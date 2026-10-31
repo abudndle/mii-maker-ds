@@ -1,0 +1,33 @@
+name: BlocksDS ARM9 and ARM7 compile smoke (synthetic assets only)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  blocksds-compile-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: skylyrac/blocksds:slim-latest
+    env:
+      CI: "true"
+      MDS_SYNTHETIC_COMPILE_ONLY: "yes"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify synthetic build safeguards and private Docker wrapper
+        run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
+      - name: Generate synthetic UI/asset placeholders for compiler only
+        run: python3 tools/generate_ci_compile_assets.py
+      - name: Compile and link real ARM9/ARM7 DS program with BlocksDS
+        run: make -j2
+      - name: Check synthetic ROM's executable sections and region layout
+        run: |
+          python3 tests/rom_arm_sections.py mii-ds.nds
+          python3 tests/rom_regions.py
+      - name: Remove nonplayable synthetic ROM (never publish)
+        if: always()
+        run: rm -f mii-ds.nds
