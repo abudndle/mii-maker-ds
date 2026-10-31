@@ -132,6 +132,10 @@ int main(void)
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_GALLERY){
+            if(k&(KEY_LEFT|KEY_RIGHT)){
+                int next=mds_gallery_slot_step(page,editor.slot,k&KEY_LEFT?-1:1);
+                if(next>=0){editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+            }
             if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
