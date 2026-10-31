@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify original skeletal motion packs survive DS ROM packaging byte for byte."""
+import argparse
 import math
 import struct
 import sys
@@ -52,19 +53,24 @@ def validate(pack, label):
 
 
 def main():
-    rom_path = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "mii-ds.nds"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
+    parser.add_argument("--source-only", action="store_true",
+                        help="validate source motion assets before compiling a ROM")
+    args = parser.parse_args()
     try:
-        rom = rom_path.read_bytes()
-        files = check(rom, with_ranges=True)
+        rom = args.rom.read_bytes() if not args.source_only else None
+        files = check(rom, with_ranges=True) if rom is not None else None
         for gender in ("Male", "Female"):
             name = f"models/{gender}Body.msp"
-            first, last = files[name]
-            embedded = rom[first:last]
-            count = validate(embedded, name)
             source = (ROOT / "nitrofiles" / name).read_bytes()
-            if source != embedded:
-                raise ValueError(f"{name}: packaged animation bytes differ from source")
-            print(f"PASS: {gender} original motions, {count} clips, exact packaged bytes")
+            count = validate(source, name)
+            if files is not None:
+                first, last = files[name]
+                if rom[first:last] != source:
+                    raise ValueError(f"{name}: packaged animation bytes differ from source")
+            kind = "source validated" if files is None else "exact packaged bytes"
+            print(f"PASS: {gender} original motions, {count} clips, {kind}")
     except (OSError, KeyError, ValueError, struct.error) as error:
         raise SystemExit(f"FAIL: original motion packaging: {error}")
 
