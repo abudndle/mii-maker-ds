@@ -23,6 +23,8 @@ jobs:
         run: python3 tests/test_motion_packs.py
       - name: Verify original body model validator rejects corrupt meshes
         run: python3 tests/test_body_models.py
+      - name: Verify saturated DS input queue preserves new presses
+        run: python3 tests/test_input_queue.py
       - name: Verify Mii preview cache recovery and safety guards
         run: python3 tests/test_preview_cache.py
       - name: Verify complete NitroFS asset parity validator
