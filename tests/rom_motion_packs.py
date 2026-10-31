@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify original skeletal motion packs survive DS ROM packaging byte for byte."""
+import math
 import struct
 import sys
 from pathlib import Path
@@ -36,6 +37,15 @@ def validate(pack, label):
         expected += frames * FRAME_BYTES
         if expected > len(pack):
             raise ValueError(f"{label}: truncated clip frames")
+        for frame in range(frames):
+            at = start + frame * FRAME_BYTES
+            if not all(math.isfinite(v) and abs(v) <= 4096 for v in
+                       struct.unpack_from("<12f", pack, at)):
+                raise ValueError(f"{label}: invalid head matrix in clip {idx}, frame {frame}")
+            # Same Q16.16 bounds required by source/motion.c at playback.
+            for (value,) in struct.iter_unpack("<i", memoryview(pack)[at + 48:at + FRAME_BYTES]):
+                if not -4096 * 65536 <= value <= 4096 * 65536:
+                    raise ValueError(f"{label}: invalid bone matrix in clip {idx}, frame {frame}")
     if expected != len(pack):
         raise ValueError(f"{label}: trailing motion data")
     return count
