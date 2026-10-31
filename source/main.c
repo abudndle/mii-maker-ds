@@ -132,6 +132,9 @@ int main(void)
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_GALLERY){
+            if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
+            else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
+            if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
             if(down&(KEY_L|KEY_R)){page=(page+(down&KEY_L?9:1))%10;editor.slot=page*10;mds_editor_request(&editor,MDS_EDIT_RELOAD);}
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;int slot=mds_gallery_touch(t.px,t.py,page);if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);}}
