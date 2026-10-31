@@ -25,4 +25,28 @@ int mds_gallery_page_step(unsigned page,unsigned selected,int direction)
     unsigned next_page=(page+(direction>0?1:9))%10;
     return (int)(next_page*10+position);
 }
+void mds_gallery_drag_reset(MdsGalleryDrag *drag)
+{
+    if(drag)drag->source=-1;
+}
+int mds_gallery_drag_begin(MdsGalleryDrag *drag,unsigned page,int source,int occupied)
+{
+    if(!drag)return 0;
+    drag->source=-1;
+    if(!occupied||page>=10||source<0||source>=100||
+       (unsigned)source/10!=page)return 0;
+    drag->source=source;
+    return 1;
+}
+int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsigned *source)
+{
+    if(!drag)return -1;
+    int start=drag->source;
+    drag->source=-1;
+    if(!source||page>=10||start<0||start>=100||
+       destination<0||destination>=100||
+       (unsigned)destination/10!=page||destination==start)return -1;
+    *source=(unsigned)start;
+    return destination;
+}
 int mds_home_focus_step(int current,int delta){int v=(current+delta)%4;return v<0?v+4:v;}
