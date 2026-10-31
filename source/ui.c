@@ -46,7 +46,7 @@ static uint8_t *body_bytes[2];
 static size_t body_sizes[2];
 static uint8_t *animation_bytes[2];
 static MdsAnimation animations[2];
-static unsigned animation_index,preview_pose[3];
+static unsigned animation_index,animation_female_index=UINT32_MAX,preview_pose[3];
 static uint32_t animation_clock;
 static unsigned rendered_animation_frames;
 static MdsMotion motions[2];
@@ -90,7 +90,7 @@ static void load_animations(void)
 void mds_ui_motion_scene(int gallery)
 {
  unsigned scene=gallery!=0;
- if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;animation_index=UINT32_MAX;}
+ if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;}
 }
 int mds_ui_animation_tick(uint32_t ticks)
 {
@@ -110,7 +110,16 @@ int mds_ui_animation_tick(uint32_t ticks)
    }
   }
   if(clip>=0){motion_clip=(unsigned)clip;motion_clip_ticks=elapsed;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
-  int changed=key!=animation_index;animation_index=key;return changed;
+  /* Either rig can advance on a different VBlank when source FPS differs.
+   * Refresh the visible Mii if either original animation advances. */
+  unsigned female_key=UINT32_MAX;
+  if(clip>=0&&motions[1].file){
+   int female_clip=mds_motion_find(&motions[1],motions[0].clips[clip].name);
+   if(female_clip>=0)female_key=(unsigned)female_clip*7200u+
+    mds_motion_frame(&motions[1].clips[female_clip],motion_clip_ticks,NULL);
+  }
+  int changed=key!=animation_index||female_key!=animation_female_index;
+  animation_index=key;animation_female_index=female_key;return changed;
  }
  unsigned index=0;mds_animation_pose(&animations[0],ticks,&index);
  int changed=index!=animation_index;animation_index=index;return changed;
