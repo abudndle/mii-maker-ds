@@ -52,6 +52,10 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     assert validation_calls == [None, ROOT]
     assert commands[0][1:3] == ("tests/rom_motion_packs.py", "--source-only")
     assert ("make", "-j3") in commands
+    renderer_command = (sys.executable, "tools/test_original_render.py",
+                        "--asset-zip", str(archive))
+    assert renderer_command in commands
+    assert commands.index(renderer_command) < commands.index(("make", "-j3"))
     assert (sys.executable, "tests/rom_all_assets.py", str(fake_rom),
             "--asset-zip", str(archive)) in commands
     assert (sys.executable, "tests/rom_arm_sections.py", str(fake_rom)) in commands
