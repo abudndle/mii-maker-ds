@@ -47,6 +47,9 @@ int main(void)
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     const char *notice="",*drawn_notice=NULL;
+    const char *save_notice="";
+    int save_return_screen=MDS_SCREEN_HOME;
+    if(ui_ready&&!save_ready)screen=MDS_SCREEN_SAVE_STATUS;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
         MdsInput input=next_input();int k=input.repeat,down=input.down;
@@ -75,7 +78,23 @@ int main(void)
                 else response=mds_ui_confirm_touch(t.px,t.py);
             }
             if(response>=0){mds_editor_confirm(&editor,response,persist,NULL);if(screen==MDS_SCREEN_GALLERY)page=editor.slot/10;if(response&&return_home)screen=MDS_SCREEN_HOME;return_home=0;}
+        }else if(screen==MDS_SCREEN_SAVE_STATUS){
+            int response=-1;
+            if(down&KEY_B)response=0;else if(down&KEY_A)response=1;
+            else if(down&KEY_TOUCH)response=mds_ui_confirm_touch(input.touch.px,input.touch.py);
+            if(response==0){screen=save_return_screen;if(!save_ready)notice="Saving unavailable. SELECT: Details.";}
+            if(response==1){
+                if(mds_editor_dirty(&editor))save_notice="Draft kept. Save or cancel it first.";
+                else{
+                    unsigned selected=editor.slot;
+                    save_ready=mds_cart_open(&gallery);
+                    if(save_ready){mds_editor_begin(&editor,&gallery);editor.slot=selected;mds_editor_request(&editor,MDS_EDIT_RELOAD);page=selected/10;save_notice="Save loaded. Gallery refreshed.";}
+                    else save_notice="Gallery kept. Check your save file.";
+                }
+                drawn_screen=-1;
+            }
         }else if(screen==MDS_SCREEN_HOME){
+            if(down&KEY_SELECT){save_return_screen=screen;save_notice="";screen=MDS_SCREEN_SAVE_STATUS;continue;}
             if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
             int action=down&KEY_A?focus+1:0;
@@ -148,6 +167,7 @@ int main(void)
             if(down&KEY_B){mds_profile_cancel(&profile);screen=MDS_SCREEN_HOME;}
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PROFILE){
+            if(profile.mode==MDS_PROFILE_ROOT&&(down&KEY_Y)){save_return_screen=screen;save_notice="";screen=MDS_SCREEN_SAVE_STATUS;continue;}
             unsigned favorites=0;for(unsigned i=0;i<100;i++)if(i!=editor.slot&&gallery.used[i])favorites+=gallery.miis[i].value[46];
             int action=0;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_profile_touch(&profile,&editor.draft,t.px,t.py,favorites);}
@@ -214,6 +234,7 @@ int main(void)
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
+            else if(screen==MDS_SCREEN_SAVE_STATUS)mds_ui_save_status(mds_cart_status(),save_notice,save_ready);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
             else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);

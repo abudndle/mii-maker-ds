@@ -10,7 +10,7 @@ Requirements retained: original 3DS look and feature choices, DS/DS Lite operati
 | Colors, hair flip, body proportions | Native color-swatch, flip and slider handlers using extracted bounds; color/body paths tested in emulator | Continuous captured stylus dragging with 0–127 clamps; knobs stay independent of expensive preview rendering, which refreshes on pause/release; exact proportions and selection effects pending |
 | Profile and naming | Original profile/gender/color/date/permission layouts, nickname/creator touch entry, strict 10-UTF16-unit limits, birthday validation and original numerals; native save/restart tested; controller focus, button typing and accessory selection | Full international keyboard and original shared alphabet font; DS keyboard is an adaptation |
 | Gallery | 100 slots, D-pad navigation, draft/save/delete flow, protected personal Mii; confirmed stable name/favorites sorting with touch and buttons, selection retention, both save formats and failed-write rollback | International name collation, remaining original dialogs and complete future import/transfer permissions; local permission-aware copy is tested |
-| ROM-associated saves | New 8 KiB snapshot supports 100 slots and melonDS defaults; legacy 64 KiB bank saves retained; writes/readback and cold restart tested | Compact format lacks full second-bank recovery; real hardware and flashcart mapping untested |
+| ROM-associated saves | New 8 KiB snapshot supports 100 slots and melonDS defaults; legacy 64 KiB bank saves retained; writes/readback and cold restart tested; boot/status warnings, read retry, unknown/damaged-save write blocking and retained drafts | Compact format lacks full second-bank recovery; real hardware and flashcart mapping untested |
 | Draft protection | Discard/delete confirmation; transaction rollback on failed persistence | Original touch confirmation art implemented; remaining modal transitions incomplete |
 | DSi camera | Compiled DSi-only preview/freeze/switch controller; DS camera gate tested | DSi sensor testing, full-resolution capture and accurate original camera UI |
 | Photo-to-Mii | Original resources and recognition data retained | Recognition engine and feature mapping; preview is not automatic Mii creation |
@@ -24,7 +24,7 @@ Requirements retained: original 3DS look and feature choices, DS/DS Lite operati
 | Copy/sharing/favorite settings | Standard file/QR imports preserve policy; copy-disabled received Miis remain read-only; Personal/Favorite icons and status persist; copy and QR permission checks | Future wireless-policy enforcement, full original identity retention in the compact gallery |
 | Standard Mii files | CFSD/FFSD import browser, strict CRC/UTF-16/date/range checks and transactional persistence | Complete raw hardware-identity retention in the private gallery; wider format conversions |
 | Sound/effects | Original sound archive and effects retained | Conversion, playback and event timing |
-| System behavior | Basic runtime; DSi camera gate | Full lid/suspend/resume, exit, save recovery UX and device-specific error handling |
+| System behavior | Basic runtime; DSi camera gate; cartridge-save status/retry UI with read/write/readback errors and draft protection | Full lid/suspend/resume, exit and remaining device-specific error handling |
 
 No network backend is presented as connected or supported. The private demake record format is not Nintendo Mii format. A resource extraction, compiled driver or reference-code location is not itself proof of completed feature compatibility.
 

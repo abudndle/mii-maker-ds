@@ -101,3 +101,12 @@ Compact saves now use MDSC version 2 with the same 8 KiB capacity and 100 slots.
 ## Controller profile regression
 
 `tools/emulator_profile_test.py --controller --core /path/to/melonds_libretro.so --save-dir /tmp/mii-controller` exercises creation, mixed-case naming, gender cancellation, shirt color, birthday, creator, permissions, cartridge saving and all accessory choices using buttons only. Repeat with `--controller --restart` and the same save directory in a new process to check persistence. As with the existing emulator tests, generate `validation/symbols.json` from the exact ROM build's `build/mii-ds.elf` before running; it maps symbol names to ARM addresses for read-only assertions. Do not reuse symbols from another build. The international keyboard/shared font remain incomplete; this adds controller access to the existing ASCII keyboard.
+
+
+## Cartridge save status and recovery
+
+Home SELECT or Y on the profile overview opens cartridge save status. A or the touch Retry button reads the existing save again; B/Back returns. A boot-time read failure, unknown nonblank save or damaged project save opens this panel automatically. Unknown/damaged contents are never erased or initialized. Saving stays disabled until a valid or genuinely blank save is read successfully. Failed read retries keep the current gallery.
+
+Read retry is blocked while the editor has unsaved changes, so loading a save cannot silently replace a draft. Return to the editor to save or cancel it first. Write/readback failures retain the draft; START in the editor retries the write. A failed physical write may already have changed part of the cartridge: RAM rollback is not a substitute for a backup, and compact 8 KiB snapshots still have no second-bank recovery.
+
+`tools/emulator_profile_test.py --save-status blank|unknown|damaged --core /path/to/core.so --save-dir /tmp/new-empty-directory` validates the normal/rejected-save screens, touch/button retry routing, draft guards and actual saved-file bytes. Each run requires an empty save directory and creates its own fictional 8 KiB fixture; it refuses to replace existing saves. The expanded host runner now has 18 sanitizer suites, including the actual portable storage code with failed reads, partial writes, readback mismatches, transaction rollback, retry, 8 KiB address aliasing and legacy-bank fallback.

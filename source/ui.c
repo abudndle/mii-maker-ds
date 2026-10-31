@@ -441,6 +441,7 @@ void mds_ui_home(int focus,const char *notice)
     memcpy(top,top_backgrounds[1],sizeof top_canvas);bitmap("nitro:/ui/home-bottom.rgb555",bottom);
     if(focus>0)for(unsigned i=0;i<sizeof home_hits/sizeof home_hits[0];i++)if(home_hits[i].action==focus+1)outline(&home_hits[i]);
     if(notice&&notice[0])label(8,156,notice);
+    label(8,177,"SELECT: Cartridge save status");
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
@@ -562,6 +563,18 @@ void mds_ui_accessories(unsigned selected)
  }
 }
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
+void mds_ui_save_status(const char *status,const char *notice,int ready)
+{
+ load_widgets();mds_ui_restore_top();
+ label(8,20,"Cartridge save status");label(8,48,status);
+ label(8,76,"Retry reads the existing save.");
+ label(8,94,"No erase or reset is performed.");
+ label(8,122,ready?"START in editor retries a save.":"Saving is currently unavailable.");
+ if(notice&&notice[0])label(8,154,notice);
+ mds_ui_confirm("Cartridge save");
+ button(28,71,200,32,"A: Retry read");button(28,111,200,32,"B: Back");
+ center_bottom(128,154,"Keep a backup of your save file.");
+}
 void mds_ui_sort_confirm(int favorites)
 {
  mds_ui_confirm(favorites?"Sort favorites first?":"Sort Miis by name?");

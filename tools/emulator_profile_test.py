@@ -1,6 +1,6 @@
 import ctypes as C,sys,pathlib,json,time,argparse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--controller',action='store_true');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--controller',action='store_true');parser.add_argument('--save-status',choices=['blank','unknown','damaged']);args=parser.parse_args()
 OUTPUT=ROOT/'validation';OUTPUT.mkdir(exist_ok=True)
 from PIL import Image
 core=C.CDLL(str(pathlib.Path(args.core).resolve()))
@@ -44,6 +44,14 @@ def inp(port,device,index,key):
   if key==1:return int((pointer[1]+192)/384*65535-32768)
  return 0
 pathlib.Path(args.save_dir).mkdir(exist_ok=True)
+if args.save_status:
+ if args.restart or args.controller:parser.error('--save-status cannot be combined with --restart or --controller')
+ save_folder=pathlib.Path(args.save_dir)
+ if any(save_folder.iterdir()):parser.error('--save-status requires an empty save directory; existing saves are never replaced')
+ seed=bytearray([255 if args.save_status=='blank' else 0x5a])*8192
+ if args.save_status=='damaged':seed[:4]=b'MDSC'
+ (save_folder/'mii-ds.sav').write_bytes(seed)
+
 for name,fn in [('environment',env),('video_refresh',video),('audio_sample_batch',audio),('input_poll',poll),('input_state',inp)]:getattr(core,'retro_set_'+name)(fn)
 core.retro_init();core.retro_load_game.argtypes=[C.POINTER(Game)];core.retro_load_game.restype=C.c_bool
 rom=(ROOT/'mii-ds.nds').resolve();blob=C.create_string_buffer(rom.read_bytes());game=Game(str(rom).encode(),C.cast(blob,C.c_void_p),len(blob)-1,None)
@@ -80,7 +88,45 @@ def key(k,wait=40):
 def avatar():return mem('editor',272)[4:130]
 def value(f):return avatar()[64+f]
 def scene():return int.from_bytes(mem('screen'),'little')
+def finish():
+ if not sram:time.sleep(3.1);run(3)
+ if sram and sram_size:sram_file.write_bytes(C.string_at(core.retro_get_memory_data(0),sram_size))
+ core.retro_unload_game();core.retro_deinit()
 run(300)
+if args.save_status:
+ blocked=args.save_status!='blank'
+ assert scene()==(8 if blocked else 0)
+ if blocked:
+  assert int.from_bytes(mem('save_ready'),'little')==0 and not any(mem('gallery',100))
+  capture('melonds-save-status-'+args.save_status)
+  key(8);assert scene()==8 and not any(mem('gallery',100))
+  tap(128,127);assert scene()==0
+ key(2);assert scene()==8
+ key(8);assert scene()==8
+ key(0);assert scene()==0
+ key(5);key(8,180);key(8,180);assert scene()==1
+ if blocked:
+  draft=avatar()
+  key(2);assert scene()==3
+  key(1);assert scene()==8
+  key(8);assert scene()==8 and avatar()==draft
+  capture('melonds-save-status-draft-'+args.save_status)
+  key(0);assert scene()==3
+  key(3);assert avatar()==draft and not any(mem('gallery',100))
+  key(0);assert scene()==1
+  key(0);assert int.from_bytes(mem('editor',272)[264:268],'little')!=0
+  key(0);assert scene()==1 and avatar()==draft
+ else:
+  key(3,300);assert mem('gallery',100)[0]==1
+  key(2);key(1);assert scene()==8
+  key(8);assert mem('gallery',100)[0]==1 and value(51)==1
+  capture('melonds-save-status-ready')
+ finish()
+ result=(pathlib.Path(args.save_dir)/'mii-ds.sav').read_bytes()
+ if blocked:assert result==seed, 'Blocked save bytes changed'
+ else:assert result[:4]==b'MDSC'
+ print('PASS: save status',args.save_status,'read retry, touch/button routing, draft protection and preserved cartridge contents',flush=True)
+ raise SystemExit(0)
 if args.restart:
  if args.controller:key(8,300);key(8,180)
  else:tap(100,25,300);tap(42,70,300);key(8,180)
@@ -171,6 +217,4 @@ else:
  assert [value(f) for f in [0,45,46,47,48,49,50,51]]==[1,6,1,0,1,2,29,1]
  capture('melonds-profile-cold-reload')
  print('PASS: cold restart restores name, creator, female body, shirt, favorite, permissions, birthday and Personal Mii flag',flush=True)
-if not sram:time.sleep(3.1);run(3)
-if sram and sram_size:sram_file.write_bytes(C.string_at(core.retro_get_memory_data(0),sram_size))
-core.retro_unload_game();core.retro_deinit()
+finish()
