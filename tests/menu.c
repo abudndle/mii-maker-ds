@@ -9,4 +9,30 @@ assert(mds_gallery_page_step(9,99,1)==9);
 assert(mds_gallery_page_step(0,0,-1)==90);
 assert(mds_gallery_page_step(7,99,1)==80);
 assert(mds_gallery_page_step(10,0,1)==-1);
-assert(mds_gallery_page_step(3,35,0)==-1);puts("PASS: original menu hitboxes, action routing, gallery touch and D-pad selection, focus wrapping");}
+assert(mds_gallery_page_step(3,35,0)==-1);
+MdsGalleryDrag drag={.source=-1};unsigned from=999;
+assert(!mds_gallery_drag_begin(NULL,0,0,1));
+assert(!mds_gallery_drag_begin(&drag,0,0,0)&&drag.source==-1);
+assert(!mds_gallery_drag_begin(&drag,0,10,1));
+assert(!mds_gallery_drag_begin(&drag,10,0,1));
+assert(mds_gallery_drag_begin(&drag,0,8,1)&&drag.source==8);
+assert(mds_gallery_drag_end(&drag,1,16,&from)==16&&from==8);
+assert(drag.source==-1);
+assert(mds_gallery_drag_end(&drag,1,12,&from)==-1);
+assert(mds_gallery_drag_begin(&drag,9,99,1));
+assert(mds_gallery_drag_end(&drag,0,3,&from)==3&&from==99);
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,4,47,&from)==-1); /* dropping on self */
+assert(drag.source==-1);
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,47,&from)==-1); /* destination wrong page */
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,-1,&from)==-1); /* outside a slot */
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,52,NULL)==-1);
+assert(drag.source==-1);
+assert(mds_gallery_drag_begin(&drag,2,22,1));
+mds_gallery_drag_reset(&drag);
+assert(mds_gallery_drag_end(&drag,3,34,&from)==-1);
+assert(mds_gallery_drag_end(NULL,3,34,&from)==-1);
+puts("PASS: original menu, gallery D-pad and cross-page stylus drag move/swap guards");}
