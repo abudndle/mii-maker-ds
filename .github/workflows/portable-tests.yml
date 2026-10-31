@@ -27,6 +27,8 @@ jobs:
         run: python3 tests/test_motion_packs.py
       - name: Verify original body model validator rejects corrupt meshes
         run: python3 tests/test_body_models.py
+      - name: Verify received Miis require copied editable records
+        run: python3 tests/test_received_copy_edit.py
       - name: Verify editor returns to originating gallery or home
         run: python3 tests/test_editor_return_navigation.py
       - name: Verify DS cartridge save null-gallery guards
