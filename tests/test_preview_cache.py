@@ -26,7 +26,12 @@ fail_end = preview.index("\n  }", fail_start)
 failure = preview[fail_start:fail_end]
 if "preview_cached[mode]=0;" not in failure or "return 0;" not in failure:
     raise SystemExit("FAIL: unsuccessful preview render is permanently cached")
-success = preview.index("preview_cached[mode]=1;", fail_end)
-if success < fail_end:
-    raise SystemExit("FAIL: success cache flag occurs in the render failure branch")
+# The success marker must occur only after the failed-render branch closes.
+# A misplaced marker inside the branch would poison the cache on failure.
+success_markers = [i for i in range(len(preview))
+                   if preview.startswith("preview_cached[mode]=1;", i)]
+if len(success_markers) != 1 or success_markers[0] <= fail_end:
+    raise SystemExit("FAIL: successful-render cache marker has unsafe placement")
+if preview.index("memcpy(head_pixels,render_pixels", fail_end) > success_markers[0]:
+    raise SystemExit("FAIL: preview marked cached before copying rendered pixels")
 print("PASS: preview input guards, 62-field cache, skeletal retry and render retry")
