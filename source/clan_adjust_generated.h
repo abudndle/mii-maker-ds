@@ -12,4 +12,16 @@ static const MdsClanKey adjust_arrow_hair_y[]={{0,-131072,0},{65536,-131072,0},{
 static const MdsClanKey adjust_arrow_r[]={{0,9830400,0}};
 static const MdsClanKey adjust_arrow_g[]={{0,13107200,0}};
 static const MdsClanKey adjust_arrow_b[]={{0,11272192,0}};
+static const MdsClanKey adjust_release_y[]={{0,0,0}};
+static const MdsClanKey adjust_release_arrow_r[]={{0,9830400,0},{65536,16711680,0}};
+static const MdsClanKey adjust_release_arrow_g[]={{0,13107200,0},{65536,16711680,0}};
+static const MdsClanKey adjust_release_arrow_b[]={{0,11272192,0},{65536,16711680,0}};
+static const MdsClanKey adjust_release_change_r[]={{-1114112,11468800,0}};
+static const MdsClanKey adjust_release_change_g[]={{-1114112,15007744,0}};
+static const MdsClanKey adjust_release_change_b[]={{-1114112,11665408,0}};
+static const MdsClanKey adjust_invalid_change_r[]={{0,14942208,0}};
+static const MdsClanKey adjust_invalid_change_g[]={{0,15073280,0}};
+static const MdsClanKey adjust_invalid_change_b[]={{0,14942208,0}};
+static const MdsClanKey adjust_invalid_arrow[]={{-1245184,16711680,0}};
+static const MdsClanKey adjust_invalid_alpha[]={{0,5242880,-11468800}};
 #endif
