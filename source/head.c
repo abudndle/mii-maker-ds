@@ -118,7 +118,7 @@ static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,c
   * light value. Reuse the identical integer RGB result without changing
   * triangle topology, shading math or texture sampling. */
  int last_flat_light=-1;
- unsigned flat_rgb[3]={0,0,0};
+ uint16_t flat_pixel=0;
  if(masked||tex){
   ur=plane(a.u,b.u,c.u,ar,brw,cr,inverse);ux=plane(a.u,b.u,c.u,ax,bx,cx,inverse);uy=plane(a.u,b.u,c.u,ay,by,cy,inverse);
   vr=plane(a.v,b.v,c.v,ar,brw,cr,inverse);vx=plane(a.v,b.v,c.v,ax,bx,cx,inverse);vy=plane(a.v,b.v,c.v,ay,by,cy,inverse);
@@ -135,11 +135,16 @@ static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,c
     else col=tint(texel(tex,u*(int)tex->width/8192,(8192-v)*(int)tex->height/8192),color,color,0);
     alpha=col>>24;if(alpha<8)continue;for(int k=0;k<3;k++)rgb[k]=(col>>(8*k)&255)*light/255;
    }else{
+    /* Solid faces are opaque. Cache the exact RGB555 result and avoid
+     * per-pixel RGB arrays, alpha tests and channel packing. */
     if(light!=last_flat_light){
-     for(int k=0;k<3;k++)flat_rgb[k]=color[k]*light/255;
+     flat_pixel=(uint16_t)(0x8000|
+      ((color[0]*light/255)>>3)|
+      (((color[1]*light/255)>>3)<<5)|
+      (((color[2]*light/255)>>3)<<10));
      last_flat_light=light;
     }
-    for(int k=0;k<3;k++)rgb[k]=flat_rgb[k];
+    out[idx]=flat_pixel;depth[idx]=z;continue;
    }
    if(alpha<255){uint16_t old=out[idx];for(int k=0;k<3;k++)rgb[k]=(rgb[k]*alpha+((old>>(5*k))&31)*255/31*(255-alpha))/255;}
    out[idx]=(uint16_t)(0x8000|(rgb[0]>>3)|((rgb[1]>>3)<<5)|((rgb[2]>>3)<<10));depth[idx]=z;
