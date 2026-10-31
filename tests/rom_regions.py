@@ -11,6 +11,7 @@ assert limit+u32(0x1cc)<=u32(0x1d0)
 assert u32(0x1d0)+u32(0x1dc)<=u32(0x210)<=len(b)
 assert crc16(b[:0x15e])==struct.unpack_from('<H',b,0x15e)[0]
 assert b[0x12]==2 and b[0xc:0x10]==b'MDSD'
+assert b[:12]==b'Mii Maker DS', 'Cartridge title must identify Mii Maker DS'
 arm9=u32(0x20)
 assert b[arm9:arm9+8]==struct.pack('<II',0xe7ffdeff,0xe7ffdeff)
 assert crc16(b[arm9:arm9+0x4000])==struct.unpack_from('<H',b,0x6c)[0]
