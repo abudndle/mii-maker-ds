@@ -184,7 +184,15 @@ static int preview(const MdsAvatar *a,int mode)
   int result=mode&&body?mds_mii_render(&cfl,a,body,size,render_pixels,mode==2):mds_head_render(&cfl,a,render_pixels);
   if(result<0){render_cancelled_count++;return preview_ready[mode];}
   if(result&&render_clock){render_ticks+=render_clock()-started;render_completed++;}
-  preview_ready[mode]=result;if(result)memcpy(head_pixels,render_pixels,sizeof render_pixels);
+  if(!result){
+   /* A missing or temporarily unreadable resource must not poison the
+    * appearance cache: retry on the next preview request. */
+   preview_ready[mode]=0;
+   preview_cached[mode]=0;
+   return 0;
+  }
+  memcpy(head_pixels,render_pixels,sizeof render_pixels);
+  preview_ready[mode]=1;
   preview_pose[mode]=pose_index;if(mode)rendered_animation_frames++;
   head_avatars[mode]=*a;preview_cached[mode]=1;
  }
