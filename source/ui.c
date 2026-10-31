@@ -131,13 +131,24 @@ static int preview(const MdsAvatar *a,int mode)
  unsigned gender=a->value[0],pose_index=0;
  const void*body=mode?mds_animation_pose(&animations[gender],animation_clock,&pose_index):NULL;
  size_t size=body?animations[gender].pose_bytes:body_sizes[gender];
- if(mode&&motions[gender].file&&body_sizes[gender]<=sizeof motion_pose_bytes[gender]){
-  unsigned key=motion_clip*7200+motion_frame;
-  if(!motion_cached[gender]||motion_cached_key[gender]!=key){
-   motion_cached[gender]=mds_motion_pose(&motions[gender],motion_clip,motion_frame,body_bytes[gender],body_sizes[gender],motion_pose_bytes[gender],sizeof motion_pose_bytes[gender]);
-   motion_cached_key[gender]=key;
+ if(mode&&motions[gender].file&&body_bytes[gender]&&body_sizes[gender]<=sizeof motion_pose_bytes[gender]){
+  /* The gallery timeline is based on the male rig. Resolve the source
+   * clip name on each gender's original rig, not its numeric table index. */
+  int selected=-1;
+  if(motions[0].file&&motion_clip<motions[0].count)
+   selected=mds_motion_find(&motions[gender],motions[0].clips[motion_clip].name);
+  if(selected>=0){
+   unsigned clip=(unsigned)selected;
+   unsigned frame=motion_frame;
+   if(frame>=motions[gender].clips[clip].count)
+    frame=motions[gender].clips[clip].count-1;
+   unsigned key=clip*7200+frame;
+   if(!motion_cached[gender]||motion_cached_key[gender]!=key){
+    motion_cached[gender]=mds_motion_pose(&motions[gender],clip,frame,body_bytes[gender],body_sizes[gender],motion_pose_bytes[gender],sizeof motion_pose_bytes[gender]);
+    motion_cached_key[gender]=key;
+   }
+   if(motion_cached[gender]){body=motion_pose_bytes[gender];size=56+(body_sizes[gender]-56)/12*18;pose_index=key;}
   }
-  if(motion_cached[gender]){body=motion_pose_bytes[gender];size=56+(body_sizes[gender]-56)/12*18;pose_index=key;}
  }
  if(!body)body=body_bytes[gender];
  if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,46)||a->value[46]!=head_avatars[mode].value[46]||a->value[51]!=head_avatars[mode].value[51]||a->value[61]!=head_avatars[mode].value[61]||(mode&&preview_pose[mode]!=pose_index)){
