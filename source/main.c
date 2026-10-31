@@ -210,8 +210,8 @@ int main(void)
             if(k&KEY_LEFT)mds_adjust(&editor.draft,(unsigned)editor.field,-1);
             if(k&(KEY_RIGHT|KEY_A))mds_adjust(&editor.draft,(unsigned)editor.field,1);
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;if(t.px<30&&t.py>=128&&t.py<149)screen=MDS_SCREEN_ACCESSORIES;else mds_ui_touch(&editor.draft,&editor.field,t.px,t.py);if(mds_ui_slider_active()){slider_changed=animation_vblanks;slider_preview_pending=1;}drawn_screen=-1;}
-            if(down&KEY_L)mds_editor_request(&editor,MDS_EDIT_PREV);
-            if(down&KEY_R)mds_editor_request(&editor,MDS_EDIT_NEXT);
+            if(down&KEY_L){if(mds_ui_view_step(-1))drawn_screen=-1;}
+            if(down&KEY_R){if(mds_ui_view_step(1))drawn_screen=-1;}
             if(down&KEY_START){mds_ui_info(&editor.draft,editor.slot,editor.field,"Saving...",mds_editor_dirty(&editor));mds_editor_save(&editor,persist,NULL);}
             if(down&KEY_SELECT){mds_profile_begin(&profile);screen=MDS_SCREEN_PROFILE;}
             if((input.held&KEY_B)&&(down&KEY_Y))mds_editor_request(&editor,MDS_EDIT_DELETE);
