@@ -452,6 +452,7 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         const char *name=g->miis[selected].name;label((256-text_width(name))/2,3,name);
     }else label(94,83,"Choose a Mii.");
     snprintf(text,sizeof text,"%u / 10",page+1);label(222-text_width(text),177,text);
+    label(8,164,"START: Sort (L/R: mode)");
     if(notice&&notice[0]&&strcmp(notice,"Ready"))label(8,177,display_status(notice));else label(8,177,"Y: Copy  X: Erase  SELECT: Image");
 }
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
@@ -549,6 +550,12 @@ void mds_ui_gender(int create,int choice)
 }
 void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
+void mds_ui_sort_confirm(int favorites)
+{
+ mds_ui_confirm(favorites?"Sort favorites first?":"Sort Miis by name?");
+ button(24,40,208,24,favorites?"Favorites / Name":"Name (A to Z)");
+ center_bottom(128,154,"L/R or tap to change mode");
+}
 int mds_ui_confirm_touch(int x,int y){const char *h=mds_profile_hit(7,x,y);if(!strcmp(h,"B_BtnCommon_00"))return 1;if(!strcmp(h,"B_BtnCommon_01"))return 0;return -1;}
 
 void mds_ui_import_open(MdsImport*b)

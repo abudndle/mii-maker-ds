@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "unicode.h"
 #include <string.h>
+#include <stdlib.h>
 static void reload(MdsEditor *e)
 {
     if(e->gallery->used[e->slot])e->draft=e->gallery->miis[e->slot];
@@ -13,6 +14,56 @@ void mds_editor_begin(MdsEditor *e,MdsGallery *g)
 }
 int mds_editor_locked(const MdsAvatar*a){return (a->value[61]&2)||((a->value[61]&1)&&!a->value[48]);}
 int mds_editor_dirty(const MdsEditor *e){return memcmp(&e->draft,&e->baseline,sizeof e->draft)!=0;}
+/* ASCII case folding leaves UTF-8 bytes intact and gives deterministic ordering
+ * without a system locale or a replacement for the original international font. */
+static int name_compare(const char *left,const char *right)
+{
+    for(unsigned i=0;i<MDS_NAME;i++){
+        unsigned a=(unsigned char)left[i],b=(unsigned char)right[i];
+        if(a>='A'&&a<='Z')a+='a'-'A';
+        if(b>='A'&&b<='Z')b+='a'-'A';
+        if(a!=b)return a<b?-1:1;
+        if(!a)return 0;
+    }
+    return 0;
+}
+static int sort_before(const MdsGallery *g,unsigned a,unsigned b,int favorites)
+{
+    if(g->used[a]!=g->used[b])return g->used[a]>g->used[b];
+    if(!g->used[a])return 0;
+    if(favorites&&g->miis[a].value[46]!=g->miis[b].value[46])
+        return g->miis[a].value[46]>g->miis[b].value[46];
+    return name_compare(g->miis[a].name,g->miis[b].name)<0;
+}
+static int sort_gallery(MdsEditor *e,int favorites,MdsPersist persist,void *ctx)
+{
+    unsigned order[MDS_SLOTS];int changed=0;
+    MdsGallery *g=e->gallery;
+    for(unsigned i=0;i<MDS_SLOTS;i++){
+        unsigned j=i;
+        while(j&&sort_before(g,i,order[j-1],favorites)){order[j]=order[j-1];j--;}
+        order[j]=i;
+    }
+    for(unsigned i=0;i<MDS_SLOTS;i++)changed|=order[i]!=i;
+    if(!changed){e->status="Gallery already sorted.";return 1;}
+    /* Keep the full snapshot off the small DS stack. A failed write restores
+     * slots, settings and save metadata together, like other editor actions. */
+    MdsGallery *prior=malloc(sizeof *prior);
+    if(!prior){e->status="Not enough memory to sort.";return 0;}
+    *prior=*g;
+    unsigned selected=e->slot;
+    for(unsigned i=0;i<MDS_SLOTS;i++){
+        g->used[i]=prior->used[order[i]];
+        g->miis[i]=prior->miis[order[i]];
+        if(order[i]==e->slot)selected=i;
+    }
+    if(!persist||!persist(g,ctx)){
+        *g=*prior;free(prior);e->status="Sort failed. Gallery retained.";return 0;
+    }
+    free(prior);e->slot=selected;reload(e);
+    e->status=favorites?"Sorted: favorites, then name.":"Sorted by name.";
+    return 1;
+}
 int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 {
     MdsGallery *g=e->gallery;
@@ -34,7 +85,11 @@ int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 }
 int mds_editor_request(MdsEditor *e,MdsEditAction action)
 {
-    if(action==MDS_EDIT_NONE||(unsigned)action>(unsigned)MDS_EDIT_RELOAD)return 0;
+    if(action==MDS_EDIT_NONE||(unsigned)action>(unsigned)MDS_EDIT_SORT_FAVORITES)return 0;
+    if(action==MDS_EDIT_SORT_NAME||action==MDS_EDIT_SORT_FAVORITES){
+        if(mds_editor_dirty(e)){e->status="Save or discard edits before sorting.";return 0;}
+        e->pending=action;e->status="L/R: sort mode. A: Sort. B: Cancel.";return 1;
+    }
     if(action==MDS_EDIT_DELETE){
         if(!e->gallery->used[e->slot]){e->status="Slot is empty";return 0;}
         if(e->gallery->miis[e->slot].value[51]){e->status="Personal Mii cannot be deleted";return 0;}
@@ -48,6 +103,8 @@ int mds_editor_confirm(MdsEditor *e,int accept,MdsPersist persist,void *ctx)
 {
     MdsEditAction action=e->pending;e->pending=MDS_EDIT_NONE;
     if(!accept){e->status="Cancelled. Draft retained";return 0;}
+    if(action==MDS_EDIT_SORT_NAME||action==MDS_EDIT_SORT_FAVORITES)
+        return sort_gallery(e,action==MDS_EDIT_SORT_FAVORITES,persist,ctx);
     if(action==MDS_EDIT_DELETE){
         MdsGallery *g=e->gallery;MdsAvatar prior=g->miis[e->slot];
         uint32_t generation=g->generation;int bank=g->active_bank;

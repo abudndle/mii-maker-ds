@@ -37,4 +37,5 @@ void mds_ui_camera_notice(const char *);
 void mds_ui_restore_top(void);
 void mds_ui_home(int,const char *);
 void mds_ui_gallery(const MdsGallery *,unsigned,unsigned,const char *);
+void mds_ui_sort_confirm(int favorites);
 #endif
