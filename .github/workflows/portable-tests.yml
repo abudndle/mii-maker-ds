@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate build prerequisite diagnostics
         run: python3 tools/test_build_preflight.py
+      - name: Verify original body model validator rejects corrupt meshes
+        run: python3 tests/test_body_models.py
       - name: Verify original Mii model RGB555 color parity
         run: python3 tests/test_flat_rgb555.py
       - name: Run asset-free source tests
