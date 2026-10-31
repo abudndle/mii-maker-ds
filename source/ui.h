@@ -41,6 +41,8 @@ int mds_ui_confirm_touch(int,int);
 void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *,int field,int editing);
 int mds_ui_editor_selection_tick(uint32_t now);
 void mds_ui_editor_adjust_key(uint32_t now,int field,int direction);
+void mds_ui_editor_adjust_invalid_key(uint32_t now,int field,int direction);
+void mds_ui_editor_adjust_release(uint32_t now,int released);
 int mds_ui_editor_adjust_tick(uint32_t now);
 void mds_ui_draw(const MdsAvatar *a,int field);
 int mds_ui_slider_active(void);

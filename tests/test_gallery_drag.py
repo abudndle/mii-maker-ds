@@ -14,7 +14,7 @@ move=editor[editor.index("int mds_editor_move("):editor.index("int mds_editor_co
 
 checks={
     "release event field": "int down,repeat,held,up;touchPosition touch;" in main,
-    "VBlank stylus release detection": ".up=keysUp()&KEY_TOUCH" in irq,
+    "VBlank records key-up and stylus release": ".up=keysUp()" in irq,
     "track last held touch position": "if(live_held&KEY_TOUCH){live_touch_x=current.px;live_touch_y=current.py;}" in irq,
     "release position preserved": "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" in irq,
     "release has priority over key repeats": "if(!(event.down||event.up)&&queued>=23)return;" in irq,

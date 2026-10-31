@@ -166,3 +166,32 @@ Only these Decide tracks have been attached. The full original
 menu audio and remaining clips are not yet ported. Host C/ASan/UBSan
 and source-generator tests do not replace BlocksDS ROM compilation,
 melonds image comparisons, or physical DS/DSi verification.
+
+## Editor CLAN button release and invalid-selection feedback milestone
+
+The private original `EditEye_UnDecide` animation contains actual
+`P_BtnArrowR` CLMC RGB release keys at frames 0 and 1
+(150,200,172)→(255,255,255); `EditEye_Invalid` has a distinct
+held `P_Change_00` material RGB (228,230,228) and opacity 80.
+`tools/generate_clan_adjust.py` now regenerates **21** keyframe tracks
+across the original Decide, UnDecide, and Invalid CLAN clips, without
+shipping original Nintendo binary assets.
+
+`source/clan_adjust.[ch]` supports three states: Press, Release,
+Invalid. Release starts when the stylus/keyboard button goes up,
+or automatically after the press phase, ensuring even a dropped release
+event cannot leave a pressed appearance stuck on screen. Invalid
+feedback uses the original source state colors and alpha; because the
+original Invalid tracks are mostly single held keys rather than a
+recoverable error pulse, the visible hold duration is a DS adaptation.
+The exit always redraws the underlying original editor bitmap.
+
+`source/main.c` queues all `keysUp()` events (not just touch),
+and routes key-up into the real editor UI. `source/ui.c` detects
+no-op bounded touch transforms and unmodified keyboard adjustments,
+using Invalid rather than a successful press cue. Touch targets,
+original feature images and game-data changes are unaffected.
+
+This source-level milestone is not complete 3DS CLYT animation
+playback. Exact invalid-state scene choreography and material hierarchy,
+console-ROM build and live melonDS acceptance remain unfinished.

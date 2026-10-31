@@ -22,8 +22,12 @@ static void change_press(void)
  assert(mds_clan_adjust_style(&fx,107,&style));
  assert(style.offset_y==0);
  assert(mds_clan_adjust_tick(&fx,109));
+ assert(fx.active&&fx.phase==MDS_CLAN_ADJUST_RELEASE);
+ assert(mds_clan_adjust_style(&fx,109,&style));
+ assert(style.offset_y==0&&style.tint_rgb555==(uint16_t)(0x8000u|(175u>>3)|((229u>>3)<<5)|((178u>>3)<<10)));
+ assert(mds_clan_adjust_tick(&fx,113));
  assert(!fx.active);
- assert(!mds_clan_adjust_tick(&fx,110));
+ assert(!mds_clan_adjust_tick(&fx,114));
 }
 static void arrow_press(void)
 {
@@ -35,6 +39,12 @@ static void arrow_press(void)
  assert(cue.tint_rgb555==(uint16_t)(0x8000u|(150u>>3)|((200u>>3)<<5)|((172u>>3)<<10)));
  assert(mds_clan_adjust_style(&fx,207,&cue)&&cue.offset_y==0);
  assert(mds_clan_adjust_tick(&fx,209));
+ assert(fx.phase==MDS_CLAN_ADJUST_RELEASE&&fx.active);
+ assert(mds_clan_adjust_style(&fx,209,&cue));
+ assert(cue.tint_rgb555==(uint16_t)(0x8000u|(150u>>3)|((200u>>3)<<5)|((172u>>3)<<10)));
+ assert(mds_clan_adjust_style(&fx,211,&cue));
+ assert(cue.tint_rgb555==0xffff);
+ assert(mds_clan_adjust_tick(&fx,213));
  assert(!fx.active);
  mds_clan_adjust_begin(&fx,300,MDS_CLAN_ADJUST_ARROW,3,42,2,29,19);
  assert(mds_clan_adjust_style(&fx,300,&cue)&&cue.offset_y==-2);
@@ -47,6 +57,9 @@ static void wrap_and_guards(void)
  assert(mds_clan_adjust_style(&fx,UINT32_MAX-1,&cue));
  assert(mds_clan_adjust_style(&fx,1,&cue)&&cue.offset_y<=0);
  assert(mds_clan_adjust_tick(&fx,6));
+ assert(fx.active&&fx.phase==MDS_CLAN_ADJUST_RELEASE);
+ assert(mds_clan_adjust_style(&fx,6,&cue));
+ assert(mds_clan_adjust_tick(&fx,10));
  assert(!fx.active);
  mds_clan_adjust_begin(&fx,1,0,5,1,1,10,10);
  assert(!fx.active);
@@ -61,9 +74,53 @@ static void wrap_and_guards(void)
  assert(!mds_clan_adjust_tick(&fx,1));
  mds_clan_adjust_reset(NULL);
 }
+static void explicit_release(void)
+{
+ MdsClanAdjust fx={0};
+ MdsClanAdjustStyle cue;
+ mds_clan_adjust_begin(&fx,100,MDS_CLAN_ADJUST_ARROW,4,134,2,29,19);
+ assert(mds_clan_adjust_style(&fx,100,&cue));
+ mds_clan_adjust_release(&fx,101);
+ assert(fx.phase==MDS_CLAN_ADJUST_RELEASE&&!fx.painted);
+ assert(mds_clan_adjust_style(&fx,101,&cue));
+ assert(cue.tint_rgb555==(uint16_t)(0x8000u|(150u>>3)|((200u>>3)<<5)|((172u>>3)<<10)));
+ assert(mds_clan_adjust_style(&fx,103,&cue));
+ assert(cue.tint_rgb555==0xffff);
+ mds_clan_adjust_release(&fx,104); /* Repeated release is ignored. */
+ assert(fx.started==101);
+ assert(mds_clan_adjust_tick(&fx,105));
+ assert(!fx.active);
+ mds_clan_adjust_release(&fx,106);
+ assert(!fx.active);
+}
+static void invalid_feedback(void)
+{
+ MdsClanAdjust fx={0};
+ MdsClanAdjustStyle cue;
+ mds_clan_adjust_invalid(&fx,10,MDS_CLAN_ADJUST_CHANGE,4,194,22,30,22);
+ assert(fx.active&&fx.phase==MDS_CLAN_ADJUST_INVALID);
+ assert(mds_clan_adjust_style(&fx,11,&cue));
+ assert(cue.offset_y==0);
+ assert(cue.opacity==80);
+ assert(cue.tint_rgb555==(uint16_t)(0x8000u|(228u>>3)|((230u>>3)<<5)|((228u>>3)<<10)));
+ mds_clan_adjust_release(&fx,12);
+ assert(fx.phase==MDS_CLAN_ADJUST_INVALID);
+ assert(mds_clan_adjust_tick(&fx,31));
+ assert(!fx.active);
+ mds_clan_adjust_invalid(&fx,UINT32_MAX-1,MDS_CLAN_ADJUST_ARROW,5,0,0,20,20);
+ assert(mds_clan_adjust_style(&fx,UINT32_MAX-1,&cue));
+ assert(cue.tint_rgb555==0xffff);
+ assert(cue.opacity==80);
+ assert(mds_clan_adjust_tick(&fx,19));
+ assert(!fx.active);
+ mds_clan_adjust_invalid(&fx,0,0,0,0,0,1,1);
+ assert(!fx.active);
+ mds_clan_adjust_invalid(NULL,0,MDS_CLAN_ADJUST_ARROW,0,0,0,1,1);
+}
 int main(void)
 {
  change_press();arrow_press();wrap_and_guards();
- puts("PASS: original arrow and adjustment CLAN tracks, first-paint timing, VBlank wrap and reset");
+ explicit_release();invalid_feedback();
+ puts("PASS: original editor Decide/UnDecide/Invalid, release, rollover and validation");
  return 0;
 }
