@@ -180,6 +180,7 @@ int main(void)
             if((screen==MDS_SCREEN_GALLERY&&last_transition_screen==MDS_SCREEN_HOME)||
                (screen==MDS_SCREEN_HOME&&last_transition_screen==MDS_SCREEN_GALLERY))
                 mds_ui_scene_transition_start(animation_vblanks);
+            else mds_ui_scene_transition_cancel();
             last_transition_screen=screen;
         }
         int animate=0;
