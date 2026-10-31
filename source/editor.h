@@ -18,5 +18,7 @@ int mds_editor_request(MdsEditor *,MdsEditAction);
 int mds_editor_confirm(MdsEditor *,int,MdsPersist,void *);
 int mds_editor_import(MdsEditor *,const MdsAvatar *,MdsPersist,void *);
 int mds_editor_copy(MdsEditor *,MdsPersist,void *);
+/* Begin a new Mii in a specific empty gallery slot. */
+int mds_editor_create(MdsEditor *,unsigned);
 int mds_editor_save(MdsEditor *,MdsPersist,void *);
 #endif
