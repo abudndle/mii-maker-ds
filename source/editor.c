@@ -65,6 +65,24 @@ int mds_editor_confirm(MdsEditor *e,int accept,MdsPersist persist,void *ctx)
     reload(e);e->status=e->gallery->used[e->slot]?"Slot loaded":"Empty slot";return 1;
 }
 
+int mds_editor_create(MdsEditor *e,unsigned slot)
+{
+ if(!e||!e->gallery||slot>=MDS_SLOTS||e->gallery->used[slot])return 0;
+ /* Never overwrite an unfinished edit when selecting a new gallery slot. */
+ if(mds_editor_dirty(e)){
+  e->status="Discard unsaved edits before creating a Mii.";
+  return 0;
+ }
+ e->slot=slot;e->field=2;e->pending=MDS_EDIT_NONE;
+ mds_new(&e->draft);e->baseline=e->draft;
+ unsigned personal=0;
+ for(unsigned i=0;i<MDS_SLOTS;i++)
+  if(e->gallery->used[i]&&e->gallery->miis[i].value[51])personal++;
+ if(!personal){e->draft.value[51]=1;e->draft.value[46]=1;}
+ e->status="New draft: START to save";
+ return 1;
+}
+
 int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 {
  MdsGallery*g=e->gallery;
