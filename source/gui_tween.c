@@ -22,3 +22,12 @@ int16_t mds_gui_tween_value(const MdsGuiTween *t,uint32_t now){
  if(value<INT16_MIN)value=INT16_MIN;
  return (int16_t)value;
 }
+
+uint16_t mds_gui_fade_rgb555(uint16_t pixel,unsigned brightness)
+{
+ if(brightness>16)brightness=16;
+ unsigned r=(pixel&31)*brightness/16;
+ unsigned g=((pixel>>5)&31)*brightness/16;
+ unsigned b=((pixel>>10)&31)*brightness/16;
+ return (uint16_t)((pixel&0x8000u)|r|(g<<5)|(b<<10));
+}
