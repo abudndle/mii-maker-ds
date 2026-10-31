@@ -128,7 +128,8 @@ int main(void)
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             if(down&KEY_SELECT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
         }else if(screen==MDS_SCREEN_GENDER){
-            if(k&(KEY_LEFT|KEY_RIGHT))mds_profile_choice_step(&profile,1);
+            if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
+            if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
             int chosen=-1;
             if(down&KEY_A)chosen=profile.choice;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
