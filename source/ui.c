@@ -153,8 +153,13 @@ static int preview(const MdsAvatar *a,int mode)
   /* The gallery timeline is based on the male rig. Resolve the source
    * clip name on each gender's original rig, not its numeric table index. */
   int selected=-1;
-  if(motions[0].file&&motion_clip<motions[0].count)
-   selected=mds_motion_find(&motions[gender],motions[0].clips[motion_clip].name);
+  if(gender==0&&motion_clip<motions[0].count)selected=(int)motion_clip;
+  else if(gender==1)for(unsigned i=0;i<6;i++){
+   if(gallery_idle_indices[i]==(int)motion_clip){
+    selected=gallery_female_idle_indices[i];
+    break;
+   }
+  }
   if(selected>=0){
    unsigned clip=(unsigned)selected;
    /* Recompute from clip-local VBlank time; the two original rigs may
