@@ -26,7 +26,14 @@ static void animation_vblank(void)
  if(!(event.down||event.repeat))return;
  touchRead(&event.touch);
  unsigned next=(input_write+1)%32;
- if(next!=input_read){input_queue[input_write]=event;input_write=next;}
+ if(next==input_read){
+  /* Rendering may take several VBlanks. Drop repeat-only events first;
+   * preserve new button/touch presses even when the FIFO is saturated. */
+  if(!event.down)return;
+  input_read=(input_read+1)%32;
+ }
+ input_queue[input_write]=event;
+ input_write=next;
 }
 static MdsInput next_input(void)
 {
