@@ -195,3 +195,29 @@ original feature images and game-data changes are unaffected.
 This source-level milestone is not complete 3DS CLYT animation
 playback. Exact invalid-state scene choreography and material hierarchy,
 console-ROM build and live melonDS acceptance remain unfinished.
+
+## Private-build original animation parity gate
+
+`tools/verify_private_clan.py` reads **all 327 original private BCLAN
+clips** from the user's local resource ZIP, validates **13,366 source
+property channels**, and regenerates the **41 source-derived GUI animation
+channels** used in the DS home, editor, profile-dialog and adjustment
+animations. Numeric Q16.16 keyframe triples must match the four checked-in
+`source/clan_*_generated.h` headers, rejecting missing/extra channels,
+keyframe drift, and duplicate initializer tables.
+
+`python3 tools/build_private.py OWNED_RESOURCE_ARCHIVE.zip --validate-only`
+now runs this verification after the existing ZIP and original skeletal
+motion-pack checks, before extracting the original game assets. Full
+private builds also run this gate before any extraction/compilation.
+A metadata-only report can be created locally with:
+`python3 tools/verify_private_clan.py OWNED_RESOURCE_ARCHIVE.zip --report /tmp/clan-parity.json`.
+The report contains only channel counts, key counts, and hashes of the
+public numeric tables, not proprietary source bytes.
+
+Asset-free GitHub CI tests exercise the parser and failure paths; original
+data verification happens only on the owner's local machine and was
+validated against the user-supplied ZIP in the development workspace.
+No Nintendo original asset archive or resulting ROM should be committed
+or uploaded publicly. This gate does NOT mean the DS executable has
+been compiled under BlocksDS or visually boot-tested in melonDS.
