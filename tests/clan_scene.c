@@ -1,5 +1,6 @@
 #include "clan_scene.h"
 #include <assert.h>
+#include <stddef.h>
 #include <stdio.h>
 int main(void)
 {
