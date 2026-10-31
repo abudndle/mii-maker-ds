@@ -15,6 +15,8 @@ typedef struct {
 /* Borrowed FILE, caller retains ownership. Failed open leaves zero state. */
 int mds_motion_open(MdsMotion *,FILE *);
 int mds_motion_find(const MdsMotion *,const char *);
+/* Cycle through all available clips; -1 selects from automatic playback. */
+int mds_motion_cycle(const MdsMotion *,int current,int direction);
 unsigned mds_motion_frame(const MdsMotionClip *,uint32_t,int *);
 /* Emits BOD3 (56 + vertex_count * 18 bytes), preserving original order/IDs. */
 int mds_motion_pose(MdsMotion *,unsigned,unsigned,const void *,size_t,void *,size_t);
