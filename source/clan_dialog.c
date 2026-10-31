@@ -6,14 +6,14 @@ int mds_clan_dialog_active(uint32_t now,uint32_t started)
 {
  return (uint32_t)(now-started)<MDS_CLAN_DIALOG_VBLANKS;
 }
-int mds_clan_dialog_y(uint32_t now,uint32_t started)
+static int scaled_y(const MdsClanKey *keys,unsigned count,
+                    uint32_t now,uint32_t started)
 {
  uint32_t elapsed=(uint32_t)(now-started);
  if(elapsed>=MDS_CLAN_DIALOG_VBLANKS)return 0;
  int32_t frame=(int32_t)(elapsed*32768u);
- int32_t source=mds_clan_curve_eval(dialog_in_y,
-   sizeof dialog_in_y/sizeof dialog_in_y[0],frame);
- /* Scale 240px 3DS pane coordinates to 192px DS bottom display. */
+ int32_t source=mds_clan_curve_eval(keys,count,frame);
+ /* Original 240px pane positions rescaled to 192px DS display. */
  int64_t scaled=(int64_t)source*192;
  int64_t divisor=240LL*65536;
  int64_t pixels=scaled<0?-((-scaled+divisor/2)/divisor):
@@ -21,6 +21,18 @@ int mds_clan_dialog_y(uint32_t now,uint32_t started)
  if(pixels>192)pixels=192;
  if(pixels< -192)pixels= -192;
  return (int)pixels;
+}
+int mds_clan_dialog_y(uint32_t now,uint32_t started)
+{
+ return scaled_y(dialog_in_y,sizeof dialog_in_y/sizeof dialog_in_y[0],
+                 now,started);
+}
+int mds_clan_dialog_exit_y(uint32_t now,uint32_t started,int up)
+{
+ if(up)return scaled_y(dialog_out_up_y,
+    sizeof dialog_out_up_y/sizeof dialog_out_up_y[0],now,started);
+ return scaled_y(dialog_out_y,
+    sizeof dialog_out_y/sizeof dialog_out_y[0],now,started);
 }
 void mds_clan_dialog_translate(uint16_t *screen,int offset,uint16_t background)
 {

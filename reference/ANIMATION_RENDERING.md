@@ -88,3 +88,30 @@ not the original independent CLYT pane hierarchy. This is not a complete
 replacement for original dialog exit sequences, texture/material animations,
 or all 327 CLAN clips. The full private ROM is **not** yet built or
 visually validated in melonDS after this milestone.
+
+## Original CLAN dialog exit milestone
+
+The DS profile screen now uses three original `Dialog.arc.files`
+`W_Dialog` Y curves: `DialogBase00_DialogIn`,
+`DialogBase00_DialogOut`, and `DialogBase00_DialogOutUp`.
+The source exit keys are (0,0,-14.117647), (17,-240,0)
+for the upward exit and (0,0,0), (17,+240,0) for the downward
+exit, from 21-frame source clips. `tools/generate_clan_dialog.py`
+reconstructs a numeric-only C header from the user's local
+private CLAN metadata without publishing original binary resources.
+
+In `source/main.c`, Back from the root profile now stages a
+DialogOut transition before returning to the editor. Cancel,
+confirm, or X-clear from a nested profile page stage DialogOutUp
+before showing the root profile page. Input is ignored during
+the pending exit so modal navigation cannot skip the animation.
+The previous profile state remains visually displayed while the
+underlying edit/cancel operation is already committed. Completion
+is checked independently of other screen redraw conditions.
+`source/ui.c` redraws the unmodified profile source bitmap for
+every translated frame. Clip positions retain 240-to-192 DS scaling.
+
+Limitations: these animations move the *reconstructed whole panel*,
+not original individual CLYT pane geometry. The source 30-fps
+cadence is provisional, and no real BlocksDS ROM or melonDS
+visual parity run is confirmed for this milestone.

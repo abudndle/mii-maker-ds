@@ -15,6 +15,8 @@ void mds_ui_present_top(void);
 void mds_ui_home_focus_start(uint32_t now);
 int mds_ui_home_focus_tick(uint32_t now);
 void mds_ui_profile_transition_start(uint32_t now);
+void mds_ui_profile_transition_exit(uint32_t now,int up);
+int mds_ui_profile_transition_active(void);
 int mds_ui_profile_transition_tick(uint32_t now);
 void mds_ui_scene_transition_start(uint32_t now);
 void mds_ui_scene_transition_cancel(void);
