@@ -78,6 +78,7 @@ jobs:
           export PATH="/opt/wonderful/bin:/opt/wonderful/toolchain/gcc-arm-none-eabi/bin:$PATH"
           python3 tools/build_preflight.py
           python3 tools/check_assets.py
+          python3 tools/validate_body_models.py
           make -j2
           test -s mii-ds.nds
           python3 tests/rom_regions.py
