@@ -31,12 +31,15 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
 
     with patch.object(runner, "run", side_effect=capture):
         runner.build(archive, validate_only=True)
-    assert len(commands) == 2
+    assert len(commands) == 3
     assert commands[0][1:] == (
         "tests/rom_motion_packs.py", "--source-only", "--asset-zip", str(archive)
     )
     assert commands[1] == (
         sys.executable, "tools/verify_private_clan.py", str(archive)
+    )
+    assert commands[2] == (
+        sys.executable, "tools/verify_runtime_assets.py", str(archive)
     )
     assert not (work / "mii-ds.nds").exists()
 
@@ -56,7 +59,9 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     assert validation_calls == [None, ROOT]
     assert commands[0][1:3] == ("tests/rom_motion_packs.py", "--source-only")
     assert (sys.executable, "tools/verify_private_clan.py", str(archive)) in commands
+    assert (sys.executable, "tools/verify_runtime_assets.py", str(archive)) in commands
     assert commands.index((sys.executable, "tools/verify_private_clan.py", str(archive))) < commands.index(("make", "-j3"))
+    assert commands.index((sys.executable, "tools/verify_runtime_assets.py", str(archive))) < commands.index(("make", "-j3"))
     assert ("make", "-j3") in commands
     renderer_command = (sys.executable, "tools/test_original_render.py",
                         "--asset-zip", str(archive))
@@ -91,6 +96,20 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     assert len(failure_commands) == 2
     assert not any(cmd and cmd[0] == "make" for cmd in failure_commands)
 
+    def reject_bad_resource(*command):
+        failure_commands.append(tuple(map(str, command)))
+        if len(command) > 1 and str(command[1]) == "tools/verify_runtime_assets.py":
+            raise subprocess.CalledProcessError(1, command)
+    failure_commands.clear()
+    with patch.object(runner, "run", side_effect=reject_bad_resource):
+        try:
+            runner.build(archive, jobs=3)
+            raise AssertionError("missing UI sprite did not prevent build")
+        except subprocess.CalledProcessError:
+            pass
+    assert len(failure_commands) == 3
+    assert not any(cmd and cmd[0] == "make" for cmd in failure_commands)
+
     with patch.object(runner, "run", side_effect=capture):
         try:
             runner.build(work / "missing.zip", validate_only=True)
@@ -98,4 +117,4 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
         except ValueError:
             pass
 
-print("PASS: private ZIP validation, CLAN parity before extraction/build, full ROM gates and missing ZIP rejection")
+print("PASS: private ZIP validation, CLAN and NitroFS UI parity before extraction/build, full ROM gates and missing ZIP rejection")
