@@ -53,19 +53,7 @@ jobs:
           else
             curl -fLsS --retry 3 "$ASSETS_URL" -o /tmp/mii-assets.zip
           fi
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-          root=Path.cwd().resolve()
-          with ZipFile('/tmp/mii-assets.zip') as z:
-              for member in z.infolist():
-                  output=(root/member.filename).resolve()
-                  if not output.is_relative_to(root) or member.filename.startswith('/'):
-                      raise SystemExit('Unsafe archive member: '+member.filename)
-                  if (member.external_attr >> 16) & 0o170000 == 0o120000:
-                      raise SystemExit('Symlinks are not allowed in resource ZIP')
-              z.extractall(root)
-          PY
+          python3 tools/restore_asset_zip.py /tmp/mii-assets.zip --extract-to .
           rm -f /tmp/mii-assets.zip
       - name: Validate input and compile ROM
         shell: bash
