@@ -87,8 +87,16 @@ int main(void)
             if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
             else if(down&KEY_TOUCH){touchPosition t;t=input.touch;response=mds_ui_confirm_touch(t.px,t.py);}
             if(response>=0){
+                int copy_prompt=editor.pending==MDS_EDIT_COPY_RECEIVED;
                 int confirmed=mds_editor_confirm(&editor,response,persist,NULL);
-                if(response&&confirmed&&pending_editor_return)screen=editor_return_screen;
+                if(response&&confirmed&&copy_prompt){
+                    /* The received source remains unchanged. Open only the
+                     * newly persisted editable copy, on its gallery page. */
+                    page=editor.slot/10;
+                    editor_return_screen=MDS_SCREEN_GALLERY;
+                    screen=MDS_SCREEN_EDITOR;
+                }else if(response&&confirmed&&pending_editor_return)
+                    screen=editor_return_screen;
                 pending_editor_return=0;
             }
         }else if(screen==MDS_SCREEN_HOME){
@@ -182,6 +190,11 @@ int main(void)
                         mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
                         screen=MDS_SCREEN_GENDER;
                     }
+                }else if(gallery.miis[editor.slot].value[61]&1){
+                    /* Nintendo 3DS behavior: permitted received Miis must be
+                     * copied first; never edit the received original. */
+                    if(!mds_editor_request(&editor,MDS_EDIT_COPY_RECEIVED))
+                        drawn_screen=-1;
                 }else if(!mds_editor_locked(&gallery.miis[editor.slot])){
                     mds_editor_request(&editor,MDS_EDIT_RELOAD);
                     editor_return_screen=MDS_SCREEN_GALLERY;
@@ -273,7 +286,10 @@ int main(void)
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
-            if(editor.pending)mds_ui_confirm(editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":"Discard your changes?");
+            if(editor.pending)mds_ui_confirm(
+                editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":
+                editor.pending==MDS_EDIT_COPY_RECEIVED?"Copy Mii to edit?":
+                "Discard your changes?");
             mds_ui_scene_transition_step(animation_vblanks,1);
             mds_ui_present_top();
             drawn=editor;drawn_screen=screen;drawn_focus=focus;drawn_page=page;drawn_notice=notice;
