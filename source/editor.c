@@ -11,7 +11,9 @@ void mds_editor_begin(MdsEditor *e,MdsGallery *g)
 {
     memset(e,0,sizeof *e);e->gallery=g;reload(e);e->status="Ready";
 }
-int mds_editor_locked(const MdsAvatar*a){return (a->value[61]&2)||((a->value[61]&1)&&!a->value[48]);}
+/* Received characters are read-only: permission allows making an editable
+ * COPY, never changing the original received record in-place. */
+int mds_editor_locked(const MdsAvatar*a){return a&&(a->value[61]&3)!=0;}
 int mds_editor_dirty(const MdsEditor *e){return memcmp(&e->draft,&e->baseline,sizeof e->draft)!=0;}
 int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 {
@@ -34,7 +36,23 @@ int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 }
 int mds_editor_request(MdsEditor *e,MdsEditAction action)
 {
-    if(action==MDS_EDIT_NONE||(unsigned)action>(unsigned)MDS_EDIT_RELOAD)return 0;
+    if(!e||!e->gallery||e->slot>=MDS_SLOTS||action==MDS_EDIT_NONE||
+       (unsigned)action>(unsigned)MDS_EDIT_COPY_RECEIVED||e->pending)return 0;
+    if(action==MDS_EDIT_COPY_RECEIVED){
+        if(!e->gallery->used[e->slot]||!(e->gallery->miis[e->slot].value[61]&1)||
+           (e->gallery->miis[e->slot].value[61]&2)||
+           !e->gallery->miis[e->slot].value[48]){
+            e->status="This received Mii cannot be copied.";
+            return 0;
+        }
+        if(mds_editor_dirty(e)){
+            e->status="Discard unsaved edits before copying.";
+            return 0;
+        }
+        e->pending=action;
+        e->status="Copy received Mii to edit? A yes / B back";
+        return 1;
+    }
     if(action==MDS_EDIT_DELETE){
         if(!e->gallery->used[e->slot]){e->status="Slot is empty";return 0;}
         if(e->gallery->miis[e->slot].value[51]){e->status="Personal Mii cannot be deleted";return 0;}
@@ -48,6 +66,8 @@ int mds_editor_confirm(MdsEditor *e,int accept,MdsPersist persist,void *ctx)
 {
     MdsEditAction action=e->pending;e->pending=MDS_EDIT_NONE;
     if(!accept){e->status="Cancelled. Draft retained";return 0;}
+    if(action==MDS_EDIT_COPY_RECEIVED)
+        return mds_editor_copy(e,persist,ctx);
     if(action==MDS_EDIT_DELETE){
         MdsGallery *g=e->gallery;MdsAvatar prior=g->miis[e->slot];
         uint32_t generation=g->generation;int bank=g->active_bank;
