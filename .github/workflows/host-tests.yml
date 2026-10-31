@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run asset-free sanitizer tests
-        run: python3 tools/test_host.py
+        run: python3 tests/test_private_rom_release.py && python3 tools/test_host.py
