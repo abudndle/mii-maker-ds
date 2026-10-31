@@ -11,7 +11,7 @@ The original compiled ARM11 executable is evidence, not recovered Nintendo C/C++
 | MiiAnim.arc, all 53 clips | animation_curves.py, motion_pack.py, motion.c, ui.c | All 12,164 gender/source frames supported via streamed bone transforms; all 53 clips selectable in gallery, six idle clips cycle automatically; original scene/event choreography incomplete |
 | PlazaTop / SelectMii / EDITSelectBase | menu.c, ui.c, menu_assets.py, thumbnail.c | Original menu/gallery art and bounds with D-pad selection, cross-page touch drag-to-move/swap, page-local thumbnail cache and animation controls; animated plaza/advanced sorting incomplete |
 | Thirteen original editor pages | layouts.py, ui_hitboxes.py, ui.c | Icons, transform/reset controls, colors and captured sliders |
-| Editor/Profile and original gender/date/permission dialogs | profile.c, profile_assets.py | Names/profile controls, original numeral font and dialog hits |
+| Editor/Profile and original gender/date/permission dialogs | profile.c, profile_assets.py | Names/profile controls, original numeral font/dialog hits; received Mii A-to-edit prompts for safe editable copy when copying is allowed |
 | QR/BtnQR, Dialog/DialogPhotoSelect | qr_assets.py, qr_generated.h, ui.c | Original QR menu and Face/Entire Mii selector; camera row hidden on DS |
 | Original 327 CLAN GUI animation tracks | animation_inventory.py | Retained and inventoried; full GUI track playback remains unfinished |
 | Original Personal/Favorite icon panes | status_assets.py, status.c, ui.c | Original tinted crown art; persistent ownership/status and provisional pants tints |
