@@ -14,27 +14,31 @@ static MdsImport importer;
 static int qr_select_image;
 static int screen=MDS_SCREEN_HOME;
 static volatile uint32_t animation_vblanks;
-typedef struct {int down,repeat,held;touchPosition touch;} MdsInput;
+typedef struct {int down,repeat,held,up;touchPosition touch;} MdsInput;
 static volatile MdsInput input_queue[32];
 static volatile unsigned input_read,input_write;
-static volatile int live_held,live_touch_x;
+static volatile int live_held,live_touch_x,live_touch_y;
 static void animation_vblank(void)
 {
  animation_vblanks++;scanKeys();
- live_held=keysHeld();touchPosition current;touchRead(&current);live_touch_x=current.px;
- MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=keysHeld()};
- if(!(event.down||event.repeat))return;
- touchRead(&event.touch);
+ live_held=keysHeld();touchPosition current;touchRead(&current);
+ /* Record the last valid stylus coordinate for the release event. */
+ if(live_held&KEY_TOUCH){live_touch_x=current.px;live_touch_y=current.py;}
+ MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=live_held,
+                 .up=keysUp()&KEY_TOUCH};
+ if(!(event.down||event.repeat||event.up))return;
+ event.touch=current;
+ if(event.up&KEY_TOUCH){event.touch.px=live_touch_x;event.touch.py=live_touch_y;}
  /* Reserve eight of the 31 usable slots for fresh presses. Holding a
   * direction during expensive software rendering must not fill the FIFO
   * with repeat events and force genuine input out of the queue. */
  unsigned queued=(input_write+32-input_read)%32;
- if(!event.down&&queued>=23)return;
+ if(!(event.down||event.up)&&queued>=23)return;
  unsigned next=(input_write+1)%32;
  if(next==input_read){
   /* Rendering may take several VBlanks. Drop repeat-only events first;
    * preserve new button/touch presses even when the FIFO is saturated. */
-  if(!event.down)return;
+  if(!(event.down||event.up))return;
   input_read=(input_read+1)%32;
  }
  input_queue[input_write]=event;
@@ -56,7 +60,8 @@ int main(void)
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
     int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
-    unsigned page=0,drawn_page=99;
+    unsigned page=0,drawn_page=99,drag_page=0;
+    int drag_slot=-1;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     const char *notice="",*drawn_notice=NULL;
@@ -152,7 +157,23 @@ int main(void)
                 int next=mds_gallery_page_step(page,editor.slot,down&KEY_L?-1:1);
                 if(next>=0){editor.slot=(unsigned)next;page=editor.slot/10;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
-            if(down&KEY_TOUCH){touchPosition t;t=input.touch;int slot=mds_gallery_touch(t.px,t.py,page);if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);}}
+            if(down&KEY_TOUCH){
+                int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
+                drag_slot=slot;drag_page=page;
+                if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+            }
+            if(input.up&KEY_TOUCH){
+                int destination=mds_gallery_touch(input.touch.px,input.touch.py,page);
+                if(drag_slot>=0&&page==drag_page&&destination>=0&&
+                   destination!=drag_slot&&gallery.used[drag_slot]){
+                    editor.slot=(unsigned)drag_slot;
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                    if(mds_editor_move(&editor,(unsigned)destination,persist,NULL))
+                        page=editor.slot/10;
+                    drawn_screen=-1;
+                }
+                drag_slot=-1;
+            }
             if(down&KEY_A){
                 if(!gallery.used[editor.slot]){
                     if(mds_editor_create(&editor,editor.slot)){
@@ -222,6 +243,7 @@ int main(void)
                 else screen=editor_return_screen;
             }
         }
+        if(screen!=MDS_SCREEN_GALLERY)drag_slot=-1;
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
