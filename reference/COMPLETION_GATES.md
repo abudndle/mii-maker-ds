@@ -7,7 +7,7 @@ art resources. Preserve private resources outside this public Git repository.
 
 | Original behavior / resource | Current DS implementation | Still required before complete |
 |---|---|---|
-| Home, create, view, edit, delete, copy | Native menu, editors and gallery; 100 physical slots | Verify actual ARM9 gameplay, all navigation and modal confirmation screens in melonDS |
+| Home, create, view, edit, delete, copy | Native menu, editors, persistent gallery drag-to-move/swap and 100 physical slots | Verify actual ARM9 gameplay, all navigation and modal confirmation screens in melonDS |
 | 13 appearance pages, original colors and transforms | Original UI icon/layout inputs and field controls | Verify every original hitbox/field visually against 3DS reference and all DS controls |
 | Mii viewing angle using L/R | 24 yaw steps applied to original face/body geometry in editor; gallery L/R pages unchanged | Confirm shading, silhouette, side and back views against the original 3DS presentation |
 | Mii names, birthday, gender, favorite color, copying/sharing | Profile controls, Unicode store/QR mapping, favorite cap, Personal Mii protection | Validate actual menu choreography, persistence, and cross-version profile compatibility |
