@@ -8,8 +8,8 @@ from pathlib import Path
 BONES = 18
 MAX_VERTICES = 12000
 
-def inspect(path: Path) -> tuple[int, int]:
-    data = path.read_bytes()
+def inspect_bytes(data: bytes, name: str = 'body mesh') -> tuple[int, int]:
+    path = name
     if len(data) < 56 or data[:4] != b'BOD2':
         raise ValueError(f'{path}: expected BOD2 original body mesh')
     count = struct.unpack_from('<I', data, 4)[0]
@@ -26,6 +26,10 @@ def inspect(path: Path) -> tuple[int, int]:
         if material > 1:
             raise ValueError(f'{path}: vertex {index} references unknown material {material}')
     return count, count // 3
+
+
+def inspect(path: Path) -> tuple[int, int]:
+    return inspect_bytes(path.read_bytes(), str(path))
 
 def main() -> int:
     parser = argparse.ArgumentParser()
