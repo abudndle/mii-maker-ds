@@ -42,7 +42,7 @@ static void animation_vblank(void)
 }
 static MdsInput next_input(void)
 {
- int state=enterCriticalSection();MdsInput event={.held=keysHeld()};
+ int state=enterCriticalSection();MdsInput event={.held=live_held};
  if(input_read!=input_write){event=input_queue[input_read];input_read=(input_read+1)%32;}
  leaveCriticalSection(state);return event;
 }
