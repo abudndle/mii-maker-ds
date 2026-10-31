@@ -9,6 +9,7 @@
 #include "animation.h"
 #include "motion.h"
 #include "gui_tween.h"
+#include "clan_scene.h"
 #include "image.h"
 #include "mii_qr.h"
 #include "qr_generated.h"
@@ -306,7 +307,7 @@ void mds_ui_set_render_abort(int (*callback)(void)){mds_render_set_abort(callbac
 void mds_ui_scene_transition_start(uint32_t now)
 {
  if(!ok)return;
- mds_gui_tween_start(&scene_fade,now,10,0,16);
+ mds_gui_tween_start(&scene_fade,now,(uint16_t)mds_clan_scene_duration("Plaza.arc.files","PlazaTop_Select",10),0,16);
  scene_fade_enabled=1;
  scene_fade_base_valid=0;
  scene_fade_clock_started=0;
@@ -323,7 +324,7 @@ int mds_ui_scene_transition_step(uint32_t now,int redraw)
  /* Expensive gallery model draws may take many VBlanks; begin at first
     presentation rather than letting the fade expire during rendering. */
  if(!scene_fade_clock_started){
-  mds_gui_tween_start(&scene_fade,now,10,0,16);
+  mds_gui_tween_start(&scene_fade,now,(uint16_t)mds_clan_scene_duration("Plaza.arc.files","PlazaTop_Select",10),0,16);
   scene_fade_clock_started=1;
  }
  if(redraw||!scene_fade_base_valid){
