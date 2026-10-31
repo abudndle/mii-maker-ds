@@ -19,6 +19,28 @@ static FILE*fixture(unsigned char**data,size_t*size)
 int main(void)
 {
  unsigned char*b;size_t size;FILE*f=fixture(&b,&size);MdsMotion m;assert(mds_motion_open(&m,f));assert(m.count==1&&mds_motion_find(&m,"Wait00")==0&&mds_motion_find(&m,"Other")==-1);
+ /* UI gallery clip selection must cover all 53 original animations and wrap. */
+ assert(mds_motion_cycle(NULL,-1,1)==-1);
+ assert(mds_motion_cycle(&m,-1,1)==0);
+ assert(mds_motion_cycle(&m,-1,-1)==0);
+ assert(mds_motion_cycle(&m,0,0)==-1);
+ MdsMotion catalog={0};catalog.file=f;catalog.count=53;
+ assert(mds_motion_cycle(&catalog,-1,1)==0);
+ assert(mds_motion_cycle(&catalog,-1,-1)==52);
+ assert(mds_motion_cycle(&catalog,0,-1)==52);
+ assert(mds_motion_cycle(&catalog,52,1)==0);
+ assert(mds_motion_cycle(&catalog,26,1)==27);
+ assert(mds_motion_cycle(&catalog,26,-1)==25);
+ assert(mds_motion_cycle(&catalog,1000,1)==0);
+ assert(mds_motion_cycle(&catalog,1000,-1)==52);
+ /* Female and male tables can hold the same named clip at different indices. */
+ strcpy(catalog.clips[0].name,"Wait00");
+ strcpy(catalog.clips[1].name,"Wait01");
+ MdsMotion female={0};female.file=f;female.count=2;
+ strcpy(female.clips[0].name,"Wait01");
+ strcpy(female.clips[1].name,"Wait00");
+ assert(mds_motion_find(&female,catalog.clips[0].name)==1);
+ assert(mds_motion_find(&female,catalog.clips[1].name)==0);
  int ended;assert(mds_motion_frame(&m.clips[0],5,&ended)==2&&!ended);assert(mds_motion_frame(&m.clips[0],6,&ended)==0&&!ended);assert(mds_motion_frame(&m.clips[0],UINT32_MAX,NULL)<3);
  m.clips[0].loop=0;assert(mds_motion_frame(&m.clips[0],6,&ended)==2&&ended);m.clips[0].loop=1;
  unsigned char base[92]={0},out[110];memcpy(base,"BOD2",4);word(base+4,3);
@@ -31,5 +53,5 @@ int main(void)
  for(unsigned n=0;n<72;n++){f=tmpfile();assert(fwrite(b,1,n,f)==n);assert(!mds_motion_open(&m,f));fclose(f);}
  f=tmpfile();b[64]=2;assert(fwrite(b,1,size,f)==size);assert(!mds_motion_open(&m,f));fclose(f);b[64]=1;
  word(b+72,0x7fc00000);f=tmpfile();assert(fwrite(b,1,size,f)==size);assert(mds_motion_open(&m,f));assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));fclose(f);free(b);
- puts("PASS: streamed motion bounds, source-frame clock, looping/one-shot endpoint, rigid original geometry transform and invalid frames");
+ puts("PASS: streamed motion bounds, source-frame clock, all-53 gallery selection, gender name mapping, looping/one-shot endpoint, rigid original geometry transform and invalid frames");
 }
