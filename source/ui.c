@@ -11,6 +11,7 @@
 #include "gui_tween.h"
 #include "clan_home.h"
 #include "clan_editor.h"
+#include "clan_adjust.h"
 #include "clan_overlay.h"
 #include "clan_dialog.h"
 #include "clan_overlay.h"
@@ -47,6 +48,7 @@ static UiRect slider_track;
 static u16 scratch[128*128];
 static unsigned category;
 static MdsClanEditorAnim editor_selection_fx;
+static MdsClanAdjust editor_adjust_fx;
 static int editor_last_category=-1,editor_last_selection=-1;
 static int ok;
 static int show_profile_hint=1;
@@ -408,10 +410,54 @@ void mds_ui_present_top(void)
 static void feature(const char *prefix,int digits,int index,UiRect r){char path[96];snprintf(path,sizeof path,"nitro:/art/%s%0*d.bin",prefix,digits,index);FILE *f=fopen(path,"rb");if(!f)return;unsigned char b[4];if(fread(b,1,4,f)!=4){fclose(f);return;}int w=b[0]|b[1]<<8,h=b[2]|b[3]<<8;if(w<1||h<1||w*h>128*128){fclose(f);return;}int read=fread(scratch,2,(size_t)(w*h),f)==(size_t)(w*h);fclose(f);if(!read)return;
  for(int y=0;y<r.h;y++)for(int x=0;x<r.w;x++){int dx=r.x+x,dy=r.y+y;if(dx<0||dx>=256||dy<0||dy>=192)continue;u16 color=scratch[(y*h/r.h)*w+x*w/r.w];if(color&BIT(15))bottom[dy*256+dx]=color;}
 }
+static int editor_hit_kind(const char *name)
+{
+ if(!strcmp(name,"B_ArrowL")||!strcmp(name,"B_ArrowR"))
+  return MDS_CLAN_ADJUST_ARROW;
+ if(!strncmp(name,"B_Change",8))
+  return MDS_CLAN_ADJUST_CHANGE;
+ return 0;
+}
+static void editor_adjust_press(uint32_t now,const UiHit *hit)
+{
+ int kind=editor_hit_kind(hit->name);
+ if(kind)mds_clan_adjust_begin(&editor_adjust_fx,now,(unsigned)kind,
+            hit->category,hit->rect.x,hit->rect.y,
+            hit->rect.w,hit->rect.h);
+}
+void mds_ui_editor_adjust_key(uint32_t now,int field,int direction)
+{
+ if(!direction)return;
+ unsigned current=pick(field);
+ const UiHit *change=NULL,*arrow=NULL;
+ for(unsigned i=0;i<UI_HIT_COUNT;i++){
+  const UiHit *h=&ui_hits[i];
+  if(h->category!=current)continue;
+  if(!change&&!strncmp(h->name,"B_Change",8))change=h;
+  if(direction>0&&!strcmp(h->name,"B_ArrowR"))arrow=h;
+  if(direction<0&&!strcmp(h->name,"B_ArrowL"))arrow=h;
+ }
+ if(arrow)editor_adjust_press(now,arrow);
+ else if(change)editor_adjust_press(now,change);
+}
+int mds_ui_editor_adjust_tick(uint32_t now)
+{
+ return mds_clan_adjust_tick(&editor_adjust_fx,now);
+}
+static void editor_adjust_draw(void)
+{
+ MdsClanAdjustStyle cue;
+ uint32_t now=render_clock?render_clock():0;
+ if(!mds_clan_adjust_style(&editor_adjust_fx,now,&cue))return;
+ mds_clan_border_tint(bottom,256,192,
+    editor_adjust_fx.x,editor_adjust_fx.y+cue.offset_y,
+    editor_adjust_fx.w,editor_adjust_fx.h,cue.tint_rgb555,255);
+}
 void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *a,
                                     int field,int editing)
 {
  if(!editing||!a){
+  mds_clan_adjust_reset(&editor_adjust_fx);
   editor_selection_fx.active=0;
   editor_last_category=-1;
   editor_last_selection=-1;
@@ -423,6 +469,7 @@ void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *a,
  int selection=c->count?a->value[c->field]:0;
  if(editor_last_category!=(int)current||editor_last_selection!=selection){
   int changed=editor_last_category!=(int)current;
+  if(changed)mds_clan_adjust_reset(&editor_adjust_fx);
   mds_clan_editor_begin(&editor_selection_fx,now,current,(unsigned)selection,changed);
   editor_last_category=(int)current;
   editor_last_selection=selection;
@@ -458,9 +505,10 @@ void mds_ui_draw(const MdsAvatar *a,int field)
    feature("BodySlider",1,0,knob);
   }
   editor_tab_color_cue(&cue);
+  editor_adjust_draw();
   return;
  }
- if(!c->prefix||!c->count){editor_tab_color_cue(&cue);return;}
+ if(!c->prefix||!c->count){editor_tab_color_cue(&cue);editor_adjust_draw();return;}
  int page=a->value[c->field]/c->count;
  for(int i=0;i<c->count;i++){
   int n=page*c->count+i;
@@ -476,6 +524,7 @@ void mds_ui_draw(const MdsAvatar *a,int field)
   }
  }
  editor_tab_color_cue(&cue);
+ editor_adjust_draw();
 }
 int mds_ui_slider_active(void){return slider_field>=0;}
 void mds_ui_slider_release(void){slider_field=-1;}
@@ -501,13 +550,26 @@ int mds_ui_touch(MdsAvatar *a,int *field,int x,int y){
    unsigned n=(unsigned)(hit->name[8]-'0')*10u+(unsigned)(hit->name[9]-'0');
    int f=color_fields[category];if(n<=mds_fields[f].maximum){a->value[f]=(uint8_t)n;*field=f;}return 1;
   }
-  if(mds_transform_touch(a,field,category,hit->name))return 1;
-  if(category==3&&!strcmp(hit->name,"B_Change_04")){mds_adjust(a,7,1);*field=7;return 1;}
+  if(mds_transform_touch(a,field,category,hit->name)){
+   if(editor_hit_kind(hit->name))
+    editor_adjust_press(render_clock?render_clock():0,hit);
+   return 1;
+  }
+  if(category==3&&!strcmp(hit->name,"B_Change_04")){
+   uint8_t prior=a->value[7];
+   mds_adjust(a,7,1);*field=7;
+   if(prior!=a->value[7])editor_adjust_press(render_clock?render_clock():0,hit);
+   return 1;
+  }
   if(category==12&&!strncmp(hit->name,"B_BgSlide_",10)){
    int f=43+(hit->name[11]-'0');if(f>=43&&f<=44){slider_field=f;slider_track=r;mds_ui_slider_move(a,x);*field=f;}return 1;
   }
   if(c->count&&(!strcmp(hit->name,"B_ArrowR")||!strcmp(hit->name,"B_ArrowL"))){
-   mds_adjust(a,(unsigned)c->field,hit->name[7]=='R'?c->count:-c->count);*field=c->field;return 1;
+   uint8_t prior=a->value[c->field];
+   mds_adjust(a,(unsigned)c->field,hit->name[7]=='R'?c->count:-c->count);*field=c->field;
+   if(prior!=a->value[c->field])
+    editor_adjust_press(render_clock?render_clock():0,hit);
+   return 1;
   }
  }
  if(c->prefix&&c->count){int page=a->value[c->field]/c->count;
