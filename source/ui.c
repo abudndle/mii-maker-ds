@@ -40,6 +40,7 @@ static MdsCflArchive cfl;
 static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
+static int gallery_retry_pending;
 _Static_assert(MDS_HEAD_SIDE==MDS_THUMBNAIL_SOURCE_SIDE,"gallery thumbnail source geometry must match renderer");
 static uint16_t *head_pixels=head_cache[0];
 static uint16_t render_pixels[MDS_HEAD_SIDE*MDS_HEAD_SIDE];
@@ -485,7 +486,10 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     if(!ok)return;
     memcpy(top,top_backgrounds[1],sizeof top_canvas);
     char text[48];
-    if(g->used[selected]&&preview(&g->miis[selected],2)){
+    unsigned before_cancel=render_cancelled_count;
+    int ready=g->used[selected]&&preview(&g->miis[selected],2);
+    if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;
+    if(ready){
         paint_head(top,48,12,160,160);
         const char *name=g->miis[selected].name;label((256-text_width(name))/2,3,name);
     }else if(g->used[selected])label(75,83,"Preview unavailable.");
@@ -498,9 +502,11 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     snprintf(text,sizeof text,"%u / 10",page+1);label(222-text_width(text),177,text);
     if(notice&&notice[0]&&strcmp(notice,"Ready"))label(8,177,display_status(notice));else label(8,177,"Y: Copy  X: Erase  SELECT: Image");
 }
+int mds_ui_gallery_retry_pending(void){return gallery_retry_pending;}
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     if(!ok)return;
+    gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
     mds_thumbnail_page(&gallery_thumbnails,page);
@@ -510,9 +516,12 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         /* Full software rasterization is expensive on DS. Only regenerate a
          * thumbnail when its page/slot/62 appearance fields have changed. */
         if(g->used[slot]){
-            if(!mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot])&&
-               preview(&g->miis[slot],0))
-                mds_thumbnail_capture(&gallery_thumbnails,page,i,&g->miis[slot],head_pixels);
+            if(!mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot])){
+                unsigned before_cancel=render_cancelled_count;
+                int ready=preview(&g->miis[slot],0);
+                if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;
+                if(ready)mds_thumbnail_capture(&gallery_thumbnails,page,i,&g->miis[slot],head_pixels);
+            }
             if(mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot]))
                 mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
