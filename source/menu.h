@@ -6,4 +6,6 @@ int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
 unsigned mds_gallery_step(unsigned slot,int horizontal,int vertical);
 int mds_home_focus_step(int,int);
+unsigned mds_accessory_step(unsigned,int,int);
+int mds_accessory_field(unsigned);
 #endif

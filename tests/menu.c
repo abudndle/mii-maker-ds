@@ -2,6 +2,14 @@
 #include <assert.h>
 #include <stdio.h>
 static void navigation(void){
+    const int fields[]={30,34,39,35};
+    for(unsigned i=0;i<4;i++){
+        assert(mds_accessory_field(i)==fields[i]);
+        assert(mds_accessory_step(mds_accessory_step(i,1,0),-1,0)==i);
+        assert(mds_accessory_step(i,1,0)/2==i/2);
+        assert(mds_accessory_step(i,0,1)==(i+2)%4);
+    }
+    assert(mds_accessory_field(4)==-1);
     for(unsigned slot=0;slot<100;slot++){
         unsigned right=mds_gallery_step(slot,1,0),down=mds_gallery_step(slot,0,1);
         assert(right/5==slot/5);

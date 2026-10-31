@@ -43,6 +43,7 @@ int main(void)
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
     unsigned page=0,drawn_page=99;
+    unsigned accessory_choice=0;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     const char *notice="",*drawn_notice=NULL;
@@ -151,18 +152,32 @@ int main(void)
             int action=0;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_profile_touch(&profile,&editor.draft,t.px,t.py,favorites);}
             if(down&KEY_B){if(profile.mode==MDS_PROFILE_ROOT)action=1;else mds_profile_cancel(&profile);}
-            if((down&KEY_A)&&profile.mode!=MDS_PROFILE_ROOT)mds_profile_done(&profile,&editor.draft);
+            int profile_mode=profile.mode;
+            int horizontal=((k&KEY_RIGHT)!=0)-((k&KEY_LEFT)!=0);
+            int vertical=((k&KEY_DOWN)!=0)-((k&KEY_UP)!=0);
+            if(profile_mode==MDS_PROFILE_BIRTHDAY){
+                if(horizontal)mds_profile_date_step(&profile,1,horizontal);
+                if(vertical)mds_profile_date_step(&profile,0,-vertical);
+                if(down&KEY_X){profile.month=profile.day=0;mds_profile_done(&profile,&editor.draft);}
+            }else mds_profile_move(&profile,horizontal,vertical);
+            if(profile_mode==MDS_PROFILE_NAME||profile_mode==MDS_PROFILE_CREATOR){
+                if(down&KEY_X)mds_profile_backspace(&profile);
+                if(down&KEY_Y)profile.upper^=1;
+            }
+            if(down&KEY_A)action=mds_profile_activate(&profile,&editor.draft,favorites);
             if(down&KEY_START){if(profile.mode==MDS_PROFILE_ROOT)action=2;else mds_profile_done(&profile,&editor.draft);}
-            if(profile.mode==MDS_PROFILE_NAME||profile.mode==MDS_PROFILE_CREATOR){if(down&KEY_X)mds_profile_backspace(&profile);if(down&KEY_Y)profile.upper^=1;}
-            else if(profile.mode==MDS_PROFILE_BIRTHDAY){if(k&KEY_LEFT)mds_profile_date_step(&profile,1,-1);if(k&KEY_RIGHT)mds_profile_date_step(&profile,1,1);if(k&KEY_UP)mds_profile_date_step(&profile,0,1);if(k&KEY_DOWN)mds_profile_date_step(&profile,0,-1);if(down&KEY_X){profile.month=profile.day=0;mds_profile_done(&profile,&editor.draft);}}
-            else if(profile.mode!=MDS_PROFILE_ROOT&&k&(KEY_LEFT|KEY_RIGHT))mds_profile_choice_step(&profile,k&KEY_LEFT?-1:1);
             if(action==1)screen=MDS_SCREEN_EDITOR;
             if(action==2){profile.status="";mds_editor_save(&editor,persist,NULL);}
             if(down||k)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_ACCESSORIES){
+            int horizontal=((k&KEY_RIGHT)!=0)-((k&KEY_LEFT)!=0);
+            int vertical=((k&KEY_DOWN)!=0)-((k&KEY_UP)!=0);
+            if(horizontal||vertical){accessory_choice=mds_accessory_step(accessory_choice,horizontal,vertical);drawn_screen=-1;}
+            if(down&KEY_A){editor.field=mds_accessory_field(accessory_choice);screen=MDS_SCREEN_EDITOR;}
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(8,t.px,t.py);int f=-1;if(!strcmp(h,"B_Glasses"))f=30;else if(!strcmp(h,"B_Mustache"))f=34;else if(!strcmp(h,"B_Beard"))f=35;else if(!strcmp(h,"B_Mole"))f=39;if(f>=0){editor.field=f;screen=MDS_SCREEN_EDITOR;}}
             if(down&KEY_B)screen=MDS_SCREEN_EDITOR;
         }else{
+            if(down&KEY_X){screen=MDS_SCREEN_ACCESSORIES;continue;}
             if(k&KEY_UP)editor.field=(editor.field+50)%51;
             if(k&KEY_DOWN)editor.field=(editor.field+1)%51;
             if(k&KEY_LEFT)mds_adjust(&editor.draft,(unsigned)editor.field,-1);
@@ -204,7 +219,7 @@ int main(void)
             else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);
             else if(screen==MDS_SCREEN_PROFILE){mds_ui_profile(&profile,&editor.draft);mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
-            else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
+            else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories(accessory_choice);mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
             if(editor.pending==MDS_EDIT_SORT_NAME||editor.pending==MDS_EDIT_SORT_FAVORITES)mds_ui_sort_confirm(editor.pending==MDS_EDIT_SORT_FAVORITES);
             else if(editor.pending)mds_ui_confirm(editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":"Discard your changes?");

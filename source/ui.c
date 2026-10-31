@@ -515,8 +515,7 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
   bitmap("nitro:/ui/profile.rgb555",bottom);
   for(unsigned i=0;i<256*192;i++)bottom[i]=RGB15(26,29,27)|0x8000;
   center_bottom(128,3,p->mode==MDS_PROFILE_NAME?"Nickname":"Creator");button(8,20,240,25,p->text);
-  static const char *rows[]={"1234567890","QWERTYUIOP","ASDFGHJKL","ZXCVBNM.-"};
-  for(int row=0;row<4;row++){int n=(int)strlen(rows[row]),left=(256-n*24+2)/2;for(int col=0;col<n;col++){char str[2]={rows[row][col],0};if(!p->upper&&str[0]>='A'&&str[0]<='Z')str[0]+=32;button(left+col*24,50+row*23,22,21,str);}}
+  for(int row=0;row<4;row++){int n=(int)strlen(mds_profile_key_row((unsigned)row)),left=(256-n*24+2)/2;for(int col=0;col<n;col++){char str[2]={mds_profile_key_row((unsigned)row)[col],0};if(!p->upper&&str[0]>='A'&&str[0]<='Z')str[0]+=32;button(left+col*24,50+row*23,22,21,str);}}
   button(8,144,48,20,p->upper?"ABC":"abc");button(60,144,104,20,"Space");button(168,144,80,20,"Backspace");
  }else if(p->mode==MDS_PROFILE_ROOT){
   bitmap("nitro:/ui/profile.rgb555",bottom);center_bottom(80,23,a->name);if(a->value[51]||a->value[46])status_icon(bottom,194,18,a);else center_bottom(203,23,"No");center_bottom(62,64,a->value[0]?"Female":"Male");center_bottom(199,64,a->value[47]?"Allow":"Don't Allow");center_bottom(199,105,a->value[48]?"Allow":"Don't Allow");
@@ -532,6 +531,10 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
   if(p->mode==MDS_PROFILE_BIRTHDAY){char value[16];snprintf(value,sizeof value,"%02d",p->month);numbers(92,78,value);snprintf(value,sizeof value,"%02d",p->day);numbers(164,78,value);center_bottom(128,151,"X: Clear birthday");}
  }
  button(8,168,112,22,p->mode==MDS_PROFILE_ROOT?"Back":"Cancel");button(136,168,112,22,p->mode==MDS_PROFILE_ROOT?"Save":"OK");
+ int x,y,w,h;
+ if(mds_profile_focus_rect(p,&x,&y,&w,&h)){
+  MdsMenuHit hit={x,y,w,h,0};outline(&hit);
+ }
 }
 void mds_ui_gender(int create,int choice)
 {
@@ -548,7 +551,16 @@ void mds_ui_gender(int create,int choice)
   }
  }
 }
-void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
+void mds_ui_accessories(unsigned selected)
+{
+ show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"D-pad: Choose / A: Edit / B: Back");
+ static const char *const names[]={"B_Glasses","B_Mustache","B_Mole","B_Beard"};
+ if(selected>=4)return;
+ for(unsigned i=0;i<PROFILE_HIT_COUNT;i++){
+  const ProfileHit *h=&profile_hits[i];
+  if(h->page==8&&!strcmp(h->name,names[selected])){MdsMenuHit hit={h->x,h->y,h->w,h->h,0};outline(&hit);}
+ }
+}
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
 void mds_ui_sort_confirm(int favorites)
 {
