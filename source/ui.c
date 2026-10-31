@@ -51,6 +51,7 @@ static uint32_t animation_clock;
 static unsigned rendered_animation_frames;
 static MdsMotion motions[2];
 static unsigned motion_clip,motion_frame,motion_clip_ticks,motion_scene;
+static int motion_clip_valid;
 static const char*const gallery_idle_names[]={"Wait00","Wait01","Wait02","Wait03Pre","Wait03","Wait04"};
 static int gallery_idle_indices[6];
 static int gallery_female_idle_indices[6];
@@ -117,6 +118,7 @@ int mds_ui_animation_tick(uint32_t ticks)
     if(elapsed<duration){clip=c;break;}elapsed-=duration;
    }
   }
+  motion_clip_valid=clip>=0;
   if(clip>=0){motion_clip=(unsigned)clip;motion_clip_ticks=elapsed;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
   /* Either rig can advance on a different VBlank when source FPS differs.
    * Refresh the visible Mii if either original animation advances. */
@@ -155,8 +157,8 @@ static int preview(const MdsAvatar *a,int mode)
   /* The gallery timeline is based on the male rig. Resolve the source
    * clip name on each gender's original rig, not its numeric table index. */
   int selected=-1;
-  if(gender==0&&motion_clip<motions[0].count)selected=(int)motion_clip;
-  else if(gender==1)for(unsigned i=0;i<6;i++){
+  if(motion_clip_valid&&gender==0&&motion_clip<motions[0].count)selected=(int)motion_clip;
+  else if(motion_clip_valid&&gender==1)for(unsigned i=0;i<6;i++){
    if(gallery_idle_indices[i]==(int)motion_clip){
     selected=gallery_female_idle_indices[i];
     break;
