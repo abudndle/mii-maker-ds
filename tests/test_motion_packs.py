@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Asset-free negative tests for original 53-clip MSP1 validation."""
 import struct
+import subprocess
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -92,4 +95,30 @@ except ValueError:
     pass
 else:
     raise AssertionError("mismatched male/female animation FPS was accepted")
-print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip name coverage")
+# Exercise the public --asset-zip CLI with a real ZIP container, not only
+# the helper functions. All data here is synthetic (no Nintendo assets).
+with tempfile.TemporaryDirectory() as directory:
+    archive_path = Path(directory) / "motions.zip"
+    cli = Path(__file__).resolve().parent / "rom_motion_packs.py"
+
+    def write_zip(male, female):
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            archive.writestr("nitrofiles/models/MaleBody.msp", male)
+            archive.writestr("nitrofiles/models/FemaleBody.msp", female)
+
+    write_zip(named, named)
+    result = subprocess.run([sys.executable, str(cli), "--source-only",
+                             "--asset-zip", str(archive_path)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    write_zip(named, different_fps)
+    result = subprocess.run([sys.executable, str(cli), "--source-only",
+                             "--asset-zip", str(archive_path)], capture_output=True, text=True)
+    assert result.returncode != 0, "ZIP CLI accepted mismatched original rig FPS"
+
+    write_zip(named, valid)
+    result = subprocess.run([sys.executable, str(cli), "--source-only",
+                             "--asset-zip", str(archive_path)], capture_output=True, text=True)
+    assert result.returncode != 0, "ZIP CLI accepted missing gallery idle clips"
+
+print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip and ZIP CLI coverage")
