@@ -7,6 +7,13 @@ source = (Path(__file__).resolve().parents[1] / "source/main.c").read_text()
 start = source.index("static void animation_vblank(void)")
 end = source.index("static MdsInput next_input(void)", start)
 producer = source[start:end]
+consumer_start = source.index("static MdsInput next_input(void)", end)
+consumer_end = source.index("static uint32_t render_time(void)", consumer_start)
+consumer = source[consumer_start:consumer_end]
+if "live_held=keysHeld();" not in producer:
+    raise SystemExit("FAIL: VBlank is not capturing held keys")
+if ".held=live_held" not in consumer or "keysHeld()" in consumer:
+    raise SystemExit("FAIL: main loop must consume VBlank-captured held state")
 checks = [
     (r"if\s*\(!event\.down&&queued>=23\)return;", "reserve eight slots for fresh presses"),
     (r"if\s*\(next==input_read\)", "queue-full detection"),
