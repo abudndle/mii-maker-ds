@@ -1,6 +1,7 @@
 /* Independent DS preview renderer. Uses supplied CFL geometry and native tiled
  * textures; software lighting and orthographic projection are provisional. */
 #include "head.h"
+#include "view.h"
 #include "status.h"
 #include <string.h>
 #include <math.h>
@@ -26,6 +27,7 @@ static const uint8_t *mask_resource;
 static int mask_valid;
 void mds_render_reset_cache(void){mask_valid=0;mask_resource=NULL;}
 static float view_scale=1.35f,view_y=111.f;
+static unsigned view_angle;
 static const uint8_t *body_model;
 static int (*render_abort)(void);
 static int render_cancelled;
@@ -181,6 +183,10 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
    }
    memcpy(p,world,sizeof p);memcpy(n,norm,sizeof n);
   }
+  if(view_angle){
+   mds_view_rotate(&p[0],&p[2],view_angle);
+   mds_view_rotate(&n[0],&n[2],view_angle);
+  }
   verts[i]=(Vertex){(int)(((int64_t)64*16777216+(int64_t)p[0]*projection)/16777216),(int)((offset_y-(int64_t)p[1]*projection)/16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(n[2]*20+n[1]*10)/256};
  }
  unsigned count=g.indices?g.index_count:g.count;
@@ -225,10 +231,10 @@ static int render_head(const MdsCflArchive*a,const MdsAvatar*m,uint16_t*out)
 static int16_t signed16(const uint8_t *p){unsigned v=le16(p);return (int16_t)(v>=32768?(int)v-65536:(int)v);}
 static uint32_t word32(const uint8_t *p){return p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;}
 static int32_t signed32(const uint8_t*p){uint32_t v=word32(p);return v<=INT32_MAX?(int32_t)v:-1-(int32_t)(UINT32_MAX-v);}
-int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size_t size,uint16_t*out,int full)
+int mds_mii_render_view(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size_t size,uint16_t*out,int full,unsigned angle)
 {
  if(!a||!m||!out||!mds_valid(m))return 0;
- body_model=NULL;render_cancelled=0;
+ body_model=NULL;render_cancelled=0;view_angle=angle%MDS_VIEW_STEPS;
  unsigned count=0,stride=12,normal_offset=6;
  if(bytes){
   const uint8_t*p=bytes;
@@ -252,7 +258,11 @@ int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size
    if(!(i%48)&&cancelled()){body_model=NULL;return -1;}
    Vertex tri[3];const uint8_t*color=shirts[m->value[45]];
    for(unsigned j=0;j<3;j++){
-    const uint8_t*p=source+(i+j)*stride;int64_t x=(int64_t)(stride==18?signed32(p):signed16(p))*width,y=(int64_t)(stride==18?signed32(p+4):signed16(p+2))*height,z=(int64_t)(stride==18?signed32(p+8):signed16(p+4))*width;
+    const uint8_t*p=source+(i+j)*stride;
+    int32_t px=stride==18?signed32(p):signed16(p);
+    int32_t pz=stride==18?signed32(p+8):signed16(p+4);
+    if(view_angle)mds_view_rotate(&px,&pz,view_angle);
+    int64_t x=(int64_t)px*width,y=(int64_t)(stride==18?signed32(p+4):signed16(p+2))*height,z=(int64_t)pz*width;
     unsigned material=p[normal_offset+3],bone=p[normal_offset+4];
     if(material==1)color=mds_pants_color(m);
     else if(bone==6||bone==9)color=skins[m->value[1]];
@@ -263,7 +273,15 @@ int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size
  }
  int ready=render_head(a,m,out);body_model=NULL;return render_cancelled?-1:ready;
 }
+int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size_t size,uint16_t*out,int full)
+{
+ return mds_mii_render_view(a,m,bytes,size,out,full,0);
+}
+int mds_head_render_view(const MdsCflArchive*a,const MdsAvatar*m,uint16_t*out,unsigned angle)
+{
+ return mds_mii_render_view(a,m,NULL,0,out,0,angle);
+}
 int mds_head_render(const MdsCflArchive*a,const MdsAvatar*m,uint16_t*out)
 {
- return mds_mii_render(a,m,NULL,0,out,0);
+ return mds_head_render_view(a,m,out,0);
 }
