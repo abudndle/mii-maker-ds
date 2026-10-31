@@ -7,5 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify CLAN keyframe decoder
+        run: python3 -m unittest discover -s tests -p test_clan_keyframes.py
       - name: Run asset-free sanitizer tests
         run: python3 tests/test_private_rom_release.py && python3 tools/test_host.py
