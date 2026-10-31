@@ -234,11 +234,7 @@ int mds_ui_scene_transition_step(uint32_t now,int redraw)
   return 1;
  }
  for(unsigned i=0;i<256*192;i++){
-  uint16_t pixel=transition_base[i];
-  unsigned r=(pixel&31)*light/16;
-  unsigned g=((pixel>>5)&31)*light/16;
-  unsigned b=((pixel>>10)&31)*light/16;
-  bottom[i]=(uint16_t)(0x8000|r|(g<<5)|(b<<10));
+  bottom[i]=mds_gui_fade_rgb555(transition_base[i],light);
  }
  return 1;
 }
