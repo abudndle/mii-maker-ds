@@ -32,6 +32,7 @@ jobs:
           python3 tests/test_motion_packs.py
           python3 tests/test_body_models.py
           python3 tests/test_flat_rgb555.py
+          python3 tests/test_preview_cache.py
       - name: Install Wonderful Toolchain and BlocksDS
         shell: bash
         run: |
