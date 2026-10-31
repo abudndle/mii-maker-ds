@@ -82,4 +82,14 @@ except ValueError:
     pass
 else:
     raise AssertionError("mismatched male/female clip catalog was accepted")
+# Both valid packs must also agree on source timing metadata by clip name.
+different_fps = bytearray(named)
+struct.pack_into("<I", different_fps, 32 + 36, 60)
+assert validate(different_fps, "synthetic") == EXPECTED_CLIPS
+try:
+    compare_rig_catalogs(named, different_fps)
+except ValueError:
+    pass
+else:
+    raise AssertionError("mismatched male/female animation FPS was accepted")
 print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip name coverage")
