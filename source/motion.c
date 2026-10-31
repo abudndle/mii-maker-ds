@@ -36,6 +36,13 @@ int mds_motion_find(const MdsMotion*m,const char*name)
  for(unsigned i=0;i<m->count;i++)if(!strcmp(name,m->clips[i].name))return (int)i;
  return -1;
 }
+int mds_motion_cycle(const MdsMotion*m,int current,int direction)
+{
+ if(!m||!m->file||!m->count||!direction)return -1;
+ int count=(int)m->count;
+ if(current<0||current>=count)return direction>0?0:count-1;
+ return direction>0?(current+1)%count:(current+count-1)%count;
+}
 unsigned mds_motion_frame(const MdsMotionClip*c,uint32_t ticks,int*ended)
 {
  if(ended)*ended=0;
