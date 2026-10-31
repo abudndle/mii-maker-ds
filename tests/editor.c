@@ -97,5 +97,50 @@ int main(void){
     assert(!mds_editor_move(&e,8,NULL,NULL));
     assert(g.used[9]&&!g.used[8]&&e.slot==9);
     assert(g.miis[9].value[51]);
-    puts("PASS: dirty navigation, failed-save/delete/move rollback, Personal Mii protection, direct creation, gallery sort, wrap");
+    /* Received Miis may be COPIED for editing, not edited in place, even
+     * when their original transfer included copy permission. */
+    mds_gallery_new(&g);mds_editor_begin(&e,&g);
+    MdsAvatar received;mds_new(&received);
+    strcpy(received.name,"Received");
+    received.value[61]=1;received.value[48]=1;
+    assert(mds_gallery_store(&g,0,&received));
+    assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    assert(mds_editor_locked(&g.miis[0]));
+    assert(!mds_editor_save(&e,saved,NULL)); /* source is always read-only */
+    assert(mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(e.pending==MDS_EDIT_COPY_RECEIVED&&e.slot==0);
+    assert(!mds_editor_request(&e,MDS_EDIT_DELETE)); /* single modal */
+    assert(!mds_editor_confirm(&e,0,saved,NULL));
+    assert(e.slot==0&&!g.used[1]&&g.miis[0].value[61]==1);
+    e.draft.value[5]=18;
+    assert(!mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(e.slot==0&&!g.used[1]);
+    e.draft=e.baseline;
+    assert(mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(!mds_editor_confirm(&e,1,failed,NULL));
+    assert(e.slot==0&&!g.used[1]&&g.miis[0].value[61]==1);
+    assert(g.generation==0&&g.active_bank==-1);
+    assert(mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(mds_editor_confirm(&e,1,saved,NULL));
+    assert(e.slot==1&&g.used[1]&&!mds_editor_locked(&g.miis[1]));
+    assert(g.miis[0].value[61]==1&&g.miis[0].value[48]==1);
+    assert(!g.miis[1].value[61]&&!g.miis[1].value[51]&&!g.miis[1].value[46]);
+    assert(!mds_editor_dirty(&e));
+    e.draft.value[5]=18;
+    assert(mds_editor_save(&e,saved,NULL));
+    assert(g.miis[1].value[5]==18&&g.miis[0].value[5]!=18);
+    /* Special/locked received Miis may not enter the copy-edit flow. */
+    mds_gallery_new(&g);mds_editor_begin(&e,&g);
+    received.value[61]=3;
+    assert(mds_gallery_store(&g,0,&received));
+    assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    assert(mds_editor_locked(&g.miis[0]));
+    assert(!mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(!e.pending&&!g.used[1]);
+    received.value[61]=1;received.value[48]=0;
+    assert(mds_gallery_store(&g,0,&received));
+    assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    assert(!mds_editor_request(&e,MDS_EDIT_COPY_RECEIVED));
+    assert(!e.pending&&!g.used[1]);
+    puts("PASS: dirty navigation, failed-save/delete/move rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, wrap");
 }
