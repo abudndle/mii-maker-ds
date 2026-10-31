@@ -87,6 +87,16 @@ def compare_rig_catalogs(male, female):
         raise ValueError(f"original rig animation timing mismatch: {', '.join(mismatched)}")
 
 
+def verify_packaged_motion(rom, files, name, source):
+    """Reject truncated, missing or modified original animation bytes in a ROM."""
+    if name not in files:
+        raise ValueError(f"{name}: missing from NitroFS")
+    first, last = files[name]
+    if not 0 <= first < last <= len(rom) or rom[first:last] != source:
+        raise ValueError(f"{name}: packaged animation bytes differ from source")
+
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
@@ -107,9 +117,7 @@ def main():
             source_packs[gender] = source
             ensure_gallery_clips(source, name)
             if files is not None:
-                first, last = files[name]
-                if rom[first:last] != source:
-                    raise ValueError(f"{name}: packaged animation bytes differ from source")
+                verify_packaged_motion(rom, files, name, source)
             kind = "source validated" if files is None else "exact packaged bytes"
             print(f"PASS: {gender} original motions, {count} clips, {kind}")
         compare_rig_catalogs(source_packs["Male"], source_packs["Female"])
