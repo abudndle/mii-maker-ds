@@ -13,3 +13,11 @@ int mds_gallery_touch(int x,int y,unsigned page)
     return -1;
 }
 int mds_home_focus_step(int current,int delta){int v=(current+delta)%4;return v<0?v+4:v;}
+/* Five columns per row, twenty rows across all ten gallery pages. */
+unsigned mds_gallery_step(unsigned slot,int horizontal,int vertical)
+{
+    slot%=100;
+    int column=((int)(slot%5)+horizontal%5+5)%5;
+    int row=((int)(slot/5)+vertical%20+20)%20;
+    return (unsigned)(row*5+column);
+}

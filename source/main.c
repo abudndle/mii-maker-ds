@@ -121,7 +121,10 @@ int main(void)
             }
         }else if(screen==MDS_SCREEN_GALLERY){
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
-            if(down&(KEY_L|KEY_R)){page=(page+(down&KEY_L?9:1))%10;editor.slot=page*10;mds_editor_request(&editor,MDS_EDIT_RELOAD);}
+            int horizontal=((k&KEY_RIGHT)!=0)-((k&KEY_LEFT)!=0);
+            int vertical=((k&KEY_DOWN)!=0)-((k&KEY_UP)!=0);
+            if(down&(KEY_L|KEY_R))vertical+=down&KEY_L?-2:2;
+            if(horizontal||vertical){editor.slot=mds_gallery_step(editor.slot,horizontal,vertical);page=editor.slot/10;mds_editor_request(&editor,MDS_EDIT_RELOAD);}
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;int slot=mds_gallery_touch(t.px,t.py,page);if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);}}
             if(down&KEY_A){if(gallery.used[editor.slot]&&!mds_editor_locked(&gallery.miis[editor.slot])){mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;}else editor.status=gallery.used[editor.slot]?"This received Mii cannot be edited.":"Choose a saved Mii to edit";}
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
