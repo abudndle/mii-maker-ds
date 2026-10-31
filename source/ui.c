@@ -187,7 +187,8 @@ static int preview(const MdsAvatar *a,int mode)
    /* A cancelled redraw may reuse the previous pose only for the same
     * appearance. Never present a different Mii's cached pixels. */
    return preview_cached[mode]&&
-     !memcmp(a->value,head_avatars[mode].value,sizeof a->value)
+     !memcmp(a->value,head_avatars[mode].value,sizeof a->value)&&
+     (!mode||preview_pose[mode]==pose_index)
      ?preview_ready[mode]:0;
   }
   if(result&&render_clock){render_ticks+=render_clock()-started;render_completed++;}
