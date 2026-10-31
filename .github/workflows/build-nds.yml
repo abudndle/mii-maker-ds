@@ -1,0 +1,76 @@
+name: Build Mii Maker DS ROM
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      BLOCKSDS: /opt/wonderful/thirdparty/blocksds/core
+      WONDERFUL_TOOLCHAIN: /opt/wonderful
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install required Linux packages
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential curl unzip python3 python3-pil
+      - name: Install Wonderful Toolchain and BlocksDS
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://wonderful.asie.pl/bootstrap/wf-installer.sh -o /tmp/wf-installer.sh
+          chmod +x /tmp/wf-installer.sh
+          # The installer is maintained by Wonderful Toolchain.
+          sudo /tmp/wf-installer.sh
+          export PATH="/opt/wonderful/bin:$PATH"
+          sudo /opt/wonderful/bin/wf-pacman -Syu --noconfirm wf-tools
+          sudo /opt/wonderful/bin/wf-config repo enable blocksds
+          sudo /opt/wonderful/bin/wf-pacman -Syu --noconfirm
+          sudo /opt/wonderful/bin/wf-pacman -S --noconfirm blocksds-toolchain
+      - name: Restore original assets from private archive
+        shell: bash
+        env:
+          ASSETS_URL: ${{ secrets.MII_ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.MII_ASSETS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ASSETS_URL" ]; then
+            echo "::error::Set repository Actions secret MII_ASSETS_URL to a private ZIP of the locally extracted resource tree (nitrofiles/ and assets/ui/). Do not commit Nintendo assets to this public repository."
+            exit 1
+          fi
+          if [ -n "$ASSETS_TOKEN" ]; then
+            curl -fLsS --retry 3 -H "Authorization: Bearer $ASSETS_TOKEN" "$ASSETS_URL" -o /tmp/mii-assets.zip
+          else
+            curl -fLsS --retry 3 "$ASSETS_URL" -o /tmp/mii-assets.zip
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          root=Path.cwd().resolve()
+          with ZipFile('/tmp/mii-assets.zip') as z:
+              for member in z.infolist():
+                  output=(root/member.filename).resolve()
+                  if not output.is_relative_to(root) or member.filename.startswith('/'):
+                      raise SystemExit('Unsafe archive member: '+member.filename)
+                  if (member.external_attr >> 16) & 0o170000 == 0o120000:
+                      raise SystemExit('Symlinks are not allowed in resource ZIP')
+              z.extractall(root)
+          PY
+          rm -f /tmp/mii-assets.zip
+      - name: Validate input and compile ROM
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/wonderful/bin:/opt/wonderful/toolchain/gcc-arm-none-eabi/bin:$PATH"
+          python3 tools/build_preflight.py
+          python3 tools/check_assets.py
+          make -j2
+          test -s mii-ds.nds
+          python3 tests/rom_regions.py
+      - name: Publish playable candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: mii-maker-ds-nds
+          path: mii-ds.nds
+          if-no-files-found: error
+          retention-days: 7
