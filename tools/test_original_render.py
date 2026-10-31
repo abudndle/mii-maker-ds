@@ -17,7 +17,7 @@ ASSET_NAMES = (
     "nitrofiles/models/MaleBody.ani",
     "nitrofiles/models/FemaleBody.ani",
 )
-MODULES = ("animation", "head", "cfl_resource", "avatar", "status")
+MODULES = ("animation", "head", "view", "cfl_resource", "avatar", "status")
 
 
 def run(cc: str, asset_zip: Path | None, compile_only: bool = False) -> None:
