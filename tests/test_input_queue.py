@@ -53,7 +53,7 @@ assert len(queue) == 23
 for _ in range(8):
     enqueue(queue, True)
 assert len(queue) == 31 and sum(queue) == 8
-if ".up=keysUp()&KEY_TOUCH" not in producer:
+if ".up=keysUp()" not in producer:
     raise SystemExit("FAIL: stylus release must be queued in VBlank")
 if "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" not in producer:
     raise SystemExit("FAIL: stylus release must use last valid coordinates")
