@@ -101,6 +101,10 @@ static int64_t plane(int a,int b,int c,int wa,int wb,int wc,int inverse)
 }
 static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,const MdsCflTexture*tex,uint16_t*out)
 {
+ /* Cheap screen-space reject before costly affine setup and rasterization.
+  * Keep all original model vertices/triangles; only invisible primitives skip. */
+ if((a.x<0&&b.x<0&&c.x<0)||(a.x>=S&&b.x>=S&&c.x>=S)||
+    (a.y<0&&b.y<0&&c.y<0)||(a.y>=S&&b.y>=S&&c.y>=S))return;
  int area=edge(a,b,c.x,c.y);if(!area)return;if(area<0){Vertex tmp=b;b=c;c=tmp;area=-area;}
  int x0=clamp(a.x<b.x?(a.x<c.x?a.x:c.x):(b.x<c.x?b.x:c.x),127),x1=clamp(a.x>b.x?(a.x>c.x?a.x:c.x):(b.x>c.x?b.x:c.x),127);
  int y0=clamp(a.y<b.y?(a.y<c.y?a.y:c.y):(b.y<c.y?b.y:c.y),127),y1=clamp(a.y>b.y?(a.y>c.y?a.y:c.y):(b.y>c.y?b.y:c.y),127);
