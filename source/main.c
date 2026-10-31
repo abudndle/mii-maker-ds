@@ -60,8 +60,8 @@ int main(void)
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
     int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
-    unsigned page=0,drawn_page=99,drag_page=0;
-    int drag_slot=-1;
+    unsigned page=0,drawn_page=99;
+    MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     const char *notice="",*drawn_notice=NULL;
@@ -159,20 +159,21 @@ int main(void)
             }
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
-                drag_slot=slot;drag_page=page;
+                mds_gallery_drag_begin(&gallery_drag,page,slot,
+                                       slot>=0&&gallery.used[slot]);
                 if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
             if(input.up&KEY_TOUCH){
-                int destination=mds_gallery_touch(input.touch.px,input.touch.py,page);
-                if(drag_slot>=0&&page==drag_page&&destination>=0&&
-                   destination!=drag_slot&&gallery.used[drag_slot]){
-                    editor.slot=(unsigned)drag_slot;
+                unsigned source;
+                int destination=mds_gallery_drag_end(&gallery_drag,page,
+                    mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                if(destination>=0){
+                    editor.slot=source;
                     mds_editor_request(&editor,MDS_EDIT_RELOAD);
                     if(mds_editor_move(&editor,(unsigned)destination,persist,NULL))
                         page=editor.slot/10;
                     drawn_screen=-1;
                 }
-                drag_slot=-1;
             }
             if(down&KEY_A){
                 if(!gallery.used[editor.slot]){
@@ -243,7 +244,7 @@ int main(void)
                 else screen=editor_return_screen;
             }
         }
-        if(screen!=MDS_SCREEN_GALLERY)drag_slot=-1;
+        if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
