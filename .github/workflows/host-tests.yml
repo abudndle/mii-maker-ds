@@ -19,5 +19,7 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_generate_clan_home_visual.py
       - name: Verify CLAN keyframe decoder
         run: python3 -m unittest discover -s tests -p test_clan_keyframes.py
+      - name: Verify original CLAN numeric build-parity gate
+        run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
       - name: Run asset-free sanitizer tests
         run: python3 tests/test_private_rom_release.py && python3 tools/test_host.py
