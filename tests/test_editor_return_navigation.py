@@ -11,7 +11,7 @@ required = {
     "home-origin new Mii": "gender_return_screen=MDS_SCREEN_HOME;",
     "deferred exit on dirty draft": "if(editor.pending)pending_editor_return=1;",
     "immediate exit on clean draft": "else screen=editor_return_screen;",
-    "confirmed return to origin": "if(response&&confirmed&&pending_editor_return)screen=editor_return_screen;",
+    "confirmed return to origin": "else if(response&&confirmed&&pending_editor_return)\n                    screen=editor_return_screen;",
     "cancel confirmation leaves editor open": "pending_editor_return=0;",
 }
 for name, snippet in required.items():
@@ -22,6 +22,6 @@ if "return_home" in source or "if(response&&return_home)screen=MDS_SCREEN_HOME;"
 # A confirmed discard must be successful before navigating. A rejection
 # from the confirmation dialog must keep the current editor active.
 confirm = source[source.index("}else if(editor.pending){"):source.index("}else if(screen==MDS_SCREEN_HOME){")]
-if confirm.index("int confirmed=mds_editor_confirm(") > confirm.index("if(response&&confirmed&&pending_editor_return)"):
+if confirm.index("int confirmed=mds_editor_confirm(") > confirm.index("else if(response&&confirmed&&pending_editor_return)"):
     raise SystemExit("FAIL: screen changes before discard is confirmed")
 print("PASS: Mii editor returns to gallery or home only after successful discard")
