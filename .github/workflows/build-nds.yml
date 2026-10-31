@@ -63,6 +63,11 @@ jobs:
           fi
           python3 tools/restore_asset_zip.py /tmp/mii-assets.zip --extract-to .
           rm -f /tmp/mii-assets.zip
+      - name: Validate restored original assets before DS toolchain installation
+        run: |
+          python3 tools/check_assets.py
+          python3 tools/validate_body_models.py
+          python3 tests/rom_motion_packs.py --source-only
       - name: Render original male and female Mii poses on host
         run: python3 tools/test_original_render.py
       - name: Install Wonderful Toolchain and BlocksDS
@@ -83,9 +88,6 @@ jobs:
           set -euo pipefail
           export PATH="/opt/wonderful/bin:/opt/wonderful/toolchain/gcc-arm-none-eabi/bin:$PATH"
           python3 tools/build_preflight.py
-          python3 tools/check_assets.py
-          python3 tools/validate_body_models.py
-          python3 tests/rom_motion_packs.py --source-only
           make -j2
           test -s mii-ds.nds
           python3 tests/rom_regions.py
