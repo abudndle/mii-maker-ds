@@ -25,6 +25,11 @@ static void animation_vblank(void)
  MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=keysHeld()};
  if(!(event.down||event.repeat))return;
  touchRead(&event.touch);
+ /* Reserve eight of the 31 usable slots for fresh presses. Holding a
+  * direction during expensive software rendering must not fill the FIFO
+  * with repeat events and force genuine input out of the queue. */
+ unsigned queued=(input_write+32-input_read)%32;
+ if(!event.down&&queued>=23)return;
  unsigned next=(input_write+1)%32;
  if(next==input_read){
   /* Rendering may take several VBlanks. Drop repeat-only events first;
