@@ -114,6 +114,11 @@ static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,c
  int64_t zr=plane(a.z,b.z,c.z,ar,brw,cr,inverse),zx=plane(a.z,b.z,c.z,ax,bx,cx,inverse),zy=plane(a.z,b.z,c.z,ay,by,cy,inverse);
  int64_t lr=plane(a.light,b.light,c.light,ar,brw,cr,inverse),lx=plane(a.light,b.light,c.light,ax,bx,cx,inverse),ly=plane(a.light,b.light,c.light,ay,by,cy,inverse);
  int64_t ur=0,ux=0,uy=0,vr=0,vx=0,vy=0;
+ /* Flat-colored original mesh faces often revisit the same quantized
+  * light value. Reuse the identical integer RGB result without changing
+  * triangle topology, shading math or texture sampling. */
+ int last_flat_light=-1;
+ unsigned flat_rgb[3]={0,0,0};
  if(masked||tex){
   ur=plane(a.u,b.u,c.u,ar,brw,cr,inverse);ux=plane(a.u,b.u,c.u,ax,bx,cx,inverse);uy=plane(a.u,b.u,c.u,ay,by,cy,inverse);
   vr=plane(a.v,b.v,c.v,ar,brw,cr,inverse);vx=plane(a.v,b.v,c.v,ax,bx,cx,inverse);vy=plane(a.v,b.v,c.v,ay,by,cy,inverse);
@@ -129,7 +134,13 @@ static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,c
     if(masked)col=mask[clamp((8192-v)*(MS-1)/8192,MS-1)*MS+clamp(u*(MS-1)/8192,MS-1)];
     else col=tint(texel(tex,u*(int)tex->width/8192,(8192-v)*(int)tex->height/8192),color,color,0);
     alpha=col>>24;if(alpha<8)continue;for(int k=0;k<3;k++)rgb[k]=(col>>(8*k)&255)*light/255;
-   }else for(int k=0;k<3;k++)rgb[k]=color[k]*light/255;
+   }else{
+    if(light!=last_flat_light){
+     for(int k=0;k<3;k++)flat_rgb[k]=color[k]*light/255;
+     last_flat_light=light;
+    }
+    for(int k=0;k<3;k++)rgb[k]=flat_rgb[k];
+   }
    if(alpha<255){uint16_t old=out[idx];for(int k=0;k<3;k++)rgb[k]=(rgb[k]*alpha+((old>>(5*k))&31)*255/31*(255-alpha))/255;}
    out[idx]=(uint16_t)(0x8000|(rgb[0]>>3)|((rgb[1]>>3)<<5)|((rgb[2]>>3)<<10));depth[idx]=z;
   }
