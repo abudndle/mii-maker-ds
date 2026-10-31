@@ -182,7 +182,14 @@ static int preview(const MdsAvatar *a,int mode)
  if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,sizeof a->value)||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;
   int result=mode&&body?mds_mii_render(&cfl,a,body,size,render_pixels,mode==2):mds_head_render(&cfl,a,render_pixels);
-  if(result<0){render_cancelled_count++;return preview_ready[mode];}
+  if(result<0){
+   render_cancelled_count++;
+   /* A cancelled redraw may reuse the previous pose only for the same
+    * appearance. Never present a different Mii's cached pixels. */
+   return preview_cached[mode]&&
+     !memcmp(a->value,head_avatars[mode].value,sizeof a->value)
+     ?preview_ready[mode]:0;
+  }
   if(result&&render_clock){render_ticks+=render_clock()-started;render_completed++;}
   if(!result){
    /* A missing or temporarily unreadable resource must not poison the
