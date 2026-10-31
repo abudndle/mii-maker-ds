@@ -488,7 +488,17 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
 void mds_ui_gender(int create,int choice)
 {
  show_profile_hint=0;bitmap(create?"nitro:/ui/create-gender.rgb555":"nitro:/ui/gender.rgb555",bottom);
- int cx=choice?176:80;for(int y=60;y<135;y++)for(int x=cx-37;x<cx+38;x++)if(y<62||y>=133||x<cx-35||x>=cx+36)bottom[y*256+x]=RGB15(4,16,11)|0x8000;
+ const char *target=choice?"B_Female":"B_Male";
+ unsigned page=create?2u:1u;
+ for(unsigned i=0;i<PROFILE_HIT_COUNT;i++){
+  const ProfileHit *hit=&profile_hits[i];
+  if((unsigned)hit->page!=page||strcmp(hit->name,target))continue;
+  for(int y=hit->y;y<hit->y+hit->h;y++)for(int x=hit->x;x<hit->x+hit->w;x++){
+   if(x<0||x>=256||y<0||y>=192)continue;
+   if(x<hit->x+2||x>=hit->x+hit->w-2||y<hit->y+2||y>=hit->y+hit->h-2)
+    bottom[y*256+x]=RGB15(4,16,11)|0x8000;
+  }
+ }
 }
 void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
