@@ -20,9 +20,9 @@ TRACKS = (
 # material/opacity state, not an animated error pulse.
 EXTRA = (
  ("adjust_release_y","EditEye_UnDecide","P_BtnArrowR","CLPA",1,1,0),
- ("adjust_release_arrow_r","EditEye_UnDecide","P_BtnArrowR","CLMC",4,2,1),
- ("adjust_release_arrow_g","EditEye_UnDecide","P_BtnArrowR","CLMC",5,2,1),
- ("adjust_release_arrow_b","EditEye_UnDecide","P_BtnArrowR","CLMC",6,2,1),
+ ("adjust_release_arrow_r","EditEye_UnDecide","P_BtnArrowR","CLMC",4,2,0),
+ ("adjust_release_arrow_g","EditEye_UnDecide","P_BtnArrowR","CLMC",5,2,0),
+ ("adjust_release_arrow_b","EditEye_UnDecide","P_BtnArrowR","CLMC",6,2,0),
  ("adjust_release_change_r","EditEye_UnDecide","P_Change_00","CLMC",4,1,-17),
  ("adjust_release_change_g","EditEye_UnDecide","P_Change_00","CLMC",5,1,-17),
  ("adjust_release_change_b","EditEye_UnDecide","P_Change_00","CLMC",6,1,-17),
@@ -97,4 +97,4 @@ if __name__=="__main__":
  p.add_argument("--output",type=Path,required=True)
  args=p.parse_args()
  args.output.write_text(generate(json.loads(args.catalog.read_text(encoding="utf-8"))),encoding="utf-8")
- print("PASS: original EditEye/EditHair Decide press and arrow tracks")
+ print("PASS: original Editor Decide/UnDecide/Invalid source keyframes")
