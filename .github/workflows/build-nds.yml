@@ -33,18 +33,6 @@ jobs:
           python3 tests/test_body_models.py
           python3 tests/test_flat_rgb555.py
           python3 tests/test_preview_cache.py
-      - name: Install Wonderful Toolchain and BlocksDS
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo mkdir -p /opt/wonderful
-          sudo chown "$USER:$USER" /opt/wonderful
-          curl -fsSL https://wonderful.asie.pl/bootstrap/wf-bootstrap-x86_64.tar.gz | tar -xz -C /opt/wonderful
-          export PATH="/opt/wonderful/bin:$PATH"
-          wf-pacman -Syu --noconfirm wf-tools
-          wf-config repo enable blocksds
-          wf-pacman -Syu --noconfirm
-          wf-pacman -S --noconfirm blocksds-toolchain
       - name: Restore original assets from private archive
         shell: bash
         env:
@@ -77,6 +65,18 @@ jobs:
           rm -f /tmp/mii-assets.zip
       - name: Render original male and female Mii poses on host
         run: python3 tools/test_original_render.py
+      - name: Install Wonderful Toolchain and BlocksDS
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /opt/wonderful
+          sudo chown "$USER:$USER" /opt/wonderful
+          curl -fsSL https://wonderful.asie.pl/bootstrap/wf-bootstrap-x86_64.tar.gz | tar -xz -C /opt/wonderful
+          export PATH="/opt/wonderful/bin:$PATH"
+          wf-pacman -Syu --noconfirm wf-tools
+          wf-config repo enable blocksds
+          wf-pacman -Syu --noconfirm
+          wf-pacman -S --noconfirm blocksds-toolchain
       - name: Validate input and compile ROM
         shell: bash
         run: |
