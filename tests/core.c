@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
+#include <stdint.h>
 int main(void){MdsAvatar a,b,guard;uint8_t packet[MDS_PACKET],copy[MDS_PACKET];mds_new(&a);assert(mds_valid(&a));
  /* Invalid pointers from import/save call chains must fail safely. */
  assert(!mds_valid(NULL));
@@ -18,5 +20,17 @@ int main(void){MdsAvatar a,b,guard;uint8_t packet[MDS_PACKET],copy[MDS_PACKET];m
  for(unsigned i=0;i<sizeof packet;i++){memcpy(copy,packet,sizeof copy);copy[i]^=1;b=guard;assert(!mds_decode(&b,copy,sizeof copy));assert(!memcmp(&b,&guard,sizeof b));}
  for(unsigned n=0;n<MDS_PACKET;n++){assert(!mds_decode(&b,packet,n));}assert(!mds_decode(&b,packet,MDS_PACKET+1));
  a.value[5]=132;assert(!mds_encode(&a,packet,sizeof packet));mds_new(&a);memset(a.name,'A',32);assert(!mds_valid(&a));
+ /* Extreme adjustments use the same mathematical modulo as small steps. */
+ mds_new(&a);
+ for(unsigned f=0;f<MDS_FIELDS;f++){
+  int n=mds_fields[f].maximum+1;
+  for(unsigned k=0;k<2;k++){
+   int d=k?INT_MAX:INT_MIN;
+   int64_t expected=((int64_t)a.value[f]+d)%n;
+   if(expected<0)expected+=n;
+   mds_adjust(&a,f,d);
+   assert(a.value[f]==(unsigned)expected);
+  }
+ }
  assert(!mds_service_available(MDS_DS,MDS_CAMERA,15));assert(mds_service_available(MDS_DSI,MDS_CAMERA,1));for(int s=0;s<4;s++)assert(!mds_service_available(MDS_DSI,(MdsService)s,0));
  mds_new(&a);assert(mds_write(&a,"/tmp/mds-core-test.dat"));assert(mds_read(&b,"/tmp/mds-core-test.dat"));assert(!memcmp(&a,&b,sizeof a));remove("/tmp/mds-core-test.dat");puts("PASS: fields, roundtrip, corruption, truncation, validation, DSi gating, file IO");}
