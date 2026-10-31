@@ -547,7 +547,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         }
         if(slot==selected)outline(&gallery_hits[i]);
     }
-    text_at(bottom,10,154,"Drag a Mii to move / swap");
+    text_at(bottom,10,154,"Drag Mii; hold + L/R pages");
 }
 
 static const uint8_t profile_colors[12][3]={{210,30,20},{255,110,25},{255,216,32},{120,210,32},{0,120,48},{10,72,180},{60,170,222},{245,90,125},{115,40,173},{72,56,24},{224,224,224},{24,24,20}};
