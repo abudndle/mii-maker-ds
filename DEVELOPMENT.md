@@ -40,6 +40,20 @@ The new compact format has one full snapshot: its CRC detects interrupted/corrup
 
 ## Build
 
+### Private-resource local build (recommended)
+
+Keep your personally extracted Nintendo resources **outside your public Git repository**. The source tree ignores `nitrofiles/`, `assets/`, and `*.nds`; do not force-add those files. With a private ZIP whose root contains `nitrofiles/` and `assets/ui/original-icon.gif`, run from the source directory:
+
+```sh
+python3 tools/build_private.py /path/to/MiiMaker_DS_Resources.zip --validate-only
+python3 tools/build_private.py /path/to/MiiMaker_DS_Resources.zip
+```
+
+The first command validates the archive and every frame in both original 53-clip animation catalogs **without extracting assets or requiring BlocksDS**. The second restores them locally, verifies the meshes, checks BlocksDS prerequisites, compiles `mii-ds.nds`, and rejects the result unless its ARM sections and every original NitroFS payload pass the existing ROM tests. The final output includes the ROM SHA-256. Use `--jobs 1` for memory-constrained systems. On Windows, run the commands inside a BlocksDS-compatible MSYS2 environment with `python3` and `make` on PATH.
+
+This is not an asset downloader: you must supply your own extraction. Builds and generated ROMs containing Nintendo assets remain **local**, not GitHub release artifacts. Once the build succeeds, test `mii-ds.nds` in melonDS with DS mode and Direct Boot. Passing a host test does not replace hardware/emulator gameplay testing.
+
+
 Install **BlocksDS 1.24.0**, Wonderful's ARM toolchain, GNU make and Python 3. Setup: https://blocksds.skylyrac.net/docs/setup/linux/ . Run `make` in this directory. Override `BLOCKSDS` and `WONDERFUL_TOOLCHAIN` for your installation. The included Makefile defaults to `/opt/wonderful/thirdparty/blocksds/core` and `/opt/wonderful`.
 
 The outer Makefile delegates compilation/packing to the SDK and runs `tools/fix_nds_regions.py` after packing, even for an otherwise up-to-date ROM. The postprocessor aligns DSi payloads to 512 KiB, preserves ARM instructions/NitroFS data, marks the reserved decrypted prefix, sets capacity/boundary/lengths and updates CRCs. The result is `mii-ds.nds`. Do not distribute an intermediate SDK-packed image before this step. `make clean` and `make dump` delegate to the SDK too.
