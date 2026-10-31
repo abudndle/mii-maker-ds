@@ -53,8 +53,9 @@ int main(void)
 {
     powerOn(POWER_ALL_2D);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
-    int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
+    int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
+    int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
     unsigned page=0,drawn_page=99;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
@@ -80,7 +81,11 @@ int main(void)
             int response=-1;
             if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
             else if(down&KEY_TOUCH){touchPosition t;t=input.touch;response=mds_ui_confirm_touch(t.px,t.py);}
-            if(response>=0){mds_editor_confirm(&editor,response,persist,NULL);if(response&&return_home)screen=MDS_SCREEN_HOME;return_home=0;}
+            if(response>=0){
+                int confirmed=mds_editor_confirm(&editor,response,persist,NULL);
+                if(response&&confirmed&&pending_editor_return)screen=editor_return_screen;
+                pending_editor_return=0;
+            }
         }else if(screen==MDS_SCREEN_HOME){
             if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
@@ -156,7 +161,9 @@ int main(void)
                         screen=MDS_SCREEN_GENDER;
                     }
                 }else if(!mds_editor_locked(&gallery.miis[editor.slot])){
-                    mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                    editor_return_screen=MDS_SCREEN_GALLERY;
+                    screen=MDS_SCREEN_EDITOR;
                 }else editor.status="This received Mii cannot be edited.";
             }
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
@@ -168,7 +175,11 @@ int main(void)
             int chosen=-1;
             if(down&KEY_A)chosen=profile.choice;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
-            if(chosen>=0){profile.choice=chosen;mds_profile_done(&profile,&editor.draft);screen=MDS_SCREEN_EDITOR;}
+            if(chosen>=0){
+                profile.choice=chosen;mds_profile_done(&profile,&editor.draft);
+                editor_return_screen=gender_return_screen;
+                screen=MDS_SCREEN_EDITOR;
+            }
             if(down&KEY_B){
                 mds_profile_cancel(&profile);
                 /* Cancel new-Mii creation without leaving a dirty draft. */
@@ -207,7 +218,8 @@ int main(void)
             else if(down&KEY_Y){camera_qr=0;camera_open=mds_camera_open();editor.status=mds_camera_status();}
             if((down&KEY_B)&&!(input.held&KEY_Y)){
                 mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                if(editor.pending)return_home=1;else screen=MDS_SCREEN_HOME;
+                if(editor.pending)pending_editor_return=1;
+                else screen=editor_return_screen;
             }
         }
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
