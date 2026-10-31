@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Protect private ROM release policy
         run: python3 tests/test_private_rom_release.py
+      - name: Verify CLAN property-keyframe decoder
+        run: python3 -m unittest discover -s tests -p test_clan_keyframes.py
       - name: Verify private ZIP extraction rejects unsafe link destinations
         run: python3 tests/test_private_zip_restore.py
       - name: Verify private local ZIP-to-ROM build orchestration
