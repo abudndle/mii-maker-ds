@@ -40,12 +40,24 @@ def validate(archive, destination=None):
             if invalid:
                 raise ValueError("ZIP CRC mismatch: " + invalid)
             if destination:
-                root = Path(destination).resolve()
+                root = Path(destination).absolute()
+                if root.is_symlink():
+                    raise ValueError("Unsafe resource destination: symbolic link")
                 for name, entry in items.items():
                     if not name.startswith(("nitrofiles/", "assets/")):
                         continue
-                    out = root.joinpath(*PurePosixPath(name).parts)
-                    out.parent.mkdir(parents=True, exist_ok=True)
+                    parts = PurePosixPath(name).parts
+                    parent = root
+                    # A pre-existing symbolic-link directory can escape the
+                    # source tree even when every ZIP member name is safe.
+                    for component in parts[:-1]:
+                        parent = parent / component
+                        if parent.is_symlink():
+                            raise ValueError("Unsafe resource destination link: " + str(parent))
+                        parent.mkdir(exist_ok=True)
+                    out = parent / parts[-1]
+                    if out.is_symlink():
+                        raise ValueError("Unsafe resource destination link: " + str(out))
                     with z.open(entry) as inp, out.open("wb") as dest:
                         shutil.copyfileobj(inp, dest)
             print(f"PASS: {len(items)} files, {len(REQUIRED)} required resource paths")
