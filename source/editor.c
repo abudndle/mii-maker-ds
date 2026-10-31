@@ -83,6 +83,41 @@ int mds_editor_create(MdsEditor *e,unsigned slot)
  return 1;
 }
 
+int mds_editor_move(MdsEditor *e,unsigned destination,MdsPersist persist,void *ctx)
+{
+ if(!e||!e->gallery||e->slot>=MDS_SLOTS||destination>=MDS_SLOTS||
+    destination==e->slot)return 0;
+ MdsGallery *g=e->gallery;
+ if(!g->used[e->slot]){e->status="Choose a saved Mii to move.";return 0;}
+ if(e->pending||mds_editor_dirty(e)){
+  e->status="Discard unsaved edits before moving a Mii.";
+  return 0;
+ }
+ unsigned source=e->slot;
+ MdsAvatar old_source=g->miis[source],old_dest=g->miis[destination];
+ uint8_t was_source=g->used[source],was_dest=g->used[destination];
+ uint32_t generation=g->generation;
+ int bank=g->active_bank;
+ /* Rearranging never changes the Mii contents or ownership/permissions.
+  * The Personal Mii is protected from deletion but may change gallery slot. */
+ g->miis[destination]=old_source;
+ g->used[destination]=was_source;
+ g->miis[source]=old_dest;
+ g->used[source]=was_dest;
+ if(!was_dest)memset(&g->miis[source],0,sizeof g->miis[source]);
+ if(!persist||!persist(g,ctx)){
+  g->miis[source]=old_source;g->miis[destination]=old_dest;
+  g->used[source]=was_source;g->used[destination]=was_dest;
+  g->generation=generation;g->active_bank=bank;
+  e->status="Move failed. Gallery retained.";
+  return 0;
+ }
+ e->slot=destination;
+ reload(e);
+ e->status=was_dest?"Miis swapped.":"Mii moved.";
+ return 1;
+}
+
 int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 {
  MdsGallery*g=e->gallery;
