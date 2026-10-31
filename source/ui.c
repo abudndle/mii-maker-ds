@@ -418,12 +418,18 @@ static int editor_hit_kind(const char *name)
   return MDS_CLAN_ADJUST_CHANGE;
  return 0;
 }
-static void editor_adjust_press(uint32_t now,const UiHit *hit)
+static int editor_adjust_touch_origin;
+static void editor_adjust_press(uint32_t now,const UiHit *hit,int valid)
 {
  int kind=editor_hit_kind(hit->name);
- if(kind)mds_clan_adjust_begin(&editor_adjust_fx,now,(unsigned)kind,
-            hit->category,hit->rect.x,hit->rect.y,
-            hit->rect.w,hit->rect.h);
+ if(!kind)return;
+ if(valid)mds_clan_adjust_begin(&editor_adjust_fx,now,(unsigned)kind,
+                hit->category,hit->rect.x,hit->rect.y,
+                hit->rect.w,hit->rect.h);
+ else mds_clan_adjust_invalid(&editor_adjust_fx,now,(unsigned)kind,
+                hit->category,hit->rect.x,hit->rect.y,
+                hit->rect.w,hit->rect.h);
+ editor_adjust_touch_origin=1;
 }
 void mds_ui_editor_adjust_key(uint32_t now,int field,int direction)
 {
@@ -437,8 +443,35 @@ void mds_ui_editor_adjust_key(uint32_t now,int field,int direction)
   if(direction>0&&!strcmp(h->name,"B_ArrowR"))arrow=h;
   if(direction<0&&!strcmp(h->name,"B_ArrowL"))arrow=h;
  }
- if(arrow)editor_adjust_press(now,arrow);
- else if(change)editor_adjust_press(now,change);
+ const UiHit *selected=arrow?arrow:change;
+ if(selected){
+  editor_adjust_press(now,selected,1);
+  editor_adjust_touch_origin=0;
+ }
+}
+void mds_ui_editor_adjust_invalid_key(uint32_t now,int field,int direction)
+{
+ if(!direction)return;
+ unsigned current=pick(field);
+ const UiHit *change=NULL,*arrow=NULL;
+ for(unsigned i=0;i<UI_HIT_COUNT;i++){
+  const UiHit *hit=&ui_hits[i];
+  if(hit->category!=current)continue;
+  if(!change&&!strncmp(hit->name,"B_Change",8))change=hit;
+  if(direction>0&&!strcmp(hit->name,"B_ArrowR"))arrow=hit;
+  if(direction<0&&!strcmp(hit->name,"B_ArrowL"))arrow=hit;
+ }
+ const UiHit *selected=arrow?arrow:change;
+ if(selected){
+  editor_adjust_press(now,selected,0);
+  editor_adjust_touch_origin=0;
+ }
+}
+void mds_ui_editor_adjust_release(uint32_t now,int released)
+{
+ if((editor_adjust_touch_origin&&(released&KEY_TOUCH))||
+    (!editor_adjust_touch_origin&&(released&(KEY_LEFT|KEY_RIGHT|KEY_A))))
+  mds_clan_adjust_release(&editor_adjust_fx,now);
 }
 int mds_ui_editor_adjust_tick(uint32_t now)
 {
@@ -451,7 +484,7 @@ static void editor_adjust_draw(void)
  if(!mds_clan_adjust_style(&editor_adjust_fx,now,&cue))return;
  mds_clan_border_tint(bottom,256,192,
     editor_adjust_fx.x,editor_adjust_fx.y+cue.offset_y,
-    editor_adjust_fx.w,editor_adjust_fx.h,cue.tint_rgb555,255);
+    editor_adjust_fx.w,editor_adjust_fx.h,cue.tint_rgb555,cue.opacity);
 }
 void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *a,
                                     int field,int editing)
@@ -550,15 +583,18 @@ int mds_ui_touch(MdsAvatar *a,int *field,int x,int y){
    unsigned n=(unsigned)(hit->name[8]-'0')*10u+(unsigned)(hit->name[9]-'0');
    int f=color_fields[category];if(n<=mds_fields[f].maximum){a->value[f]=(uint8_t)n;*field=f;}return 1;
   }
+  uint8_t old_values[MDS_FIELDS];
+  int feedback=editor_hit_kind(hit->name)!=0;
+  if(feedback)memcpy(old_values,a->value,sizeof old_values);
   if(mds_transform_touch(a,field,category,hit->name)){
-   if(editor_hit_kind(hit->name))
-    editor_adjust_press(render_clock?render_clock():0,hit);
+   if(feedback)editor_adjust_press(render_clock?render_clock():0,
+                     hit,memcmp(old_values,a->value,sizeof old_values)!=0);
    return 1;
   }
   if(category==3&&!strcmp(hit->name,"B_Change_04")){
    uint8_t prior=a->value[7];
    mds_adjust(a,7,1);*field=7;
-   if(prior!=a->value[7])editor_adjust_press(render_clock?render_clock():0,hit);
+   editor_adjust_press(render_clock?render_clock():0,hit,prior!=a->value[7]);
    return 1;
   }
   if(category==12&&!strncmp(hit->name,"B_BgSlide_",10)){
@@ -567,8 +603,8 @@ int mds_ui_touch(MdsAvatar *a,int *field,int x,int y){
   if(c->count&&(!strcmp(hit->name,"B_ArrowR")||!strcmp(hit->name,"B_ArrowL"))){
    uint8_t prior=a->value[c->field];
    mds_adjust(a,(unsigned)c->field,hit->name[7]=='R'?c->count:-c->count);*field=c->field;
-   if(prior!=a->value[c->field])
-    editor_adjust_press(render_clock?render_clock():0,hit);
+   editor_adjust_press(render_clock?render_clock():0,
+                       hit,prior!=a->value[c->field]);
    return 1;
   }
  }
