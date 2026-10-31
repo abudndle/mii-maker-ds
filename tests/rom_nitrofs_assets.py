@@ -18,7 +18,7 @@ REQUIRED = (
 )
 
 
-def check(rom: bytes) -> dict:
+def check(rom: bytes, with_ranges: bool = False) -> dict:
     def u16(offset):
         return struct.unpack_from("<H", rom, offset)[0]
 
@@ -79,12 +79,12 @@ def check(rom: bytes) -> dict:
                 path = prefix + name
                 if path in files:
                     raise ValueError("Duplicate NitroFS filename: " + path)
-                files[path] = file_id
+                files[path] = (first, last) if with_ranges else file_id
                 ranges.append((first, last, path))
                 file_id += 1
 
     walk(0xf000, "")
-    if len(files) != count or set(files.values()) != set(range(count)):
+    if len(files) != count or (not with_ranges and set(files.values()) != set(range(count))):
         raise ValueError("Not all NitroFS FAT entries are indexed")
     ranges.sort()
     for previous, following in zip(ranges, ranges[1:]):
