@@ -41,6 +41,7 @@ def check(rom: bytes, with_ranges: bool = False) -> dict:
         raise ValueError("Invalid NitroFS directory count")
     files = {}
     ranges = []
+    used_file_ids = set()
     visited = set()
 
     def walk(directory, prefix):
@@ -79,12 +80,15 @@ def check(rom: bytes, with_ranges: bool = False) -> dict:
                 path = prefix + name
                 if path in files:
                     raise ValueError("Duplicate NitroFS filename: " + path)
+                if file_id in used_file_ids:
+                    raise ValueError('Duplicate NitroFS file ID: ' + str(file_id))
+                used_file_ids.add(file_id)
                 files[path] = (first, last) if with_ranges else file_id
                 ranges.append((first, last, path))
                 file_id += 1
 
     walk(0xf000, "")
-    if len(files) != count or (not with_ranges and set(files.values()) != set(range(count))):
+    if len(files) != count or used_file_ids != set(range(count)):
         raise ValueError("Not all NitroFS FAT entries are indexed")
     ranges.sort()
     for previous, following in zip(ranges, ranges[1:]):
