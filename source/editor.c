@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "unicode.h"
 #include <string.h>
 static void reload(MdsEditor *e)
 {
@@ -10,10 +11,12 @@ void mds_editor_begin(MdsEditor *e,MdsGallery *g)
 {
     memset(e,0,sizeof *e);e->gallery=g;reload(e);e->status="Ready";
 }
+int mds_editor_locked(const MdsAvatar*a){return (a->value[61]&2)||((a->value[61]&1)&&!a->value[48]);}
 int mds_editor_dirty(const MdsEditor *e){return memcmp(&e->draft,&e->baseline,sizeof e->draft)!=0;}
 int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 {
     MdsGallery *g=e->gallery;
+    if(g->used[e->slot]&&mds_editor_locked(&g->miis[e->slot])){e->status="This received Mii cannot be edited.";return 0;}
     static const unsigned days[]={0,31,29,31,30,31,30,31,31,30,31,30,31};
     unsigned month=e->draft.value[49],day=e->draft.value[50];
     if((month||day)&&(!month||month>12||!day||day>days[month])){e->status="Choose a valid birthday.";return 0;}
@@ -70,8 +73,25 @@ int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
  unsigned dest=0;while(dest<MDS_SLOTS&&g->used[dest])dest++;
  if(dest==MDS_SLOTS){e->status="All 100 Mii slots are occupied";return 0;}
  MdsAvatar prior=g->miis[dest],copy=g->miis[e->slot];uint32_t generation=g->generation;int bank=g->active_bank;
- copy.value[51]=0;copy.value[46]=0;
+ copy.value[51]=0;copy.value[46]=0;copy.value[61]=0;
  if(!mds_gallery_store(g,dest,&copy))return 0;
  if(!persist||!persist(g,ctx)){g->miis[dest]=prior;g->used[dest]=0;g->generation=generation;g->active_bank=bank;e->status="Copy failed. Original retained.";return 0;}
  e->slot=dest;reload(e);e->status="Mii copied.";return 1;
+}
+
+int mds_editor_import(MdsEditor*e,const MdsAvatar*source,MdsPersist persist,void*ctx)
+{
+ if(!source||!mds_valid(source)){e->status="Invalid Mii data.";return 0;}
+ static const unsigned days[]={0,31,29,31,30,31,30,31,31,30,31,30,31};
+ unsigned month=source->value[49],day=source->value[50];uint8_t name[20];
+ if(((month||day)&&(!month||!day||day>days[month]))||!source->name[0]||!mds_name_to_utf16(name,source->name)||!mds_name_to_utf16(name,source->creator)){e->status="Invalid Mii profile.";return 0;}
+ MdsGallery*g=e->gallery;unsigned dest=0;while(dest<MDS_SLOTS&&g->used[dest])dest++;
+ if(dest==MDS_SLOTS){e->status="All 100 Mii slots are occupied";return 0;}
+ MdsAvatar old=g->miis[dest],copy=*source;uint32_t generation=g->generation;int bank=g->active_bank;
+ copy.value[51]=0;copy.value[46]=0;copy.value[61]=(source->value[61]&2)|1;
+ if(!mds_gallery_store(g,dest,&copy)){e->status="Invalid Mii data.";return 0;}
+ if(!persist||!persist(g,ctx)){
+  g->miis[dest]=old;g->used[dest]=0;g->generation=generation;g->active_bank=bank;e->status="Import failed. Gallery retained.";return 0;
+ }
+ e->slot=dest;reload(e);e->status="Mii imported.";return 1;
 }

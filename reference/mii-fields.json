@@ -1,0 +1,419 @@
+{
+  "format": "96-byte CFLStoreData / Ver3StoreData",
+  "name_utf16le_offset": 26,
+  "creator_utf16le_offset": 72,
+  "name_code_units": 10,
+  "crc_be_offset": 94,
+  "crc": "CRC-16/XMODEM of bytes 0..93",
+  "eyebrow_note": "Recovered word: rotation 5 bits, spacing 4, y 5; differs from the older libctru eyebrow bitfield declaration",
+  "fields": [
+    {
+      "ds_field": 0,
+      "name": "Gender",
+      "byte_offset": 24,
+      "bit_shift": 0,
+      "bits": 1,
+      "inverted": false
+    },
+    {
+      "ds_field": 49,
+      "name": "Birthday month",
+      "byte_offset": 24,
+      "bit_shift": 1,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 50,
+      "name": "Birthday day",
+      "byte_offset": 24,
+      "bit_shift": 5,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 45,
+      "name": "Favorite color",
+      "byte_offset": 24,
+      "bit_shift": 10,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 46,
+      "name": "Favorite",
+      "byte_offset": 24,
+      "bit_shift": 14,
+      "bits": 1,
+      "inverted": false
+    },
+    {
+      "ds_field": 48,
+      "name": "Copy allowed",
+      "byte_offset": 1,
+      "bit_shift": 0,
+      "bits": 1,
+      "inverted": false
+    },
+    {
+      "ds_field": 47,
+      "name": "Sharing allowed",
+      "byte_offset": 48,
+      "bit_shift": 0,
+      "bits": 1,
+      "inverted": true
+    },
+    {
+      "ds_field": 2,
+      "name": "Face shape",
+      "byte_offset": 48,
+      "bit_shift": 1,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 1,
+      "name": "Skin",
+      "byte_offset": 48,
+      "bit_shift": 5,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 3,
+      "name": "Wrinkles",
+      "byte_offset": 49,
+      "bit_shift": 0,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 4,
+      "name": "Makeup",
+      "byte_offset": 49,
+      "bit_shift": 4,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 43,
+      "name": "Height",
+      "byte_offset": 46,
+      "bit_shift": 0,
+      "bits": 8,
+      "inverted": false
+    },
+    {
+      "ds_field": 44,
+      "name": "Build",
+      "byte_offset": 47,
+      "bit_shift": 0,
+      "bits": 8,
+      "inverted": false
+    },
+    {
+      "ds_field": 5,
+      "name": "Hair style",
+      "byte_offset": 50,
+      "bit_shift": 0,
+      "bits": 8,
+      "inverted": false
+    },
+    {
+      "ds_field": 6,
+      "name": "Hair color",
+      "byte_offset": 51,
+      "bit_shift": 0,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 7,
+      "name": "Hair flip",
+      "byte_offset": 51,
+      "bit_shift": 3,
+      "bits": 1,
+      "inverted": false
+    },
+    {
+      "ds_field": 8,
+      "name": "Eye style",
+      "byte_offset": 52,
+      "bit_shift": 0,
+      "bits": 6,
+      "inverted": false
+    },
+    {
+      "ds_field": 9,
+      "name": "Eye color",
+      "byte_offset": 52,
+      "bit_shift": 6,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 10,
+      "name": "Eye size",
+      "byte_offset": 52,
+      "bit_shift": 9,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 11,
+      "name": "Eye stretch",
+      "byte_offset": 52,
+      "bit_shift": 13,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 12,
+      "name": "Eye rotation",
+      "byte_offset": 52,
+      "bit_shift": 16,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 13,
+      "name": "Eye spacing",
+      "byte_offset": 52,
+      "bit_shift": 21,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 14,
+      "name": "Eye height",
+      "byte_offset": 52,
+      "bit_shift": 25,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 15,
+      "name": "Brow style",
+      "byte_offset": 56,
+      "bit_shift": 0,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 16,
+      "name": "Brow color",
+      "byte_offset": 56,
+      "bit_shift": 5,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 17,
+      "name": "Brow size",
+      "byte_offset": 56,
+      "bit_shift": 8,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 18,
+      "name": "Brow stretch",
+      "byte_offset": 56,
+      "bit_shift": 12,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 19,
+      "name": "Brow rotation",
+      "byte_offset": 58,
+      "bit_shift": 0,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 20,
+      "name": "Brow spacing",
+      "byte_offset": 58,
+      "bit_shift": 5,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 21,
+      "name": "Brow height",
+      "byte_offset": 58,
+      "bit_shift": 9,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 22,
+      "name": "Nose style",
+      "byte_offset": 60,
+      "bit_shift": 0,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 23,
+      "name": "Nose size",
+      "byte_offset": 60,
+      "bit_shift": 5,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 24,
+      "name": "Nose height",
+      "byte_offset": 60,
+      "bit_shift": 9,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 25,
+      "name": "Mouth style",
+      "byte_offset": 62,
+      "bit_shift": 0,
+      "bits": 6,
+      "inverted": false
+    },
+    {
+      "ds_field": 26,
+      "name": "Lip color",
+      "byte_offset": 62,
+      "bit_shift": 6,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 27,
+      "name": "Mouth size",
+      "byte_offset": 62,
+      "bit_shift": 9,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 28,
+      "name": "Mouth stretch",
+      "byte_offset": 62,
+      "bit_shift": 13,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 29,
+      "name": "Mouth height",
+      "byte_offset": 64,
+      "bit_shift": 0,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 34,
+      "name": "Mustache",
+      "byte_offset": 64,
+      "bit_shift": 5,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 35,
+      "name": "Beard",
+      "byte_offset": 66,
+      "bit_shift": 0,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 36,
+      "name": "Facial hair color",
+      "byte_offset": 66,
+      "bit_shift": 3,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 37,
+      "name": "Mustache size",
+      "byte_offset": 66,
+      "bit_shift": 6,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 38,
+      "name": "Mustache height",
+      "byte_offset": 66,
+      "bit_shift": 10,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 30,
+      "name": "Glasses",
+      "byte_offset": 68,
+      "bit_shift": 0,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 31,
+      "name": "Glasses color",
+      "byte_offset": 68,
+      "bit_shift": 4,
+      "bits": 3,
+      "inverted": false
+    },
+    {
+      "ds_field": 32,
+      "name": "Glasses size",
+      "byte_offset": 68,
+      "bit_shift": 7,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 33,
+      "name": "Glasses height",
+      "byte_offset": 68,
+      "bit_shift": 11,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 39,
+      "name": "Mole",
+      "byte_offset": 70,
+      "bit_shift": 0,
+      "bits": 1,
+      "inverted": false
+    },
+    {
+      "ds_field": 40,
+      "name": "Mole size",
+      "byte_offset": 70,
+      "bit_shift": 1,
+      "bits": 4,
+      "inverted": false
+    },
+    {
+      "ds_field": 41,
+      "name": "Mole X",
+      "byte_offset": 70,
+      "bit_shift": 5,
+      "bits": 5,
+      "inverted": false
+    },
+    {
+      "ds_field": 42,
+      "name": "Mole Y",
+      "byte_offset": 70,
+      "bit_shift": 10,
+      "bits": 5,
+      "inverted": false
+    }
+  ]
+}

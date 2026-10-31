@@ -1,6 +1,6 @@
 import ctypes as C,sys,pathlib,json,time,argparse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--animation',action='store_true');parser.add_argument('--sliders',action='store_true');parser.add_argument('--image',action='store_true');parser.add_argument('--benchmark',action='store_true');parser.add_argument('--rom');parser.add_argument('--symbols');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--animation',action='store_true');parser.add_argument('--sliders',action='store_true');parser.add_argument('--image',action='store_true');parser.add_argument('--benchmark',action='store_true');parser.add_argument('--import-no-sd',action='store_true');parser.add_argument('--qr-screen',action='store_true');parser.add_argument('--rom');parser.add_argument('--symbols');args=parser.parse_args()
 OUTPUT=ROOT/'validation';OUTPUT.mkdir(exist_ok=True)
 from PIL import Image
 core=C.CDLL(str(pathlib.Path(args.core).resolve()))
@@ -120,6 +120,33 @@ if args.image and not args.restart:
  capture('melonds-image-no-sd')
  pressed={8};run(3);pressed=set();run(120)
  print('PASS: native image-export route reports absent SD without changing cartridge Mii',flush=True)
+if args.import_no_sd and not args.restart:
+ pressed={0};run(3);pressed=set();run(90)
+ pointer=(100,120);run(3);pointer=None;run(180)
+ assert int.from_bytes(mem('screen'),'little')==6
+ assert int.from_bytes(mem('importer',9708)[9704:9708],'little')==0
+ capture('melonds-import-no-sd')
+ pressed={8};run(3);pressed=set();run(60)
+ assert mem('gallery',100)[1]==0
+ pressed={0};run(3);pressed=set();run(60)
+ pointer=(100,25);run(3);pointer=None;run(120)
+ pointer=(42,70);run(3);pointer=None;run(90)
+ pressed={8};run(3);pressed=set();run(120)
+ print('PASS: native import browser rejects absent SD and returns without altering gallery',flush=True)
+if args.qr_screen and not args.restart:
+ pressed={0};run(3);pressed=set();run(90)
+ pointer=(100,155);run(3);pointer=None;run(180)
+ assert int.from_bytes(mem('screen'),'little')==7
+ pressed={8};run(3);pressed=set();run(300)
+ assert int.from_bytes(mem('qr_matrix_valid'),'little')==1
+ capture('melonds-native-qr')
+ pressed={9};run(3);pressed=set();run(90)
+ assert int.from_bytes(mem('screen'),'little')==7
+ pressed={0};run(3);pressed=set();run(60)
+ pointer=(100,25);run(3);pointer=None;run(120)
+ pointer=(42,70);run(3);pointer=None;run(90)
+ pressed={8};run(3);pressed=set();run(120)
+ print('PASS: native QR generation/display and DS camera-scan gate',flush=True)
 if args.appearance:
  pointer=(15,75);run(3);pointer=None;run(90)
  pointer=(209,109);run(3);pointer=None;run(90)

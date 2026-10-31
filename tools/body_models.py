@@ -32,8 +32,8 @@ class Reader:
  def pointers(self,n,p):
   if n>1000 or (n and p is None):raise ValueError('Pointer-table count')
   return [self.ptr(p+4*i) for i in range(n)]
-def pose_data(frame=0):
- r=Reader(ROOT/'assets/decoded/models/MiiAnim.arc.files/Wait00.bcskla');canm=r.data.index(b'CANM');d=r.ptr(canm+28)
+def pose_data(frame=0,clip="Wait00"):
+ r=Reader(ROOT/'assets/decoded/models/MiiAnim.arc.files'/(clip+'.bcskla'));canm=r.data.index(b'CANM');d=r.ptr(canm+28)
  # CANM: magic/revision/name/group/loop/frames + dictionary count/pointer.
  result={}
  for p in r.dictionary(d):

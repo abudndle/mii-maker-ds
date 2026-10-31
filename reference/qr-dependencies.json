@@ -1,0 +1,11 @@
+{
+  "libctru_mii_header_blob": "38e2674a812106b7added5b085d8de9b53487552",
+  "quirc": "dlbeer/quirc",
+  "tiny_aes": "kokke/tiny-AES-c",
+  "qr_generator": "nayuki/QR-Code-generator",
+  "local_modifications": [
+    "quirc: signedness/unused-parameter/enum-bound warning fixes",
+    "qrcodegen: portable unsigned enum assertions for ARM GCC"
+  ],
+  "third_party_assets_vendored": false
+}

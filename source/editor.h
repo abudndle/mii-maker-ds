@@ -12,9 +12,11 @@ typedef struct {
 } MdsEditor;
 typedef int (*MdsPersist)(MdsGallery *,void *);
 void mds_editor_begin(MdsEditor *,MdsGallery *);
+int mds_editor_locked(const MdsAvatar *);
 int mds_editor_dirty(const MdsEditor *);
 int mds_editor_request(MdsEditor *,MdsEditAction);
 int mds_editor_confirm(MdsEditor *,int,MdsPersist,void *);
+int mds_editor_import(MdsEditor *,const MdsAvatar *,MdsPersist,void *);
 int mds_editor_copy(MdsEditor *,MdsPersist,void *);
 int mds_editor_save(MdsEditor *,MdsPersist,void *);
 #endif

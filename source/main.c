@@ -5,10 +5,13 @@
 #include "ui.h"
 #include "camera_ds.h"
 #include "menu.h"
+#include "qr_scan.h"
 static MdsGallery gallery;
 static MdsEditor editor;
 static int save_ready;
 static MdsProfile profile;
+static MdsImport importer;
+static int qr_select_image;
 static int screen=MDS_SCREEN_HOME;
 static volatile uint32_t animation_vblanks;
 typedef struct {int down,repeat,held;touchPosition touch;} MdsInput;
@@ -38,7 +41,7 @@ int main(void)
 {
     powerOn(POWER_ALL_2D);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
-    int camera_open=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
+    int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
     unsigned page=0,drawn_page=99;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     const char *notice="",*drawn_notice=NULL;
@@ -48,9 +51,16 @@ int main(void)
         if(camera_open){
             if(down&KEY_B){mds_camera_close();camera_open=0;mds_ui_restore_top();drawn_screen=-1;}
             else{
-                if(down&KEY_A)mds_camera_freeze();
+                if(down&KEY_A){
+                    if(camera_qr){
+                        MdsMiiRecord received;
+                        if(mds_qr_scan_rgb555(&received,mds_camera_frame(),256,192)){
+                            if(mds_editor_import(&editor,&received.avatar,persist,NULL)){mds_camera_close();camera_open=0;mds_ui_restore_top();screen=MDS_SCREEN_GALLERY;page=editor.slot/10;drawn_screen=-1;}
+                        }else editor.status="No valid Mii QR found. Try again.";
+                    }else mds_camera_freeze();
+                }
                 if(down&KEY_X)mds_camera_switch();
-                camera_open=mds_camera_update();mds_ui_camera(mds_camera_frame());mds_ui_present_top();editor.status=mds_camera_status();
+                if(camera_open){camera_open=mds_camera_update();mds_ui_camera(mds_camera_frame());if(!camera_qr)editor.status=mds_camera_status();mds_ui_camera_notice(editor.status);mds_ui_present_top();}
             }
         }else if(editor.pending){
             int response=-1;
@@ -67,17 +77,52 @@ int main(void)
                 unsigned free_slot=0;while(free_slot<100&&gallery.used[free_slot])free_slot++;
                 if(free_slot==100)notice="All 100 Mii slots are occupied";
                 else{editor.slot=free_slot;mds_editor_request(&editor,MDS_EDIT_NEW);editor.field=2;
-                    unsigned count=0;for(unsigned i=0;i<100;i++)count+=gallery.used[i];if(!count)editor.draft.value[51]=1;
+                    unsigned personal=0;for(unsigned i=0;i<100;i++)if(gallery.used[i])personal+=gallery.miis[i].value[51];if(!personal){editor.draft.value[51]=1;editor.draft.value[46]=1;}
                     mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);screen=MDS_SCREEN_GENDER;notice="";}
-            }else if(action==MDS_HOME_TRANSFER)notice="Wireless transfers are not implemented";
-            else if(action==MDS_HOME_QR)notice="QR functions are not implemented";
+            }else if(action==MDS_HOME_TRANSFER){mds_ui_import_open(&importer);screen=MDS_SCREEN_IMPORT;}
+            else if(action==MDS_HOME_QR){screen=MDS_SCREEN_QR;qr_select_image=0;mds_ui_qr_reset();notice="L/R: choose a saved Mii";if(!gallery.used[editor.slot]){for(unsigned i=0;i<100;i++)if(gallery.used[i]){editor.slot=i;break;}}}
             else if(action==MDS_HOME_HELP)notice="Choose View or Create. B returns here.";
             if(down&KEY_B)notice="";
+        }else if(screen==MDS_SCREEN_QR){
+            int action=0;
+            if(down&KEY_B){if(qr_select_image){qr_select_image=0;drawn_screen=-1;}else screen=MDS_SCREEN_HOME;}
+            if(down&(KEY_L|KEY_R)){unsigned candidate=editor.slot;for(unsigned i=0;i<100;i++){candidate=(candidate+(down&KEY_L?99:1))%100;if(gallery.used[candidate]){editor.slot=candidate;break;}}mds_ui_qr_reset();drawn_screen=-1;}
+            if(down&KEY_A)action=qr_select_image?2:1;
+            if(down&KEY_Y)action=2;
+            if(down&KEY_SELECT)action=3;
+            if((down&KEY_X)&&isDSiMode())action=4;
+            if(down&KEY_TOUCH){int x=input.touch.px,y=input.touch.py;action=mds_ui_qr_touch(x,y,qr_select_image,isDSiMode());if(y>=168){if(qr_select_image)qr_select_image=0;else screen=MDS_SCREEN_HOME;drawn_screen=-1;}}
+            if(action==2&&!qr_select_image){qr_select_image=1;action=0;drawn_screen=-1;}
+
+            if(action==4){camera_qr=1;camera_open=mds_camera_open();editor.status=camera_open?"A: Scan Mii QR / X: Camera / B: Back":mds_camera_status();notice=editor.status;}
+            else if(action){notice=mds_ui_qr_export(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,editor.slot,action);drawn_screen=-1;}
+        }else if(screen==MDS_SCREEN_IMPORT){
+            int action=0;
+            if(k&KEY_UP){mds_import_step(&importer,-1);drawn_screen=-1;}
+            if(k&KEY_DOWN){mds_import_step(&importer,1);drawn_screen=-1;}
+            if(down&KEY_B)action=1;
+            if(down&KEY_A)action=2;
+            if(down&KEY_X)action=3;
+            if(down&KEY_TOUCH){
+                int x=input.touch.px,y=input.touch.py;
+                if(y>=168)action=x<126?1:2;
+                else if(x>=184&&y<26)action=3;
+                else if(x>=16&&x<240&&y>=32&&y<147){unsigned slot=importer.selected/5*5+(unsigned)(y-32)/23;if(slot<importer.count)mds_import_select(&importer,slot);}
+                drawn_screen=-1;
+            }
+            if(action==1)screen=MDS_SCREEN_HOME;
+            if(action==3){mds_ui_import_open(&importer);drawn_screen=-1;}
+            if(action==2){
+                if(!importer.valid)importer.status="Choose a valid Mii file first.";
+                else if(mds_editor_import(&editor,&importer.record.avatar,persist,NULL)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;}
+                else importer.status=editor.status;
+                drawn_screen=-1;
+            }
         }else if(screen==MDS_SCREEN_GALLERY){
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
             if(down&(KEY_L|KEY_R)){page=(page+(down&KEY_L?9:1))%10;editor.slot=page*10;mds_editor_request(&editor,MDS_EDIT_RELOAD);}
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;int slot=mds_gallery_touch(t.px,t.py,page);if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);}}
-            if(down&KEY_A){if(gallery.used[editor.slot]){mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;}else editor.status="Choose a saved Mii to edit";}
+            if(down&KEY_A){if(gallery.used[editor.slot]&&!mds_editor_locked(&gallery.miis[editor.slot])){mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;}else editor.status=gallery.used[editor.slot]?"This received Mii cannot be edited.":"Choose a saved Mii to edit";}
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             if(down&KEY_SELECT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
@@ -116,12 +161,13 @@ int main(void)
             if(down&KEY_START){mds_ui_info(&editor.draft,editor.slot,editor.field,"Saving...",mds_editor_dirty(&editor));mds_editor_save(&editor,persist,NULL);}
             if(down&KEY_SELECT){mds_profile_begin(&profile);screen=MDS_SCREEN_PROFILE;}
             if((input.held&KEY_B)&&(down&KEY_Y))mds_editor_request(&editor,MDS_EDIT_DELETE);
-            else if(down&KEY_Y){camera_open=mds_camera_open();editor.status=mds_camera_status();}
+            else if(down&KEY_Y){camera_qr=0;camera_open=mds_camera_open();editor.status=mds_camera_status();}
             if((down&KEY_B)&&!(input.held&KEY_Y)){
                 mds_editor_request(&editor,MDS_EDIT_RELOAD);
                 if(editor.pending)return_home=1;else screen=MDS_SCREEN_HOME;
             }
         }
+        if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
             else if(mds_ui_slider_move(&editor.draft,live_touch_x)){slider_changed=animation_vblanks;slider_preview_pending=1;drawn_screen=-1;}
@@ -134,6 +180,8 @@ int main(void)
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
+            else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
+            else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);
             else if(screen==MDS_SCREEN_PROFILE){mds_ui_profile(&profile,&editor.draft);mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}

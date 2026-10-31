@@ -23,10 +23,11 @@ scenes=[
  ('Face rendering',['CFL_Res.dat'],'source/cfl_resource.c; source/head.c','original CFL heads plus original male/female CGFX body meshes and sampled original Wait00 idle poses; software camera/lighting and body proportions remain provisional; other animations and exact timing incomplete'),
  ('Body geometry and skeleton',['MaleBody.bcmdl','FemaleBody.bcmdl','MiiAnim/Wait00.bcskla'],'tools/body_models.py; source/head.c; source/ui.c','original indexed rigid meshes, bone palettes, SRT hierarchy and sampled idle poses mapped; body-models.json records offsets/attributes; body proportion coefficients provisional'),
  ('Image export',[],'source/image.c; source/ui.c; source/main.c','gallery SELECT: private BMP adaptation to DS/DSi SD filesystem; sharing permission and no-overwrite policy; physical writes untested'),
+ ('Mii file import',[],'source/exchange.c; source/mii_codec.c; source/editor.c; source/main.c','standard 96-byte CFSD/FFSD file decoding and transactional import; received copy-disabled Miis are read-only'),
  ('Saving',[],'source/save_nds.c; source/save_compact.c; source/save.c','100-slot private DS format; new 8 KiB snapshot; retained 64 KiB legacy support; not Nintendo Mii serialization'),
  ('Camera',['Camera'],'source/camera_ds.c','DSi-only controller, hardware untested; not photo recognition'),
  ('Send/Receive',['Network','Wireless'],'source/main.c','explicit unavailable notice; no transport implemented'),
- ('QR/Image',['QR/QREncode'],'source/main.c','explicit unavailable notice; no codec/export implemented'),
+ ('QR/Image',['QR/QREncode','QR/BtnQR','Dialog/DialogPhotoSelect'],'source/mii_codec.c; source/mii_qr.c; source/qr_scan.c; source/qr_photo.c; source/main.c; source/ui.c','original QR/menu data, authenticated payload, PNG export and DSi-only scanner path; physical camera/SD/stock-device checks pending'),
 ]
 layout_runtime={}
 for title,layouts,source,state in scenes:
@@ -47,7 +48,8 @@ for i,(name,maximum,initial) in enumerate(fields):
     if i==0:status='original male/female CGFX body selection; original CFL head attributes independent'
     if i in [43,44]:status='live original body slider/knob and decoded body geometry; proportion coefficients provisional'
     if i==45:status='favorite-color metadata, cap tint and original body recoloring'
-    if i>=52:status='legacy temporary character-input field retained in save ABI; names use separate validated touch keyboard'
+    if i>=52:status='legacy temporary input field; names use validated touch keyboard'
+    if i==61:status='persistent received/special status, migrated from obsolete legacy creator-input byte'
     fieldmap.append(dict(ds_field=i,name=name,maximum=int(maximum),initial=int(initial),state=status))
 assets=[dict(path=str(p.relative_to(ROOT)),bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in sorted((ROOT/'nitrofiles').rglob('*')) if p.is_file()]
 result=dict(original_product=original['product'],original_rom_sha256=original['input_sha256'],original_executable='assets/exefs/code-decompressed.bin',original_source_available=False,code_evidence_notice='String locations are binary offsets, not identified functions or proof of implemented behavior. 3DS ARM11/PICA/OS code is not executed on the DS.',code_string_locations={s:refs(s) for s in ['CFL_Res.dat','PlazaTop','SelectMii','EditorCommon','QREncode','EditHair']},scenes=[dict(name=t,original_layouts=l,ds_source=s,status=st) for t,l,s,st in scenes],layouts=layouts,fields=fieldmap,runtime_assets=assets,coordinate_mapping=dict(bottom_screen='320x240 -> 256x192; x/y * 0.8, generated hitboxes',top_screen='400x240 -> 256x192; x * 0.64, y * 0.8',head='128x128 resource preview with original body, skeleton/head anchor and sampled original Wait00 idle poses; camera/lighting/proportion coefficients provisional'))

@@ -9,7 +9,7 @@ GAME_AUTHOR := Independent demake
 SOURCEDIRS := source
 NITROFSDIR := nitrofiles
 LIBS := -lnds9 -lm
-CFLAGS := -Wextra -Werror
+CFLAGS := -Wextra -Werror $(EXTRA_CFLAGS)
 ifeq ($(SDK_STAGE),1)
 include $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile
 NDSTOOL_ARGS += -g MDSD
@@ -22,7 +22,7 @@ else
 .PHONY: all $(NAME).nds clean dump
 all: $(NAME).nds
 $(NAME).nds:
-	python3 tools/check_assets.py
+	python3 tools/check_assets.py $(if $(findstring MDS_IMPORT_TEST_FILES,$(EXTRA_CFLAGS)),--allow-test-import,)
 	+$(MAKE) SDK_STAGE=1 $(NAME).nds
 	python3 tools/fix_nds_regions.py $@
 clean dump:

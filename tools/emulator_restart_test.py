@@ -112,8 +112,8 @@ pressed={8};run(3);pressed=set();run(90)
 assert int.from_bytes(mem('screen',4),'little')==0
 capture('emulator-home-return')
 pointer=(100,120);run(3);pointer=None;run(90)
-assert int.from_bytes(mem('screen',4),'little')==0
-capture('emulator-transfer-unavailable')
+assert int.from_bytes(mem('screen',4),'little')==6
+capture('emulator-import-no-sd')
 print('PASS: original home/gallery/editor routes and protected Back navigation',flush=True)
 
 core.retro_unload_game();core.retro_deinit()

@@ -1,6 +1,7 @@
 /* Independent DS preview renderer. Uses supplied CFL geometry and native tiled
  * textures; software lighting and orthographic projection are provisional. */
 #include "head.h"
+#include "status.h"
 #include <string.h>
 #include <math.h>
 #include <limits.h>
@@ -230,7 +231,7 @@ int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size
    for(unsigned j=0;j<3;j++){
     const uint8_t*p=source+(i+j)*12;int64_t x=(int64_t)signed16(p)*width,y=(int64_t)signed16(p+2)*height,z=(int64_t)signed16(p+4)*width;
     unsigned material=p[9],bone=p[10];
-    if(material==1)color=dark;
+    if(material==1)color=mds_pants_color(m);
     else if(bone==6||bone==9)color=skins[m->value[1]];
     tri[j]=(Vertex){(int)(((int64_t)64*549755813888+x*projection)/549755813888),(int)(((int64_t)offset*8388608-y*projection)/549755813888),(int)(z/65536),0,0,clamp(225+(int)(int8_t)p[8]*20/127+(int)(int8_t)p[7]*10/127,255)};
    }

@@ -20,5 +20,6 @@ int main(void){
  assert(!mds_profile_favorite(&a,10)&&a.value[46]==0);assert(mds_profile_favorite(&a,9)&&a.value[46]==1);assert(mds_profile_favorite(&a,10)&&a.value[46]==0);
  assert(!strcmp(mds_profile_hit(7,128,87),"B_BtnCommon_00"));assert(!strcmp(mds_profile_hit(7,128,127),"B_BtnCommon_01"));
  assert(!strcmp(mds_profile_hit(8,128,32),"B_Beard"));
+ a.value[61]=1;mds_profile_open(&p,&a,MDS_PROFILE_CREATOR);strcpy(p.text,"CODEX");assert(mds_profile_done(&p,&a)&&a.value[61]==1&&mds_valid(&a));
  puts("PASS: original profile bounds, keyboard limits/UTF-8/backspace/cancel, gender, birthday validation, permissions and favorite limit");
 }

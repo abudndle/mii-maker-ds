@@ -3,7 +3,14 @@
 #include "avatar.h"
 #include "save.h"
 #include "profile.h"
+#include "exchange.h"
 int mds_ui_init(void);
+void mds_ui_qr_reset(void);
+void mds_ui_qr(const MdsAvatar *,const char *,int,int);
+int mds_ui_qr_touch(int,int,int,int);
+const char *mds_ui_qr_export(const MdsAvatar *,unsigned,int);
+void mds_ui_import_open(MdsImport *);
+void mds_ui_import(const MdsImport *);
 void mds_ui_present_top(void);
 void mds_ui_set_render_clock(uint32_t (*)(void));
 void mds_ui_set_render_abort(int (*)(void));
@@ -22,6 +29,7 @@ void mds_ui_slider_release(void);
 int mds_ui_touch(MdsAvatar *a,int *field,int x,int y);
 void mds_ui_info(const MdsAvatar *,unsigned,int,const char *,int);
 void mds_ui_camera(const uint16_t *);
+void mds_ui_camera_notice(const char *);
 void mds_ui_restore_top(void);
 void mds_ui_home(int,const char *);
 void mds_ui_gallery(const MdsGallery *,unsigned,unsigned,const char *);

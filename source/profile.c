@@ -44,7 +44,7 @@ int mds_profile_done(MdsProfile*p,MdsAvatar*a)
  if(p->mode==MDS_PROFILE_NAME||p->mode==MDS_PROFILE_CREATOR){
   if(!mds_profile_name_valid(p->text,p->mode==MDS_PROFILE_CREATOR)){p->status="Please enter a nickname.";return 0;}
   int creator=p->mode==MDS_PROFILE_CREATOR;char *dest=creator?a->creator:a->name;memset(dest,0,MDS_NAME);memcpy(dest,p->text,strlen(p->text));
-  for(unsigned i=0;i<5;i++){unsigned c=(unsigned char)dest[i];a->value[(creator?57:52)+i]=(uint8_t)(c>=32&&c<=127?c-32:0);}
+  for(unsigned i=0;i<(creator?4u:5u);i++){unsigned c=(unsigned char)dest[i];a->value[(creator?57:52)+i]=(uint8_t)(c>=32&&c<=127?c-32:0);}
  }else if(p->mode==MDS_PROFILE_BIRTHDAY){
   if(!mds_profile_date_valid((unsigned)p->month,(unsigned)p->day)){p->status="Choose a valid birthday.";return 0;}
   a->value[49]=(uint8_t)p->month;a->value[50]=(uint8_t)p->day;
@@ -61,7 +61,8 @@ void mds_profile_date_step(MdsProfile*p,int month,int delta)
  if(month){p->month=(p->month-1+delta+12)%12+1;if(p->day>(int)days((unsigned)p->month))p->day=(int)days((unsigned)p->month);}
  else{int n=(int)days((unsigned)p->month);p->day=(p->day-1+delta+n)%n+1;}p->status="";
 }
-int mds_profile_favorite(MdsAvatar*a,unsigned other_favorites){if(!a->value[46]&&other_favorites>=10)return 0;a->value[46]^=1;return 1;}
+int mds_profile_favorite(MdsAvatar*a,unsigned other_favorites){
+ if(a->value[51]){a->value[46]=1;return 0;}if(!a->value[46]&&other_favorites>=10)return 0;a->value[46]^=1;return 1;}
 
 const char *mds_profile_hit(unsigned page,int x,int y)
 {
@@ -88,7 +89,7 @@ int mds_profile_touch(MdsProfile*p,MdsAvatar*a,int x,int y,unsigned favorites)
   else if(!strcmp(hit,"B_Birthday"))mode=MDS_PROFILE_BIRTHDAY;
   else if(!strcmp(hit,"B_Open"))mode=MDS_PROFILE_SHARING;
   else if(!strcmp(hit,"B_Admission"))mode=MDS_PROFILE_COPYING;
-  else if(!strcmp(hit,"B_Favorite")){if(!mds_profile_favorite(a,favorites))p->status="You can save up to ten favorites.";return 0;}
+  else if(!strcmp(hit,"B_Favorite")){if(a->value[51]){a->value[46]=1;p->status="Your Personal Mii is always a Favorite.";}else if(!mds_profile_favorite(a,favorites))p->status="You can save up to ten favorites.";return 0;}
   if(mode>=0){mds_profile_open(p,a,mode);return 0;}
  }else{
   unsigned page=p->mode==MDS_PROFILE_GENDER?1:p->mode==MDS_PROFILE_COLOR?4:p->mode==MDS_PROFILE_BIRTHDAY?3:p->mode==MDS_PROFILE_SHARING?5:6;

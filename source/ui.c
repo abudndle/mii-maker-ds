@@ -6,6 +6,10 @@
 #include "head.h"
 #include "animation.h"
 #include "image.h"
+#include "mii_qr.h"
+#include "qr_generated.h"
+#include "vendor/qr/qrcodegen.h"
+#include <time.h>
 #include <fat.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -88,7 +92,7 @@ static int preview(const MdsAvatar *a,int mode)
  const void*body=mode?mds_animation_pose(&animations[gender],animation_clock,&pose_index):NULL;
  size_t size=body?animations[gender].pose_bytes:body_sizes[gender];
  if(!body)body=body_bytes[gender];
- if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,46)||(mode&&preview_pose[mode]!=pose_index)){
+ if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,46)||a->value[46]!=head_avatars[mode].value[46]||a->value[51]!=head_avatars[mode].value[51]||a->value[61]!=head_avatars[mode].value[61]||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;
   int result=mode&&body?mds_mii_render(&cfl,a,body,size,render_pixels,mode==2):mds_head_render(&cfl,a,render_pixels);
   if(result<0){render_cancelled_count++;return preview_ready[mode];}
@@ -108,7 +112,7 @@ static void paint_head(uint16_t *dest,int x,int y,int w,int h)
 }
 const char *mds_ui_export_image(const MdsAvatar*a,unsigned slot)
 {
- if(!a||!a->value[47])return "Sharing is not allowed.";
+ if(!a)return "Choose a saved Mii first.";
  if(!preview(a,2)||memcmp(a->value,head_avatars[2].value,46))return "Mii image is unavailable.";
  if(!fatInitDefault())return "SD card is unavailable.";
  const char *drive=isDSiMode()?"sd:":"fat:";
@@ -231,6 +235,24 @@ static void text_at(uint16_t *dest,int x,int y,const char *text)
  }
 }
 static void label(int x,int y,const char *text){text_at(top,x,y,text);}
+static uint16_t status_pixels[2][32*32];
+static unsigned status_width[2],status_height[2];
+static int status_loaded;
+static void status_icon(uint16_t*dest,int x,int y,const MdsAvatar*a)
+{
+ if(!status_loaded){
+  status_loaded=1;const char*paths[]={"nitro:/art/StatusPersonal.bin","nitro:/art/StatusFavorite.bin"};
+  for(unsigned i=0;i<2;i++){
+   FILE*f=fopen(paths[i],"rb");if(!f)continue;uint8_t h[4];
+   if(fread(h,1,4,f)==4){unsigned w=h[0]|h[1]<<8,ht=h[2]|h[3]<<8;if(w&&ht&&w<=32&&ht<=32&&fread(status_pixels[i],2,w*ht,f)==w*ht){status_width[i]=w;status_height[i]=ht;}}
+   fclose(f);
+  }
+ }
+ int icon=a->value[51]?0:a->value[46]?1:-1;if(icon<0)return;
+ for(unsigned j=0;j<status_height[icon];j++)for(unsigned i=0;i<status_width[icon];i++){
+  uint16_t c=status_pixels[icon][j*status_width[icon]+i];int dx=x+(int)i,dy=y+(int)j;if((c&0x8000)&&dx>=0&&dx<256&&dy>=0&&dy<192)dest[dy*256+dx]=c;
+ }
+}
 static const char *display_status(const char *status)
 {
  if(!status||!status[0]||!strcmp(status,"Ready")||!strcmp(status,"New draft: START to store")||!strcmp(status,"New draft: START to save"))return "";
@@ -244,6 +266,7 @@ void mds_ui_info(const MdsAvatar *a,unsigned slot,int field,const char *status,i
     (void)slot;
     int mode=(field>=43&&field<=51)?2:1;
     if(preview(a,mode))paint_head(top,48,12,160,160);else label(42,86,"Face resource unavailable");
+    status_icon(top,7,7,a);
     char name[40];snprintf(name,sizeof name,"%.30s%s",a->name,dirty?" *":"");label((256-text_width(name))/2,3,name);
     const char *message=display_status(status);
     if(dirty&&status&&!strcmp(status,"ROM save written"))message="";
@@ -303,7 +326,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         unsigned slot=page*10+i;
         /* Original resource thumbnails; full original gallery labels are pending. */
         if(g->used[slot]&&preview(&g->miis[slot],0)){
-            const MdsMenuHit *r=&gallery_hits[i];paint_head(bottom,r->x,r->y-2,r->w,r->h);
+            const MdsMenuHit *r=&gallery_hits[i];paint_head(bottom,r->x,r->y-2,r->w,r->h);status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
         if(slot==selected)outline(&gallery_hits[i]);
     }
@@ -358,7 +381,7 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
   for(int row=0;row<4;row++){int n=(int)strlen(rows[row]),left=(256-n*24+2)/2;for(int col=0;col<n;col++){char str[2]={rows[row][col],0};if(!p->upper&&str[0]>='A'&&str[0]<='Z')str[0]+=32;button(left+col*24,50+row*23,22,21,str);}}
   button(8,144,48,20,p->upper?"ABC":"abc");button(60,144,104,20,"Space");button(168,144,80,20,"Backspace");
  }else if(p->mode==MDS_PROFILE_ROOT){
-  bitmap("nitro:/ui/profile.rgb555",bottom);center_bottom(80,23,a->name);center_bottom(203,23,a->value[46]?"Yes":"No");center_bottom(62,64,a->value[0]?"Female":"Male");center_bottom(199,64,a->value[47]?"Allow":"Don't Allow");center_bottom(199,105,a->value[48]?"Allow":"Don't Allow");
+  bitmap("nitro:/ui/profile.rgb555",bottom);center_bottom(80,23,a->name);if(a->value[51]||a->value[46])status_icon(bottom,194,18,a);else center_bottom(203,23,"No");center_bottom(62,64,a->value[0]?"Female":"Male");center_bottom(199,64,a->value[47]?"Allow":"Don't Allow");center_bottom(199,105,a->value[48]?"Allow":"Don't Allow");
   uint16_t color=RGB15(profile_colors[a->value[45]][0]>>3,profile_colors[a->value[45]][1]>>3,profile_colors[a->value[45]][2]>>3)|0x8000;for(int y=106;y<118;y++)for(int x=53;x<72;x++)bottom[y*256+x]=color;
   char date[16];if(a->value[49]&&a->value[50])snprintf(date,sizeof date,"%02u/%02u",a->value[49],a->value[50]);else strcpy(date,"--/--");center_bottom(52,146,date);center_bottom(175,146,a->creator);
  }else{
@@ -380,3 +403,90 @@ void mds_ui_gender(int create,int choice)
 void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
 int mds_ui_confirm_touch(int x,int y){const char *h=mds_profile_hit(7,x,y);if(!strcmp(h,"B_BtnCommon_00"))return 1;if(!strcmp(h,"B_BtnCommon_01"))return 0;return -1;}
+
+void mds_ui_import_open(MdsImport*b)
+{
+#ifdef MDS_IMPORT_TEST_FILES
+ mds_import_scan(b,"nitro:/test-import");return;
+#endif
+ mds_import_reset(b);
+ if(!fatInitDefault()){b->status="SD card is unavailable.";return;}
+ const char*drive=isDSiMode()?"sd:":"fat:";char path[96];
+ snprintf(path,sizeof path,"%s/MiiMaker",drive);
+ if(mkdir(path,0777)&&errno!=EEXIST){b->status="Could not open MiiMaker folder.";return;}
+ snprintf(path,sizeof path,"%s/MiiMaker/Import",drive);
+ if(mkdir(path,0777)&&errno!=EEXIST){b->status="Could not open Import folder.";return;}
+ mds_import_scan(b,path);
+}
+void mds_ui_import(const MdsImport*b)
+{
+ show_profile_hint=0;load_widgets();bitmap("nitro:/ui/import-bottom.rgb555",bottom);
+ center_bottom(96,7,"Import a Mii file");button(184,3,64,22,"Rescan");
+ unsigned first=b->selected/5*5;
+ for(unsigned i=0;i<5&&first+i<b->count;i++){
+  char name[32];snprintf(name,sizeof name,"%.27s",b->files[first+i]);button(16,32+i*23,224,21,name);
+  if(first+i==b->selected){MdsMenuHit r={.x=16,.y=32+(int)i*23,.w=224,.h=21};outline(&r);}
+ }
+ char count[40];snprintf(count,sizeof count,"%u / %u%s",b->count?b->selected+1:0,b->count,b->truncated?" (first 100)":"");center_bottom(128,149,count);
+ button(8,168,112,21,"Back");button(132,168,116,21,"Import");
+ if(b->valid)mds_ui_info(&b->record.avatar,0,45,b->status,0);
+ else{memcpy(top,top_backgrounds[0],sizeof top_canvas);label(16,78,b->status);label(16,101,"Folder: MiiMaker/Import");label(16,122,"96-byte .cfsd / .ffsd files");}
+}
+static uint8_t qr_matrix[MDS_QR_BUFFER];
+static int qr_matrix_valid;
+void mds_ui_qr_reset(void){qr_matrix_valid=0;}
+const char *mds_ui_qr_export(const MdsAvatar*a,unsigned slot,int kind)
+{
+ if(!a)return "Choose a saved Mii first.";
+ if(kind==1&&!a->value[47]){qr_matrix_valid=0;return "Sharing is not allowed.";}
+ if(kind==1&&(a->value[61]&2)){qr_matrix_valid=0;return "Special Mii QR export is unavailable.";}
+ if(kind==1){
+  MdsMiiRecord record;uint8_t encoded[MDS_PACKET],payload[112];
+  if(!mds_encode(a,encoded,sizeof encoded))return "Invalid Mii data.";
+  uint64_t serial=1469598103934665603ULL;for(unsigned k=0;k<sizeof encoded;k++)serial=(serial^encoded[k])*1099511628211ULL;
+  time_t now=time(NULL);uint32_t creation=now>1262304000?(uint32_t)((now-1262304000)/2):1;
+  if(!mds_cfs_create(&record,a,creation,serial)||!mds_mii_qr_encrypt(&record,payload)||!mds_mii_qr_matrix(payload,qr_matrix)){qr_matrix_valid=0;return "QR generation failed.";}
+  qr_matrix_valid=1;
+ }
+ int mode=kind==3?0:2;
+ if(!preview(a,mode)||memcmp(a->value,head_avatars[mode].value,46))return "Preview loading; try again.";
+ if(!fatInitDefault())return kind==1?"QR ready. SD card unavailable.":"SD card is unavailable.";
+ const char*drive=isDSiMode()?"sd:":"fat:";char directory[64],path[112];
+ snprintf(directory,sizeof directory,"%s/MiiMaker",drive);if(mkdir(directory,0777)&&errno!=EEXIST)return "Could not create photo folder.";
+ snprintf(directory,sizeof directory,"%s/MiiMaker/Photos",drive);if(mkdir(directory,0777)&&errno!=EEXIST)return "Could not create photo folder.";
+ const char*prefix=kind==1?"QR_Mii":kind==3?"Face_Mii":"Mii";int fd=-1;
+ for(unsigned i=0;i<10000;i++){
+  snprintf(path,sizeof path,"%s/%s%03u_%04u.png",directory,prefix,slot+1,i);fd=open(path,O_WRONLY|O_CREAT|O_EXCL,0666);
+  if(fd>=0)break;
+  if(errno!=EEXIST)return "Could not create photo file.";
+ }
+ if(fd<0)return "Photo filenames are occupied.";
+ FILE*f=fdopen(fd,"wb");if(!f){close(fd);remove(path);return "Could not open photo file.";}
+ int success=mds_mii_qr_photo(f,kind==1?qr_matrix:NULL,head_pixels);if(fflush(f))success=0;if(fclose(f))success=0;
+ if(!success){remove(path);return "Photo write failed.";}
+ return "PNG saved in MiiMaker/Photos.";
+}
+int mds_ui_qr_touch(int x,int y,int choose,int dsi)
+{
+ for(unsigned i=0;i<MDS_QR_HITS;i++){const MdsQrHit*h=&qr_hits[i];if(h->page==choose&&x>=h->x&&x<h->x+h->w&&y>=h->y&&y<h->y+h->h&&(h->action!=4||dsi))return h->action;}return 0;
+}
+void mds_ui_qr(const MdsAvatar*a,const char*status,int dsi,int choose)
+{
+ load_widgets();show_profile_hint=0;bitmap(choose?"nitro:/ui/photo-select.rgb555":dsi?"nitro:/ui/qr-menu-dsi.rgb555":"nitro:/ui/qr-menu-ds.rgb555",bottom);
+ button(8,168,240,21,"Back (B)");memcpy(top,top_backgrounds[0],sizeof top_canvas);
+ if(choose&&a){if(preview(a,0))paint_head(bottom,52,74,56,56);if(preview(a,2))paint_head(bottom,144,66,64,80);}
+ if(a){
+  if(preview(a,2))paint_head(top,qr_matrix_valid?2:48,qr_matrix_valid?31:12,qr_matrix_valid?112:160,qr_matrix_valid?140:160);
+  label((256-text_width(a->name))/2,3,a->name);status_icon(top,7,7,a);
+  if(qr_matrix_valid)for(int y=0;y<130;y++)for(int x=0;x<130;x++){
+   int qx=x/2-4,qy=y/2-4;int black=qx>=0&&qx<57&&qy>=0&&qy<57&&qrcodegen_getModule(qr_matrix,qx,qy);
+   top[(31+y)*256+122+x]=black?0x8000:0xffff;
+  }
+ }else label(52,83,"Choose or create a Mii first.");
+ if(status&&status[0])label((256-text_width(status))/2,177,status);
+}
+void mds_ui_camera_notice(const char*message)
+{
+ for(unsigned i=176*256;i<192*256;i++)top[i]=0xffff;
+ if(message)label(3,177,message);
+}

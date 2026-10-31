@@ -14,13 +14,15 @@ Requirements retained: original 3DS look and feature choices, DS/DS Lite operati
 | Draft protection | Discard/delete confirmation; transaction rollback on failed persistence | Original touch confirmation art implemented; remaining modal transitions incomplete |
 | DSi camera | Compiled DSi-only preview/freeze/switch controller; DS camera gate tested | DSi sensor testing, full-resolution capture and accurate original camera UI |
 | Photo-to-Mii | Original resources and recognition data retained | Recognition engine and feature mapping; preview is not automatic Mii creation |
-| QR generation/scan | Original assets/messages retained | Nintendo Mii codec and encryption, QR encoder/decoder, image/camera input and permission handling |
-| Image export | Gallery SELECT writes a 128×128 BMP to MiiMaker/Images; sharing policy, unique names and error cleanup; encoder and missing-SD route tested | Actual SD/flashcart write verification; original JPEG/image UI |
+| QR generation/scan | Standard 96-byte codec, 3DS authenticated envelope, version-10-H QR, original menu and face/body chooser, PNG photo export, portable camera-sized scanner; independent AES/ZXing and native-screen checks | Physical DSi sensor/SD and stock 3DS/Wii U checks; broader QR variants and special-record re-export |
+| Image export | QR, full-Mii and face 400×240 PNG photos in MiiMaker/Photos; original selector; gallery BMP retained; unique names/error cleanup | Physical SD/flashcart writes, original JPEG and native DSi Camera album integration |
 | DS ↔ DS communication | Original communication scenes/code extracted as reference | Discovery, transport, verified payload format, errors and two-system tests |
-| DS ↔ 3DS communication | Target only | Stock compatibility investigation or explicit companion endpoint; hardware tests |
+| DS ↔ 3DS communication | QR/data format implemented; direct wireless target only | Stock compatibility investigation or explicit companion endpoint; hardware tests |
 | Wii Mii Channel import | Original DS messages and communication overlays identified | Discovery parameters, association, payload/ack handling, data conversion and stock Wii test |
+| DS → Wii U | Stock Mii Maker Connect to Nintendo 3DS is the requested target | Native protocol implementation and stock-device tests; not provided by a QR or file conversion alone |
 | Sending to Wii | Requested target | Determine stock receiver capability and supported downgrade behavior; may require a Wii companion; receive/send labels are not evidence of stock two-way support |
-| Copy/sharing/favorite settings | Original profile controls; local copy permission, ten-favorite limit, Personal protection and copy flag reset tested | Enforcement on future import/transfer/export paths; those paths do not exist yet |
+| Copy/sharing/favorite settings | Standard file/QR imports preserve policy; copy-disabled received Miis remain read-only; Personal/Favorite icons and status persist; copy and QR permission checks | Future wireless-policy enforcement, full original identity retention in the compact gallery |
+| Standard Mii files | CFSD/FFSD import browser, strict CRC/UTF-16/date/range checks and transactional persistence | Complete raw hardware-identity retention in the private gallery; wider format conversions |
 | Sound/effects | Original sound archive and effects retained | Conversion, playback and event timing |
 | System behavior | Basic runtime; DSi camera gate | Full lid/suspend/resume, exit, save recovery UX and device-specific error handling |
 
