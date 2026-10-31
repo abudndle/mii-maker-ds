@@ -204,16 +204,19 @@ static int render_head(const MdsCflArchive*a,const MdsAvatar*m,uint16_t*out)
 
 static int16_t signed16(const uint8_t *p){unsigned v=le16(p);return (int16_t)(v>=32768?(int)v-65536:(int)v);}
 static uint32_t word32(const uint8_t *p){return p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;}
+static int32_t signed32(const uint8_t*p){uint32_t v=word32(p);return v<=INT32_MAX?(int32_t)v:-1-(int32_t)(UINT32_MAX-v);}
 int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size_t size,uint16_t*out,int full)
 {
  if(!a||!m||!out||!mds_valid(m))return 0;
  body_model=NULL;render_cancelled=0;
- unsigned count=0;
+ unsigned count=0,stride=12,normal_offset=6;
  if(bytes){
   const uint8_t*p=bytes;
-  if(size<56||memcmp(p,"BOD2",4))return 0;
-  count=word32(p+4);if(count>12000||count%3||size!=56+(size_t)count*12)return 0;
-  float mat[12];memcpy(mat,p+8,48);for(unsigned k=0;k<12;k++)if(!isfinite(mat[k])||fabsf(mat[k])>200)return 0;
+  if(size<56)return 0;
+  if(!memcmp(p,"BOD3",4)){stride=18;normal_offset=12;}else if(memcmp(p,"BOD2",4))return 0;
+  count=word32(p+4);if(count>12000||count%3||size!=56+(size_t)count*stride)return 0;
+  float mat[12];memcpy(mat,p+8,48);for(unsigned k=0;k<12;k++)if(!isfinite(mat[k])||fabsf(mat[k])>4096)return 0;
+  if(stride==18)for(unsigned i=0;i<count;i++)for(unsigned k=0;k<3;k++){int32_t v=signed32(p+56+i*18+k*4);if(v< -524288||v>524288)return 0;}
   body_model=p;
  }
  body_height=.85f+(m->value[43]/127.f)*.3f;
@@ -229,11 +232,11 @@ int mds_mii_render(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes,size
    if(!(i%48)&&cancelled()){body_model=NULL;return -1;}
    Vertex tri[3];const uint8_t*color=shirts[m->value[45]];
    for(unsigned j=0;j<3;j++){
-    const uint8_t*p=source+(i+j)*12;int64_t x=(int64_t)signed16(p)*width,y=(int64_t)signed16(p+2)*height,z=(int64_t)signed16(p+4)*width;
-    unsigned material=p[9],bone=p[10];
+    const uint8_t*p=source+(i+j)*stride;int64_t x=(int64_t)(stride==18?signed32(p):signed16(p))*width,y=(int64_t)(stride==18?signed32(p+4):signed16(p+2))*height,z=(int64_t)(stride==18?signed32(p+8):signed16(p+4))*width;
+    unsigned material=p[normal_offset+3],bone=p[normal_offset+4];
     if(material==1)color=mds_pants_color(m);
     else if(bone==6||bone==9)color=skins[m->value[1]];
-    tri[j]=(Vertex){(int)(((int64_t)64*549755813888+x*projection)/549755813888),(int)(((int64_t)offset*8388608-y*projection)/549755813888),(int)(z/65536),0,0,clamp(225+(int)(int8_t)p[8]*20/127+(int)(int8_t)p[7]*10/127,255)};
+    tri[j]=(Vertex){(int)(((int64_t)64*549755813888+x*projection)/549755813888),(int)(((int64_t)offset*8388608-y*projection)/549755813888),(int)(z/65536),0,0,clamp(225+(int)(int8_t)p[normal_offset+2]*20/127+(int)(int8_t)p[normal_offset+1]*10/127,255)};
    }
    triangle(tri[0],tri[1],tri[2],color,0,NULL,out);
   }

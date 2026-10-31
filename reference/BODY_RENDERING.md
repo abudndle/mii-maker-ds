@@ -12,7 +12,7 @@ Format observations were cross-checked against the primary implementation https:
 |---|---|---|
 | Shape indices, triangle indices, position/normal attributes | `tools/body_models.py` emits original triangles and posed normals; `source/head.c` rasterizes them | DS RGB555 output and software rasterization |
 | Submesh bone indices and rigid skinning | Original palette resolves each vertex to the original skeleton bone | These supplied body meshes use rigid skinning; the converter rejects smooth skinning |
-| Bone scale/rotation/translation and parent indices | Parent-composed SRT matrices with original `Wait00` frame-zero channels | 24 sampled original idle poses, original Hermite curves decoded; other animations and exact original timing pending |
+| Bone scale/rotation/translation and parent indices | Parent-composed SRT matrices with original `Wait00` frame-zero channels | All 53 source clips decoded at integer source frames into streamed bone transforms; remaining scene choreography and exact source timing pending |
 | Original head-bone matrix | CFL mesh placement uses the source attachment transform | Camera and lighting remain provisional |
 | Body material index and hand-bone assignment | Favorite-color clothing, skin-colored hands and dark trousers | Full original GPU material/shader evaluation is not implemented |
 | Height/build fields and `B_BgSlide_00/01` | Slider values change body geometry and original knob positions | Body proportion coefficients are provisional DS mappings, not a recovered original function |

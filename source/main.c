@@ -176,6 +176,7 @@ int main(void)
         if(!defer_preview&&slider_preview_pending){drawn_screen=-1;slider_preview_pending=0;}
         swiWaitForVBlank();
         int animate=0;
+        mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);

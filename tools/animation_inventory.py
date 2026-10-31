@@ -4,7 +4,7 @@ from body_models import ROOT,Reader,pose_data
 import json,hashlib,math
 records=[]
 for p in sorted((ROOT/'assets/decoded/models/MiiAnim.arc.files').glob('*.bcskla')):
- r=Reader(p);at=r.data.index(b'CANM');last=r.f(at+20);record={'source':str(p.relative_to(ROOT)),'sha256':hashlib.sha256(r.data).hexdigest(),'last_frame':last,'source_flags':r.u(at+16),'runtime_state':'Wait00 source-pose playback' if p.stem=='Wait00' else 'original asset retained; full scene binding not implemented'}
+ r=Reader(p);at=r.data.index(b'CANM');last=r.f(at+20);record={'source':str(p.relative_to(ROOT)),'sha256':hashlib.sha256(r.data).hexdigest(),'last_frame':last,'source_flags':r.u(at+16),'runtime_state':'streamed full-source-frame playback; gallery idle binding' if p.stem in ('Wait00','Wait01','Wait02','Wait03Pre','Wait03','Wait04') else 'streamed full-source-frame playback available; original scene/event binding not implemented'}
  try:
   samples=[]
   for frame in [0,last/2,last]:

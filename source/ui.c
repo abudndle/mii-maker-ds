@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "head.h"
 #include "animation.h"
+#include "motion.h"
 #include "image.h"
 #include "mii_qr.h"
 #include "qr_generated.h"
@@ -44,6 +45,12 @@ static MdsAnimation animations[2];
 static unsigned animation_index,preview_pose[3];
 static uint32_t animation_clock;
 static unsigned rendered_animation_frames;
+static MdsMotion motions[2];
+static unsigned motion_clip,motion_frame,motion_scene;
+static uint32_t motion_started;
+static uint8_t motion_pose_bytes[2][56+1440*18];
+static unsigned motion_cached_key[2];
+static int motion_cached[2];
 static uint32_t (*render_clock)(void);
 static uint32_t render_ticks,render_completed,render_cancelled_count;
 static void load_bodies(void)
@@ -58,8 +65,15 @@ static void load_bodies(void)
 }
 static void load_animations(void)
 {
+ const char *packs[]={"nitro:/models/MaleBody.msp","nitro:/models/FemaleBody.msp"};
+ for(unsigned i=0;i<2;i++){
+  FILE*f=fopen(packs[i],"rb");
+  if(f&&!mds_motion_open(&motions[i],f))fclose(f);
+ }
+ /* Keep the older sampled files as a fallback for older resource bundles. */
  const char *paths[]={"nitro:/models/MaleBody.ani","nitro:/models/FemaleBody.ani"};
  for(unsigned i=0;i<2;i++){
+  if(motions[i].file)continue;
   FILE*f=fopen(paths[i],"rb");if(!f)continue;
   if(fseek(f,0,SEEK_END)){fclose(f);continue;}long n=ftell(f);rewind(f);
   if(n>=24&&n<=1024*1024){
@@ -69,9 +83,31 @@ static void load_animations(void)
   fclose(f);
  }
 }
+void mds_ui_motion_scene(int gallery)
+{
+ unsigned scene=gallery!=0;
+ if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;animation_index=UINT32_MAX;}
+}
 int mds_ui_animation_tick(uint32_t ticks)
 {
  animation_clock=ticks;
+ if(motions[0].file){
+  static const char*const idle[]={"Wait00","Wait01","Wait02","Wait03Pre","Wait03","Wait04"};
+  unsigned elapsed=ticks-motion_started,key=0;
+  int clip=mds_motion_find(&motions[0],"Wait00");
+  if(motion_scene){
+   unsigned total=0;
+   for(unsigned i=0;i<6;i++){int c=mds_motion_find(&motions[0],idle[i]);if(c>=0)total+=motions[0].clips[c].count*2;}
+   if(total)elapsed%=total;
+   for(unsigned i=0;i<6;i++){
+    int c=mds_motion_find(&motions[0],idle[i]);if(c<0)continue;
+    unsigned duration=motions[0].clips[c].count*2;
+    if(elapsed<duration){clip=c;break;}elapsed-=duration;
+   }
+  }
+  if(clip>=0){motion_clip=(unsigned)clip;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
+  int changed=key!=animation_index;animation_index=key;return changed;
+ }
  unsigned index=0;mds_animation_pose(&animations[0],ticks,&index);
  int changed=index!=animation_index;animation_index=index;return changed;
 }
@@ -91,6 +127,14 @@ static int preview(const MdsAvatar *a,int mode)
  unsigned gender=a->value[0],pose_index=0;
  const void*body=mode?mds_animation_pose(&animations[gender],animation_clock,&pose_index):NULL;
  size_t size=body?animations[gender].pose_bytes:body_sizes[gender];
+ if(mode&&motions[gender].file&&body_sizes[gender]<=sizeof motion_pose_bytes[gender]){
+  unsigned key=motion_clip*7200+motion_frame;
+  if(!motion_cached[gender]||motion_cached_key[gender]!=key){
+   motion_cached[gender]=mds_motion_pose(&motions[gender],motion_clip,motion_frame,body_bytes[gender],body_sizes[gender],motion_pose_bytes[gender],sizeof motion_pose_bytes[gender]);
+   motion_cached_key[gender]=key;
+  }
+  if(motion_cached[gender]){body=motion_pose_bytes[gender];size=56+(body_sizes[gender]-56)/12*18;pose_index=key;}
+ }
  if(!body)body=body_bytes[gender];
  if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,46)||a->value[46]!=head_avatars[mode].value[46]||a->value[51]!=head_avatars[mode].value[51]||a->value[61]!=head_avatars[mode].value[61]||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;

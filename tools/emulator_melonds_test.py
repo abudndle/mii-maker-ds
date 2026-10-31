@@ -198,7 +198,8 @@ if args.sliders:
  capture('melonds-free-slider-drag')
  print('PASS: native continuous height/build dragging, intermediate values, capture outside track, endpoint clamp and release',flush=True)
 if args.animation:
- assert all(int.from_bytes(mem('animations',56)[i:i+4],'little') for i in [0,28]), 'Original animations did not load'
+ assert all(int.from_bytes(mem('motions',5136)[i:i+4],'little') for i in [0,2568]), 'Streamed original motion packs did not load'
+ assert all(int.from_bytes(mem('motions',5136)[i:i+4],'little')==53 for i in [4,2572]), 'Incomplete source motion inventory'
  pointer=(15,158);run(3);pointer=None;run(180)
  before=int.from_bytes(mem('rendered_animation_frames'),'little');snapshot=mem('editor',272)[4:130]
  frames=[];indices=set()
@@ -212,7 +213,19 @@ if args.animation:
  assert mem('editor',272)[4:130]==snapshot, 'Animation changed Mii data'
  assert len({im.crop((0,0,256,192)).tobytes() for im in frames})>8, 'No visible original pose motion'
  frames[0].save(OUTPUT/'melonds-original-idle.gif',save_all=True,append_images=frames[1:],duration=83,loop=0)
- print('PASS: native original idle playback, both animation resources loaded, visible pose changes, Mii data unchanged',flush=True)
+ print('PASS: native full-frame original idle playback, both 53-clip motion packs loaded, visible pose changes, Mii data unchanged',flush=True)
+ pressed={0};run(3);pressed=set();run(120)
+ pointer=(130,24);run(3);pointer=None;run(120)
+ assert int.from_bytes(mem('screen'),'little')==2, 'Gallery not opened'
+ clips=set();gallery_frames=[]
+ for i in range(300):
+  run(5);clips.add(int.from_bytes(mem('motion_clip'),'little'))
+  if i%15==0:
+   raw,w,h,pitch=frame;gallery_frames.append(Image.frombytes('RGB',(w,h),raw,'raw','BGRX',pitch))
+ assert len(clips)>=5, ('Idle variation playlist did not advance',clips)
+ capture('melonds-original-motion-gallery')
+ gallery_frames[0].save(OUTPUT/'melonds-original-motion-gallery.gif',save_all=True,append_images=gallery_frames[1:],duration=1250,loop=0)
+ print('PASS: native gallery advances through original idle variation clips',sorted(clips),flush=True)
 if not sram:
  # Older core flushes its own file after a wall-clock debounce.
  time.sleep(3.1);run(3)

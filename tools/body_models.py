@@ -52,7 +52,7 @@ def matrix(scale,rotation,translation):
  rz=np.array([[cz,-sz,0],[sz,cz,0],[0,0,1]])
  out=np.eye(4);out[:3,:3]=rz@ry@rx@np.diag(scale);out[:3,3]=translation;return out
 
-def extract(name,pose,write=True):
+def skeleton(name,pose):
  r=Reader(ROOT/'assets/decoded/models'/f'{name}.bcmdl')
  objs=[i-4 for i in range(4,len(r.data)-4) if r.data[i:i+4]==b'SOBJ']
  skeleton=next(p for p in objs if r.u(p)==0x02000000);bones={}
@@ -70,6 +70,12 @@ def extract(name,pose,write=True):
   if b['parent']>=0:m=bone_world(b['parent'])@m
   world[i]=m;return m
  for i in bones:bone_world(i)
+ return bones,world
+
+def extract(name,pose,write=True,wide=False):
+ r=Reader(ROOT/'assets/decoded/models'/f'{name}.bcmdl')
+ objs=[i-4 for i in range(4,len(r.data)-4) if r.data[i:i+4]==b'SOBJ']
+ bones,world=skeleton(name,pose)
  meshes=[p for p in objs if r.u(p)==0x01000000];shapes=[p for p in objs if r.u(p)==0x10000001]
  groups=[];flat=[]
  for mesh in meshes:
@@ -116,11 +122,11 @@ def extract(name,pose,write=True):
  out=ROOT/'nitrofiles/models';out.mkdir(parents=True,exist_ok=True)
  # Remove the original shadow-only material. Runtime supplies its own projected shadow.
  visible=[v for v in flat if v[6]!=2]
- binary=bytearray(struct.pack('<4sI12f',b'BOD2',len(visible),*world[10][:3,:].ravel()))
+ binary=bytearray(struct.pack('<4sI12f',b'BOD3' if wide else b'BOD2',len(visible),*world[10][:3,:].ravel()))
  for v in visible:
   coords=[round(c*128) for c in v[:3]]
-  if any(abs(c)>32767 for c in coords):raise ValueError('Body coordinate range')
-  binary+=struct.pack('<3h3bBBx',*coords,*[max(-127,min(127,round(c*127))) for c in v[3:6]],v[6],v[7])
+  if any(abs(c)>(524288 if wide else 32767) for c in coords):raise ValueError('Body coordinate range')
+  binary+=struct.pack('<3i3bBBx' if wide else '<3h3bBBx',*coords,*[max(-127,min(127,round(c*127))) for c in v[3:6]],v[6],v[7])
  if write:(out/(name+'.bin')).write_bytes(binary)
  else:return bytes(binary)
  mins=np.min(np.array(visible)[:,:3],axis=0).tolist();maxs=np.max(np.array(visible)[:,:3],axis=0).tolist()

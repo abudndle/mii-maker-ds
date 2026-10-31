@@ -6,7 +6,7 @@ The original compiled ARM11 executable is evidence, not recovered Nintendo C/C++
 |---|---|---|
 | CFL_Res.dat meshes, anchors, masks and feature textures | cfl_resource.c, head.c | Real original geometry/textures; software camera/materials remain provisional |
 | MaleBody/FemaleBody rigid meshes and skeleton | body_models.py, head.c | Original triangle/palette/bone streams and head attachment; body proportion coefficients incomplete |
-| MiiAnim.arc, Wait00 | animation_curves.py, body_animation.py, animation.c | 24 sampled source poses per gender; remaining original clips retained locally but not all played |
+| MiiAnim.arc, all 53 clips | animation_curves.py, motion_pack.py, motion.c | All 12,164 gender/source frames supported via streamed bone transforms; six idle clips bound; remaining original scene/event choreography incomplete |
 | PlazaTop / SelectMii / EDITSelectBase | menu.c, ui.c, menu_assets.py | Original menu/gallery art and bounds; animated plaza/sorting incomplete |
 | Thirteen original editor pages | layouts.py, ui_hitboxes.py, ui.c | Icons, transform/reset controls, colors and captured sliders |
 | Editor/Profile and original gender/date/permission dialogs | profile.c, profile_assets.py | Names/profile controls, original numeral font and dialog hits |

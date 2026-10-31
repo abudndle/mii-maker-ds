@@ -16,6 +16,7 @@ void mds_ui_set_render_clock(uint32_t (*)(void));
 void mds_ui_set_render_abort(int (*)(void));
 const char *mds_ui_export_image(const MdsAvatar *,unsigned);
 int mds_ui_animation_tick(uint32_t);
+void mds_ui_motion_scene(int);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
