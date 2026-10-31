@@ -4,6 +4,7 @@ import argparse
 import math
 import struct
 import sys
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,16 +90,21 @@ def compare_rig_catalogs(male, female):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
+    parser.add_argument("--asset-zip", type=Path,
+                        help="validate original motion packs directly from a private resource ZIP")
     parser.add_argument("--source-only", action="store_true",
                         help="validate source motion assets before compiling a ROM")
     args = parser.parse_args()
     try:
+        if args.asset_zip and not args.source_only:
+            parser.error("--asset-zip requires --source-only")
+        archive = zipfile.ZipFile(args.asset_zip) if args.asset_zip else None
         rom = args.rom.read_bytes() if not args.source_only else None
         files = check(rom, with_ranges=True) if rom is not None else None
         source_packs = {}
         for gender in ("Male", "Female"):
             name = f"models/{gender}Body.msp"
-            source = (ROOT / "nitrofiles" / name).read_bytes()
+            source = archive.read("nitrofiles/" + name) if archive else (ROOT / "nitrofiles" / name).read_bytes()
             count = validate(source, name)
             source_packs[gender] = source
             ensure_gallery_clips(source, name)
@@ -110,7 +116,7 @@ def main():
             print(f"PASS: {gender} original motions, {count} clips, {kind}")
         compare_rig_catalogs(source_packs["Male"], source_packs["Female"])
         print("PASS: male and female original 53-clip catalogs match")
-    except (OSError, KeyError, ValueError, struct.error) as error:
+    except (OSError, KeyError, ValueError, struct.error, zipfile.BadZipFile) as error:
         raise SystemExit(f"FAIL: original motion packaging: {error}")
 
 
