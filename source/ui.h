@@ -23,7 +23,7 @@ void mds_ui_motion_scene(int);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
-void mds_ui_accessories(void);
+void mds_ui_accessories(unsigned);
 void mds_ui_confirm(const char *);
 int mds_ui_confirm_touch(int,int);
 void mds_ui_draw(const MdsAvatar *a,int field);

@@ -3,6 +3,79 @@
 #include <ctype.h>
 #include "profile_generated.h"
 static unsigned days(unsigned month){static const unsigned d[]={0,31,29,31,30,31,30,31,31,30,31,30,31};return month<=12?d[month]:0;}
+static const char *const root_names[]={"B_Nickname","B_Favorite","B_Gender","B_Open","B_Color","B_Admission","B_Birthday","B_Makeup"};
+const char *mds_profile_key_row(unsigned row)
+{
+ static const char *const rows[]={"1234567890","QWERTYUIOP","ASDFGHJKL","ZXCVBNM.-"};
+ return row<4?rows[row]:"";
+}
+static int wrap(int value,int delta,int count){return (value+delta%count+count)%count;}
+void mds_profile_move(MdsProfile *p,int horizontal,int vertical)
+{
+ if(p->mode==MDS_PROFILE_ROOT){
+  p->focus=wrap(p->focus/2,vertical,5)*2+wrap(p->focus%2,horizontal,2);
+ }else if(p->mode==MDS_PROFILE_NAME||p->mode==MDS_PROFILE_CREATOR){
+  p->key_row=wrap(p->key_row,vertical,5);
+  int count=p->key_row==4?3:(int)strlen(mds_profile_key_row((unsigned)p->key_row));
+  if(p->key_column>=count)p->key_column=count-1;
+  p->key_column=wrap(p->key_column,horizontal,count);
+ }else if(p->mode==MDS_PROFILE_COLOR){
+  p->choice=wrap(p->choice/6,vertical,2)*6+wrap(p->choice%6,horizontal,6);
+ }else if(p->mode==MDS_PROFILE_GENDER||p->mode==MDS_PROFILE_SHARING||p->mode==MDS_PROFILE_COPYING){
+  mds_profile_choice_step(p,horizontal+vertical);
+ }
+}
+int mds_profile_activate(MdsProfile *p,MdsAvatar *a,unsigned favorites)
+{
+ if(p->mode==MDS_PROFILE_ROOT){
+  static const int modes[]={MDS_PROFILE_NAME,-1,MDS_PROFILE_GENDER,MDS_PROFILE_SHARING,MDS_PROFILE_COLOR,MDS_PROFILE_COPYING,MDS_PROFILE_BIRTHDAY,MDS_PROFILE_CREATOR};
+  if(p->focus==8)return 1;
+  if(p->focus==9)return 2;
+  if(p->focus<0||p->focus>=8)return 0;
+  if(p->focus==1){
+   if(a->value[51]){a->value[46]=1;p->status="Your Personal Mii is always a Favorite.";}
+   else if(!mds_profile_favorite(a,favorites))p->status="You can save up to ten favorites.";
+   else p->status="";
+  }else mds_profile_open(p,a,modes[p->focus]);
+ }else if(p->mode==MDS_PROFILE_NAME||p->mode==MDS_PROFILE_CREATOR){
+  if(p->key_row==4){
+   if(p->key_column==0)p->upper^=1;
+   else if(p->key_column==1)mds_profile_append(p,' ');
+   else if(p->key_column==2)mds_profile_backspace(p);
+  }else if(p->key_row>=0&&p->key_row<4){
+   const char *row=mds_profile_key_row((unsigned)p->key_row);
+   if(p->key_column<0||(unsigned)p->key_column>=strlen(row))return 0;
+   unsigned ch=(unsigned char)row[p->key_column];
+   if(!p->upper&&ch>='A'&&ch<='Z')ch+=32;
+   mds_profile_append(p,ch);
+  }
+ }else mds_profile_done(p,a);
+ return 0;
+}
+int mds_profile_focus_rect(const MdsProfile *p,int *x,int *y,int *w,int *h)
+{
+ if(p->mode==MDS_PROFILE_ROOT){
+  if(p->focus==8||p->focus==9){*x=p->focus==8?8:136;*y=168;*w=112;*h=22;return 1;}
+  if(p->focus<0||p->focus>=8)return 0;
+  for(unsigned i=0;i<PROFILE_HIT_COUNT;i++){
+   const ProfileHit *hit=&profile_hits[i];
+   if(hit->page==0&&!strcmp(hit->name,root_names[p->focus])){*x=hit->x;*y=hit->y;*w=hit->w;*h=hit->h;return 1;}
+  }
+ }else if(p->mode==MDS_PROFILE_NAME||p->mode==MDS_PROFILE_CREATOR){
+  if(p->key_row<0||p->key_row>4||p->key_column<0)return 0;
+  if(p->key_row==4){
+   static const int xs[]={8,60,168},widths[]={48,104,80};
+   if(p->key_column>2)return 0;
+   *x=xs[p->key_column];*y=144;*w=widths[p->key_column];*h=20;
+  }else{
+   int count=(int)strlen(mds_profile_key_row((unsigned)p->key_row));
+   if(p->key_column>=count)return 0;
+   *x=(256-count*24+2)/2+p->key_column*24;*y=50+p->key_row*23;*w=22;*h=21;
+  }
+  return 1;
+ }
+ return 0;
+}
 int mds_profile_date_valid(unsigned month,unsigned day){return (!month&&!day)||(month>=1&&month<=12&&day>=1&&day<=days(month));}
 int mds_profile_name_valid(const char *s,int allow_empty)
 {
@@ -25,7 +98,7 @@ void mds_profile_open(MdsProfile*p,const MdsAvatar*a,int mode)
 {
  p->mode=mode;p->status="";
  p->choice=mode==MDS_PROFILE_GENDER?a->value[0]:mode==MDS_PROFILE_COLOR?a->value[45]:mode==MDS_PROFILE_SHARING?a->value[47]:mode==MDS_PROFILE_COPYING?a->value[48]:0;
- if(mode==MDS_PROFILE_NAME||mode==MDS_PROFILE_CREATOR){memcpy(p->text,mode==MDS_PROFILE_NAME?a->name:a->creator,MDS_NAME);p->upper=1;}
+ if(mode==MDS_PROFILE_NAME||mode==MDS_PROFILE_CREATOR){memcpy(p->text,mode==MDS_PROFILE_NAME?a->name:a->creator,MDS_NAME);p->upper=1;p->key_row=1;p->key_column=0;}
  if(mode==MDS_PROFILE_BIRTHDAY){p->month=a->value[49]?a->value[49]:1;p->day=a->value[50]?a->value[50]:1;if(!mds_profile_date_valid((unsigned)p->month,(unsigned)p->day))p->day=1;}
 }
 int mds_profile_append(MdsProfile*p,unsigned ch)
@@ -73,24 +146,17 @@ void mds_profile_choice_step(MdsProfile*p,int delta){int n=p->mode==MDS_PROFILE_
 int mds_profile_touch(MdsProfile*p,MdsAvatar*a,int x,int y,unsigned favorites)
 {
  if(p->mode==MDS_PROFILE_NAME||p->mode==MDS_PROFILE_CREATOR){
-  static const char *rows[]={"1234567890","QWERTYUIOP","ASDFGHJKL","ZXCVBNM.-"};
   for(int row=0;row<4;row++){
-   int count=(int)strlen(rows[row]),left=(256-count*24+2)/2;
+   int count=(int)strlen(mds_profile_key_row((unsigned)row)),left=(256-count*24+2)/2;
    if(y<50+row*23||y>=71+row*23)continue;
-   int col=(x-left)/24;if(x>=left&&col<count&&x<left+col*24+22){unsigned ch=(unsigned char)rows[row][col];if(!p->upper&&ch>='A'&&ch<='Z')ch+=32;mds_profile_append(p,ch);return 0;}
+   int col=(x-left)/24;if(x>=left&&col<count&&x<left+col*24+22){p->key_row=row;p->key_column=col;unsigned ch=(unsigned char)mds_profile_key_row((unsigned)row)[col];if(!p->upper&&ch>='A'&&ch<='Z')ch+=32;mds_profile_append(p,ch);return 0;}
   }
-  if(y>=144&&y<164){if(x>=8&&x<56)p->upper^=1;else if(x>=60&&x<164)mds_profile_append(p,' ');else if(x>=168&&x<248)mds_profile_backspace(p);return 0;}
+  if(y>=144&&y<164){if(x>=8&&x<56){p->key_row=4;p->key_column=0;p->upper^=1;}else if(x>=60&&x<164){p->key_row=4;p->key_column=1;mds_profile_append(p,' ');}else if(x>=168&&x<248){p->key_row=4;p->key_column=2;mds_profile_backspace(p);}return 0;}
  }else if(p->mode==MDS_PROFILE_ROOT){
-  const char *hit=mds_profile_hit(0,x,y);int mode=-1;
-  if(!strcmp(hit,"B_Nickname"))mode=MDS_PROFILE_NAME;
-  else if(!strcmp(hit,"B_Makeup"))mode=MDS_PROFILE_CREATOR;
-  else if(!strcmp(hit,"B_Gender"))mode=MDS_PROFILE_GENDER;
-  else if(!strcmp(hit,"B_Color"))mode=MDS_PROFILE_COLOR;
-  else if(!strcmp(hit,"B_Birthday"))mode=MDS_PROFILE_BIRTHDAY;
-  else if(!strcmp(hit,"B_Open"))mode=MDS_PROFILE_SHARING;
-  else if(!strcmp(hit,"B_Admission"))mode=MDS_PROFILE_COPYING;
-  else if(!strcmp(hit,"B_Favorite")){if(a->value[51]){a->value[46]=1;p->status="Your Personal Mii is always a Favorite.";}else if(!mds_profile_favorite(a,favorites))p->status="You can save up to ten favorites.";return 0;}
-  if(mode>=0){mds_profile_open(p,a,mode);return 0;}
+  const char *hit=mds_profile_hit(0,x,y);
+  for(unsigned i=0;i<sizeof root_names/sizeof root_names[0];i++){
+   if(!strcmp(hit,root_names[i])){p->focus=(int)i;return mds_profile_activate(p,a,favorites);}
+  }
  }else{
   unsigned page=p->mode==MDS_PROFILE_GENDER?1:p->mode==MDS_PROFILE_COLOR?4:p->mode==MDS_PROFILE_BIRTHDAY?3:p->mode==MDS_PROFILE_SHARING?5:6;
   const char*hit=mds_profile_hit(page,x,y);
@@ -105,8 +171,8 @@ int mds_profile_touch(MdsProfile*p,MdsAvatar*a,int x,int y,unsigned favorites)
   }
  }
  if(y>=168&&y<190){
-  if(x>=8&&x<120){if(p->mode==MDS_PROFILE_ROOT)return 1;mds_profile_cancel(p);}
-  if(x>=136&&x<248){if(p->mode==MDS_PROFILE_ROOT)return 2;mds_profile_done(p,a);}
+  if(x>=8&&x<120){if(p->mode==MDS_PROFILE_ROOT){p->focus=8;return 1;}mds_profile_cancel(p);}
+  if(x>=136&&x<248){if(p->mode==MDS_PROFILE_ROOT){p->focus=9;return 2;}mds_profile_done(p,a);}
  }
  return 0;
 }

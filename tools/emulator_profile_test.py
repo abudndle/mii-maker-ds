@@ -1,6 +1,6 @@
 import ctypes as C,sys,pathlib,json,time,argparse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--controller',action='store_true');args=parser.parse_args()
 OUTPUT=ROOT/'validation';OUTPUT.mkdir(exist_ok=True)
 from PIL import Image
 core=C.CDLL(str(pathlib.Path(args.core).resolve()))
@@ -82,12 +82,48 @@ def value(f):return avatar()[64+f]
 def scene():return int.from_bytes(mem('screen'),'little')
 run(300)
 if args.restart:
- tap(100,25,300);tap(42,70,300);key(8,180)
+ if args.controller:key(8,300);key(8,180)
+ else:tap(100,25,300);tap(42,70,300);key(8,180)
+elif args.controller:
+ key(5,40);key(8,180);assert scene()==4
+ key(8,180);assert scene()==1 and value(51)==1
 else:
  tap(140,80,180);assert scene()==4;capture('melonds-create-gender')
  tap(80,98,180);assert scene()==1 and value(51)==1
 key(2,120);assert scene()==3
-if not args.restart:
+if args.controller:
+ if args.restart:
+  assert avatar()[:32].split(b'\0')[0]==b'QWe'
+  assert avatar()[32:64].split(b'\0')[0]==b'Q'
+  assert [value(f) for f in [0,45,46,47,48,49,50,51]]==[1,7,1,0,0,2,2,1]
+  capture('melonds-controller-cold-reload')
+  print('PASS: controller-created profile persists across cold restart',flush=True)
+ else:
+  key(8);assert int.from_bytes(mem('profile'),'little')==1
+  for _ in range(3):key(9,10)
+  key(8);key(7);key(8);key(1);key(7);key(8)
+  capture('melonds-controller-keyboard')
+  key(3);assert avatar()[:32].split(b'\0')[0]==b'QWe'
+  key(5);key(8);key(7);key(0);assert value(0)==0
+  key(8);key(7);key(8,180);assert value(0)==1
+  key(5);key(8);key(5);key(7);key(8,180);assert value(45)==7
+  key(5);key(8);key(7);key(4);key(8);assert value(49)==2 and value(50)==2
+  key(7);key(8);key(8);key(3);assert avatar()[32:64].split(b'\0')[0]==b'Q'
+  key(4);key(8);key(7);key(0);assert value(48)==1
+  key(8);key(7);key(8);assert value(48)==0
+  key(4);key(8);key(7);key(8);assert value(47)==0
+  capture('melonds-controller-profile')
+  key(3,300)
+  status=int.from_bytes(mem('editor',272)[268:272],'little')
+  assert C.string_at(ram+status-0x02000000,64).split(b'\0')[0]==b'ROM save written'
+  key(0);assert scene()==1
+  for direction,field in [(None,30),(7,34),(5,35),(6,39)]:
+   key(9);assert scene()==5
+   if direction is not None:key(direction)
+   capture('melonds-controller-accessories-'+str(field))
+   key(8);assert scene()==1 and int.from_bytes(mem('editor',272)[260:264],'little')==field
+  print('PASS: controller-only create, keyboard, gender cancel/commit, color, birthday, creator, permissions, cartridge save and all accessories',flush=True)
+elif not args.restart:
  tap(80,29);assert int.from_bytes(mem('profile'),'little')==1
  for _ in range(3):key(9,10)
  for x,y in [(116,84),(68,84),(56,106),(116,84),(176,129),(188,84),(188,84)]:tap(x,y,10)
