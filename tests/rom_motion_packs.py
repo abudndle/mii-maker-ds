@@ -12,6 +12,7 @@ from rom_nitrofs_assets import check
 
 FRAME_BYTES = 48 + 18 * 48
 EXPECTED_CLIPS = 53
+GALLERY_IDLE_CLIPS = ("Wait00", "Wait01", "Wait02", "Wait03Pre", "Wait03", "Wait04")
 
 
 def validate(pack, label):
@@ -52,6 +53,18 @@ def validate(pack, label):
     return count
 
 
+def ensure_gallery_clips(pack, label):
+    """Required original idle clips must be resolvable by name on both rigs."""
+    names = set()
+    count = struct.unpack_from("<I", pack, 8)[0]
+    for i in range(count):
+        name = pack[32 + i * 40:32 + i * 40 + 24].split(b"\\0", 1)[0]
+        names.add(name.decode("ascii"))
+    missing = sorted(set(GALLERY_IDLE_CLIPS) - names)
+    if missing:
+        raise ValueError(f"{label}: missing gallery animation clips: {', '.join(missing)}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
@@ -65,6 +78,7 @@ def main():
             name = f"models/{gender}Body.msp"
             source = (ROOT / "nitrofiles" / name).read_bytes()
             count = validate(source, name)
+            ensure_gallery_clips(source, name)
             if files is not None:
                 first, last = files[name]
                 if rom[first:last] != source:
