@@ -65,6 +65,18 @@ def ensure_gallery_clips(pack, label):
         raise ValueError(f"{label}: missing gallery animation clips: {', '.join(missing)}")
 
 
+def compare_rig_catalogs(male, female):
+    """Both original rigs must expose the same named animations."""
+    def catalog(pack):
+        return {pack[32 + i * 40:32 + i * 40 + 24].split(bytes((0,)), 1)[0]
+                for i in range(EXPECTED_CLIPS)}
+    male_names, female_names = catalog(male), catalog(female)
+    if male_names != female_names:
+        missing_female = sorted(n.decode("ascii") for n in male_names - female_names)
+        missing_male = sorted(n.decode("ascii") for n in female_names - male_names)
+        raise ValueError(f"original rig clip catalog mismatch: female lacks {missing_female}; male lacks {missing_male}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
@@ -74,10 +86,12 @@ def main():
     try:
         rom = args.rom.read_bytes() if not args.source_only else None
         files = check(rom, with_ranges=True) if rom is not None else None
+        source_packs = {}
         for gender in ("Male", "Female"):
             name = f"models/{gender}Body.msp"
             source = (ROOT / "nitrofiles" / name).read_bytes()
             count = validate(source, name)
+            source_packs[gender] = source
             ensure_gallery_clips(source, name)
             if files is not None:
                 first, last = files[name]
@@ -85,6 +99,8 @@ def main():
                     raise ValueError(f"{name}: packaged animation bytes differ from source")
             kind = "source validated" if files is None else "exact packaged bytes"
             print(f"PASS: {gender} original motions, {count} clips, {kind}")
+        compare_rig_catalogs(source_packs["Male"], source_packs["Female"])
+        print("PASS: male and female original 53-clip catalogs match")
     except (OSError, KeyError, ValueError, struct.error) as error:
         raise SystemExit(f"FAIL: original motion packaging: {error}")
 
