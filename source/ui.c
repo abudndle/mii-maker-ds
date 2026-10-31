@@ -206,6 +206,11 @@ void mds_ui_scene_transition_start(uint32_t now)
  scene_fade_enabled=1;
  scene_fade_base_valid=0;
 }
+void mds_ui_scene_transition_cancel(void)
+{
+ scene_fade_enabled=0;
+ scene_fade_base_valid=0;
+}
 int mds_ui_scene_transition_step(uint32_t now,int redraw)
 {
  if(!scene_fade_enabled||!ok)return 0;
