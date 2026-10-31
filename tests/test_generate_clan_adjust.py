@@ -1,31 +1,34 @@
-"""Asset-free original editor arrow/feature adjustment curve generator tests."""
+"""Asset-free original editor Decide/UnDecide/Invalid generator tests."""
 import copy
 import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
-from generate_clan_adjust import TRACKS,generate,q16
+from generate_clan_adjust import TRACKS,EXTRA,generate,q16
 
 def fixture():
  clips=[]
- for clip in ["EditEye_Decide","EditHair_Decide"]:
+ for clip in ("EditEye_Decide","EditHair_Decide","EditEye_UnDecide","EditEye_Invalid"):
   tracks=[]
   for name,origin,pane,kind,target,count in TRACKS:
    if clip!=origin:continue
-   if count==4:
-    keys=[[0,0,0],[1,-3,0],[2,-3,0],[3,0,0]]
-   elif count==3:
-    keys=[[0,-3,0],[1,-3,0],[1,0,0]]
+   if count==4:keys=[[0,0,0],[1,-3,0],[2,-3,0],[3,0,0]]
+   elif count==3:keys=[[0,-3,0],[1,-3,0],[1,0,0]]
    else:keys=[[0,150,0]]
    tracks.append(dict(pane=pane,kind=kind,index=0,target=target,value_type=2,keys=keys))
-  clips.append(dict(archive="Editor.arc.files",clip=clip,frames=6,tracks=tracks))
+  for name,origin,pane,kind,target,count,start in EXTRA:
+   if clip!=origin:continue
+   keys=[[start,150,0]] if count==1 else [[0,150,0],[1,255,0]]
+   tracks.append(dict(pane=pane,kind=kind,index=0,target=target,value_type=2,keys=keys))
+  clips.append(dict(archive="Editor.arc.files",clip=clip,frames=11 if clip=="EditEye_Invalid" else 6,tracks=tracks))
  return {"clips":clips}
 
 class GeneratorTests(unittest.TestCase):
- def test_nine_tracks(self):
+ def test_all_21_tracks(self):
   data=generate(fixture())
-  self.assertEqual(data.count("static const MdsClanKey"),9)
-  self.assertIn("adjust_arrow_hair_y",data)
+  self.assertEqual(data.count("static const MdsClanKey"),21)
+  self.assertIn("adjust_release_arrow_r",data)
+  self.assertIn("adjust_invalid_alpha",data)
  def test_missing_source_clip(self):
   d=fixture();d["clips"].pop()
   with self.assertRaises(ValueError):generate(d)
@@ -33,13 +36,22 @@ class GeneratorTests(unittest.TestCase):
   d=fixture();d["clips"][0]["tracks"].append(copy.deepcopy(d["clips"][0]["tracks"][0]))
   with self.assertRaises(ValueError):generate(d)
  def test_changed_clip_frames(self):
-  d=fixture();d["clips"][1]["frames"]=3
+  d=fixture();d["clips"][3]["frames"]=6
   with self.assertRaises(ValueError):generate(d)
  def test_malformed_frame(self):
   d=fixture();d["clips"][0]["tracks"][0]["keys"][0][0]=5
   with self.assertRaises(ValueError):generate(d)
  def test_unsorted_keys(self):
   d=fixture();d["clips"][0]["tracks"][0]["keys"][2][0]=-5
+  with self.assertRaises(ValueError):generate(d)
+ def test_missing_release_track(self):
+  d=fixture();d["clips"][2]["tracks"].pop()
+  with self.assertRaises(ValueError):generate(d)
+ def test_invalid_release_frame(self):
+  d=fixture();d["clips"][2]["tracks"][0]["keys"][0][0]=3
+  with self.assertRaises(ValueError):generate(d)
+ def test_changed_invalid_alpha(self):
+  d=fixture();d["clips"][3]["tracks"][-1]["keys"][0][0]=5
   with self.assertRaises(ValueError):generate(d)
  def test_invalid_numerics(self):
   for value in [float("nan"),float("inf"),1e20]:
