@@ -2,6 +2,7 @@
 """Synthetic-only BlocksDS smoke and local private Docker wrapper regressions."""
 import importlib.util
 import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / 'tools'
+sys.path.insert(0, str(TOOLS))
 
 
 def load(name):
