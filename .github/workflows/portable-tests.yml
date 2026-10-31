@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Protect private ROM release policy
         run: python3 tests/test_private_rom_release.py
+      - name: Verify source-derived editor CLAN selection tracks
+        run: python3 -m unittest discover -s tests -p test_generate_clan_editor.py
       - name: Verify source-derived dialog pane keys
         run: python3 -m unittest discover -s tests -p test_generate_clan_dialog.py
       - name: Verify source-derived CLAN home track generator
