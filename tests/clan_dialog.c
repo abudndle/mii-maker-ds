@@ -10,8 +10,22 @@ static void clocks(void)
  assert(mds_clan_dialog_y(100,100)==-192);
  assert(mds_clan_dialog_y(134,100)==2);
  assert(mds_clan_dialog_y(140,100)==0);
+ /* Original out reaches the bottom edge by source frame 17, then holds. */
+ assert(mds_clan_dialog_exit_y(100,100,0)==0);
+ assert(mds_clan_dialog_exit_y(134,100,0)==-192);
+ assert(mds_clan_dialog_exit_y(138,100,0)==-192);
+ assert(mds_clan_dialog_exit_y(140,100,0)==0);
+ assert(mds_clan_dialog_exit_y(100,100,1)==0);
+ assert(mds_clan_dialog_exit_y(134,100,1)==192);
+ assert(mds_clan_dialog_exit_y(138,100,1)==192);
+ assert(mds_clan_dialog_exit_y(140,100,1)==0);
+ /* Frame 1 of each exit travels in the correct direction. */
+ assert(mds_clan_dialog_exit_y(102,100,0)<0);
+ assert(mds_clan_dialog_exit_y(102,100,1)>0);
  assert(mds_clan_dialog_active(0,UINT32_MAX-1));
  assert(mds_clan_dialog_y(0,UINT32_MAX-1)<0);
+ assert(mds_clan_dialog_exit_y(0,UINT32_MAX-1,0)<0);
+ assert(mds_clan_dialog_exit_y(0,UINT32_MAX-1,1)>0);
  assert(!mds_clan_dialog_active(41,UINT32_MAX-1));
 }
 static void frame_safety(void)
@@ -38,6 +52,6 @@ static void frame_safety(void)
 int main(void)
 {
  clocks();frame_safety();
- puts("PASS: source CLAN dialog motion, DS scale, VBlank wrap, RGB555 clipping");
+ puts("PASS: source CLAN entry/exit/up motion, DS scale, VBlank wrap, RGB555 clipping");
  return 0;
 }
