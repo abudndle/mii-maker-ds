@@ -1,0 +1,11 @@
+# Rendering performance and fidelity limits
+
+The original CFL and CGFX geometry is retained. The software rasterizer now computes affine depth, light and UV gradients once per triangle with a shared reciprocal, then steps them across scanlines. Vertex projection and body/head-bone transforms use fixed-point arithmetic instead of repeated software floating-point operations. Facial feature composition is reused while its appearance fields and immutable CFL resource remain unchanged. Call `mds_render_reset_cache()` if a caller modifies the archive backing bytes.
+
+A matched 600-VBlank melonDS DS interpreter workload measured mean completed-preview time falling from 16 to 11 VBlanks (about 31% less rendering time), with observed completed portrait previews rising from 3.1 to 4.3 per second. These are coarse emulator measurements, not a physical DS benchmark or a claim of 60 FPS. The animation source is sampled at six poses/sec and can still drop poses when software rendering takes too long. A hardware 3D backend remains a future performance task.
+
+A 20-case regression comparison across both original bodies, portrait/full framing and several source hairstyles retained silhouette coverage within 2.5% of the previous provisional renderer and RGB5 RMSE below 2.5. This comparison catches accidental geometry/framing loss; it is not a reference comparison against the original 3DS image. Exact original camera, lighting, materials, body-proportion coefficients, full animation coverage and the shared alphabet font remain incomplete.
+
+Input is queued during rendering. A new event cancels incomplete output, which never replaces the last complete cached frame. Facial composition also checks for pending input; cancelled partial masks are invalidated. Original body sliders redraw from cached artwork independently of model rendering, track the held stylus, clamp to both endpoints and release capture correctly.
+
+Run `tools/emulator_melonds_test.py --core CORE --save-dir DIRECTORY --benchmark` for the current image. `--rom` and `--symbols` allow a retained earlier image and its exact symbols to be compared. Private validation reports are generated locally and are excluded from the source repository.

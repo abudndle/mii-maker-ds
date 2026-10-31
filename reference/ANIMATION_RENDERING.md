@@ -1,0 +1,13 @@
+# Original idle data and DS presentation
+
+The models remain the supplied original male/female CGFX triangle streams, rigid palettes and 18-bone hierarchy. No replacement shapes were introduced. `tools/animation_curves.py` independently decodes the supplied scalar curves; the actual Wait00 animation uses UnifiedHermite96 values and tangents. The converter evaluates source curves with cubic Hermite interpolation before composing the original SRT hierarchy. Format fields were cross-checked against SPICA at commit 82acbd63695e4ef8b95a92ce884f25ec1044788f; no third-party implementation is vendored.
+
+`tools/body_animation.py` samples source frames 0, 5, …, 115. Each pose retains the original triangle count and material/bone identities, quantizes positions to 1/128 and normals to 1/127, and includes its original head-bone matrix. Frame zero must reproduce the existing BOD2 asset byte-for-byte. `body-animation.json` records source/output hashes and distinct poses. ANI1 is a bounded private container of those BOD2 poses. `source/animation.c` rejects invalid count/stride/duration and malformed pose records.
+
+Playback assumes 30 source fps, samples at six poses per second and uses a 60 Hz VBlank clock. This rate has not been recovered from the original executable. Slow rendering may drop poses. Other animations, facial/expression animation, exact camera/light/materials and exact body-proportion coefficients remain incomplete. Original head normals now follow the animated head-bone rotation; mirrored hair normals are mirrored too.
+
+The top image is drawn into RAM and presented as a complete frame. Static source backgrounds are cached. Each software preview renders into a scratch buffer and replaces the previous cache only on completion. New queued input cancels a render; VBlank-captured button/touch events preserve short taps while rendering. The gallery animates only the selected upper-screen model, leaving its thumbnail grid intact.
+
+Body sliders capture a touch that begins on the original track. While held, the latest stylus x maps continuously to 0–127 with endpoint clamping, even if y leaves the track. Release ends capture. The original knob and cached page redraw independently; model preview waits for a pause or release. This avoids blocking knob movement behind software model rendering.
+
+Host sanitizer tests cover all 48 poses, both genders, animation clock wrap, malformed streams, cancellation and restart of a renderer. Native melonDS tests inspect actual visible changes without altering guest RAM and verify continuous slider values, out-of-track capture, clamps and release. No real-device performance claim is made.

@@ -1,0 +1,20 @@
+#ifndef MDS_EDITOR_H
+#define MDS_EDITOR_H
+#include "save.h"
+typedef enum { MDS_EDIT_NONE, MDS_EDIT_PREV, MDS_EDIT_NEXT, MDS_EDIT_NEW, MDS_EDIT_DELETE, MDS_EDIT_RELOAD } MdsEditAction;
+typedef struct {
+    MdsGallery *gallery;
+    MdsAvatar draft,baseline;
+    unsigned slot;
+    int field;
+    MdsEditAction pending;
+    const char *status;
+} MdsEditor;
+typedef int (*MdsPersist)(MdsGallery *,void *);
+void mds_editor_begin(MdsEditor *,MdsGallery *);
+int mds_editor_dirty(const MdsEditor *);
+int mds_editor_request(MdsEditor *,MdsEditAction);
+int mds_editor_confirm(MdsEditor *,int,MdsPersist,void *);
+int mds_editor_copy(MdsEditor *,MdsPersist,void *);
+int mds_editor_save(MdsEditor *,MdsPersist,void *);
+#endif

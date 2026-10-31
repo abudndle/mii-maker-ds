@@ -1,0 +1,2 @@
+# Historical devkitPro recipe is unsupported for this project.
+$(error Use the supplied BlocksDS Makefile: run make without -f Makefile.devkitpro)

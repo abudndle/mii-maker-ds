@@ -1,0 +1,11 @@
+# Original profile flows on DS
+
+Original layout bounds, widget textures and English messages drive the creation gender picker, profile, gender/shirt/birthday/permission dialogs, accessory selector and Yes/No confirmation. `profile-layouts.json`, `number-font.json` and `banner-icon.json` record source provenance. The generic pane converter now mirrors origin anchors for negative scale as well as texture pixels.
+
+Nickname and creator accept at most ten UTF-16 units with strict UTF-8 validation; nickname cannot be blank. The touch keyboard offers ASCII letters, digits, space, period and hyphen. Existing Unicode strings are preserved unchanged and backspace removes a code point. Alphabet rendering is still a substitute font. Birthday numerals use the supplied original Nintendo BCFNT; dates allow February 29, reject impossible days and permit an unset 0/0 date. Modal cancellation leaves the draft unchanged.
+
+Profile settings include gender, shirt/favorite color, favorite, sharing and copy permission. Ten favorites are permitted. The first created Mii is Personal and cannot be deleted. Gallery Y copies a saved Mii only when copying is allowed, clears Personal/Favorite, and rolls back on failed persistence. Sharing is stored; there is no implemented wireless/export backend on which to enforce it yet.
+
+`tests/profile.c` checks bounds, text validation, cancellation, dates and permissions. `tests/editor.c` checks copy/favorite/date policy and transactional rollback. `tools/emulator_profile_test.py` uses real melonDS input and verifies profile edits, source dialogs, accessory routes, touch discard/cancel, permission-aware copy/delete and cold restart. Guest RAM is inspected, never modified by the harness.
+
+These are reconstructed DS flows using original assets, not execution of Nintendo source. Full international keyboard, remaining dialogs/effects, QR, photo recognition, wireless and sound remain incomplete.
