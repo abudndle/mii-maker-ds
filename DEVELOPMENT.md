@@ -1,5 +1,7 @@
 # Mii Maker DS — original-resource development build
 
+The complete 3DS-to-DS feature and acceptance checklist is in [reference/COMPLETION_GATES.md](reference/COMPLETION_GATES.md). Source CI success is not proof of an emulator-tested, full-fidelity port.
+
 This is an unfinished Nintendo DS/DSi demake of 3DS Mii Maker. **The melonDS blank-screen fault is corrected**, and the supplied `CFL_Res.dat` now drives a real head preview in the editor and saved-gallery thumbnails. This is not a complete or pixel-identical 3DS port.
 
 ## Run the corrected ROM
