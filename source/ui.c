@@ -280,7 +280,7 @@ int mds_ui_slider_move(MdsAvatar*a,int x)
 }
 int mds_ui_touch(MdsAvatar *a,int *field,int x,int y){
  static const int tabs[]={2,5,15,8,22,25,30,43};
- if(x<30&&y<170){int i=(y-2)/21;if(i>=0&&i<8){*field=tabs[i];return 1;}}
+ if(x>=0&&x<30&&y>=2&&y<170){int i=(y-2)/21;if(i>=0&&i<8){*field=tabs[i];return 1;}}
  const UiCategory *c=&ui_categories[category];
  static const int color_fields[]={1,-1,-1,6,9,16,-1,26,31,36,36,-1,-1};
  for(unsigned i=0;i<UI_HIT_COUNT;i++){
