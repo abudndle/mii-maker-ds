@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse,os,subprocess,tempfile
 root=Path(__file__).resolve().parents[1]
 a=argparse.ArgumentParser();a.add_argument('--cc',default='cc');a.add_argument('--no-sanitizers',action='store_true');args=a.parse_args()
-suites={'gui_tween':['gui_tween'],'animation_clock':['animation'],'motion':['motion'],'core':['avatar'],'save':['avatar','save'],'save_compact':['avatar','save','save_compact','unicode'],'editor':['avatar','save','save_compact','editor','unicode'],'profile':['avatar','profile'],'transform':['avatar','transform'],'menu':['menu'],'cfl_resource':['cfl_resource'],'image':['image'],'mii_codec':['avatar','unicode','mii_codec'],'exchange':['avatar','unicode','mii_codec','exchange'],'status':['avatar','status'],'save_migration':['avatar','save','save_compact','unicode'],'mii_qr':['avatar','unicode','mii_codec','mii_qr','qr_photo','qr_scan','vendor/aes/aes','vendor/qr/qrcodegen','vendor/quirc/quirc','vendor/quirc/identify','vendor/quirc/decode','vendor/quirc/version_db']}
+suites={'gui_tween':['gui_tween'],'animation_clock':['animation'],'motion':['motion'],'core':['avatar'],'save':['avatar','save'],'save_compact':['avatar','save','save_compact','unicode'],'save_storage':['avatar','save','save_compact','save_storage','editor','unicode'],'editor':['avatar','save','save_compact','editor','unicode'],'profile':['avatar','profile'],'transform':['avatar','transform'],'menu':['menu'],'cfl_resource':['cfl_resource'],'image':['image'],'mii_codec':['avatar','unicode','mii_codec'],'exchange':['avatar','unicode','mii_codec','exchange'],'status':['avatar','status'],'save_migration':['avatar','save','save_compact','unicode'],'mii_qr':['avatar','unicode','mii_codec','mii_qr','qr_photo','qr_scan','vendor/aes/aes','vendor/qr/qrcodegen','vendor/quirc/quirc','vendor/quirc/identify','vendor/quirc/decode','vendor/quirc/version_db']}
 env=os.environ.copy();env['ASAN_OPTIONS']='detect_leaks=0'
 with tempfile.TemporaryDirectory(prefix='mii-ds-tests-') as td:
  for name,modules in suites.items():
@@ -17,4 +17,4 @@ with tempfile.TemporaryDirectory(prefix='mii-ds-tests-') as td:
   import_dir=Path(td)/'import';import_dir.mkdir(exist_ok=True)
   command=[str(exe)]+([str(Path(td)/'image.bmp')] if name=='image' else [str(import_dir)] if name=='exchange' else [str(Path(td)/'qr.bin'),str(Path(td)/'qr.png')] if name=='mii_qr' else [])
   subprocess.run(command,check=True,env=env)
-print('PASS: all seventeen asset-free portable suites')
+print(f'PASS: all {len(suites)} asset-free portable suites')

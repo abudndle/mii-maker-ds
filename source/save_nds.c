@@ -1,56 +1,28 @@
-/* Cartridge save backend: compact 8 KiB snapshots and legacy 64 KiB banks.
- * Both sizes use the type-2 EEPROM protocol (two address bytes).
- * Do not auto-detect via RDID: some emulators return zero for that opcode.
- * No flash erases. Unknown existing save contents are never initialized.
- */
+/* Cartridge ownership and fixed two-address-byte EEPROM transport.
+ * Validation, error state and verified writes live in portable save_storage.c. */
 #include <nds.h>
 #include <string.h>
 #include "save_nds.h"
 #include "save_chip.h"
-#include "save_compact.h"
-static uint8_t image[MDS_SAVE_SIZE],verify[MDS_BANK_SIZE];
-static int ready,compact;
+static MdsStorage storage;
+static int read_save(void *context,unsigned address,uint8_t *data,size_t size)
+{
+ (void)context;sysSetCardOwner(BUS_OWNER_ARM9);return mds_chip_read(address,data,size);
+}
+static int write_save(void *context,unsigned address,const uint8_t *data,size_t size)
+{
+ (void)context;sysSetCardOwner(BUS_OWNER_ARM9);return mds_chip_write(address,data,size);
+}
 int mds_cart_open(MdsGallery *g)
 {
-    ready=0;compact=0;
-    /* A raw cardReadHeader command is invalid after NitroFS initializes the
-       gamecard; use the bootloader header copy for the launched application. */
-    if(memcmp(__NDSHeader->gameCode,"MDSD",4))return 0;
-    sysSetCardOwner(BUS_OWNER_ARM9);
-    if(!mds_chip_present()||!mds_chip_read(0,image,sizeof image))return 0;
-    if(!mds_gallery_load(g,image,sizeof image)){
-        if(mds_compact_load(g,image,MDS_COMPACT_SIZE)){compact=1;ready=1;return 1;}
-        int blank_ff=1,blank_00=1;
-        for(unsigned i=0;i<sizeof image;i++){
-            if(image[i]!=255)blank_ff=0;
-            if(image[i]!=0)blank_00=0;
-        }
-        if(!blank_ff&&!blank_00)return 0;
-        mds_gallery_new(g);compact=1;
-    }
-    ready=1;
-    return 1;
+ /* Use the bootloader header: raw header commands are invalid after NitroFS. */
+ if(memcmp(__NDSHeader->gameCode,"MDSD",4)){
+  mds_storage_disable(&storage,MDS_STORAGE_WRONG_ROM);return 0;
+ }
+ sysSetCardOwner(BUS_OWNER_ARM9);
+ if(!mds_chip_present()){mds_storage_disable(&storage,MDS_STORAGE_UNAVAILABLE);return 0;}
+ return mds_storage_open(&storage,g,read_save,write_save,NULL);
 }
-int mds_cart_flush(MdsGallery *g)
-{
-    if(!ready)return 0;
-    if(compact){
-        if(!mds_compact_encode(g,image,MDS_COMPACT_SIZE))return 0;
-        sysSetCardOwner(BUS_OWNER_ARM9);
-        if(!mds_chip_write(0,image,MDS_COMPACT_SIZE)||!mds_chip_read(0,verify,MDS_COMPACT_SIZE)||memcmp(image,verify,MDS_COMPACT_SIZE))return 0;
-        g->generation++;g->active_bank=2;return 1;
-    }
-    int prior=g->active_bank;
-    uint32_t gen=g->generation;
-    if(!mds_gallery_commit(g,image,sizeof image))return 0;
-    unsigned address=(unsigned)g->active_bank*MDS_BANK_SIZE;
-    sysSetCardOwner(BUS_OWNER_ARM9);
-    int written=mds_chip_write(address,image+address,MDS_SAVE_BODY+4);
-    int read=mds_chip_read(address,verify,MDS_SAVE_BODY+4);
-    if(!written||!read||memcmp(image+address,verify,MDS_SAVE_BODY+4)){
-        g->active_bank=prior;
-        g->generation=gen;
-        return 0;
-    }
-    return 1;
-}
+int mds_cart_flush(MdsGallery *g){return mds_storage_flush(&storage,g);}
+MdsStorageState mds_cart_state(void){return storage.state;}
+const char *mds_cart_status(void){return mds_storage_message(storage.state);}
