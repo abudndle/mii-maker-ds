@@ -35,6 +35,8 @@ jobs:
         run: python3 tests/test_input_queue.py
       - name: Verify original 53-clip gallery controls and gender mapping
         run: python3 tests/test_gallery_motion_controls.py
+      - name: Verify stylus gallery reordering and transactional swaps
+        run: python3 tests/test_gallery_drag.py
       - name: Verify interrupted Mii gallery previews retry after input settles
         run: python3 tests/test_gallery_retry.py
       - name: Verify Mii preview cache recovery and safety guards
