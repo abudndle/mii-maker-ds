@@ -18,6 +18,8 @@ def check(root: Path, sdk: Path, toolchain: Path) -> list[str]:
     for label, path in paths.items():
         if not path.is_file():
             missing.append(f'{label}: {path}')
+        elif path.stat().st_size == 0:
+            missing.append(f'{label} is empty: {path}')
     arm_gcc = [toolchain / 'toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-gcc',
                toolchain / 'bin/arm-none-eabi-gcc']
     if not any(p.is_file() for p in arm_gcc) and shutil.which('arm-none-eabi-gcc') is None:
