@@ -15,9 +15,9 @@ if "live_held=keysHeld();" not in producer:
 if ".held=live_held" not in consumer or "keysHeld()" in consumer:
     raise SystemExit("FAIL: main loop must consume VBlank-captured held state")
 checks = [
-    (r"if\s*\(!event\.down&&queued>=23\)return;", "reserve eight slots for fresh presses"),
+    (r"if\s*\(!\(event\.down\|\|event\.up\)&&queued>=23\)return;", "reserve slots for presses and stylus release"),
     (r"if\s*\(next==input_read\)", "queue-full detection"),
-    (r"if\s*\(!event\.down\)return;", "discard saturated repeat-only events"),
+    (r"if\s*\(!\(event\.down\|\|event\.up\)\)return;", "discard saturated repeat-only events"),
     (r"input_read\s*=\s*\(input_read\+1\)%32;", "evict oldest event for new press"),
     (r"input_queue\[input_write\]\s*=\s*event;", "enqueue new press"),
     (r"input_write\s*=\s*next;", "advance tail"),
@@ -53,4 +53,11 @@ assert len(queue) == 23
 for _ in range(8):
     enqueue(queue, True)
 assert len(queue) == 31 and sum(queue) == 8
-print("PASS: eight FIFO slots reserved for fresh presses")
+if ".up=keysUp()&KEY_TOUCH" not in producer:
+    raise SystemExit("FAIL: stylus release must be queued in VBlank")
+if "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" not in producer:
+    raise SystemExit("FAIL: stylus release must use last valid coordinates")
+queue = [False] * 31
+enqueue(queue, True)  # stylus release has the same priority as a new press
+assert len(queue) == 31 and queue[-1]
+print("PASS: eight FIFO slots reserved for fresh presses or touch releases")
