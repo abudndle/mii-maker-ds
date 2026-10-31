@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, validate
+from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, GALLERY_IDLE_CLIPS, ensure_gallery_clips, validate
 
 
 def example():
@@ -59,4 +59,17 @@ for value in (4096 * 65536 + 1, -4096 * 65536 - 1):
     bad = bytearray(valid)
     struct.pack_into("<i", bad, frame_start + 48, value)
     must_reject(bad)
-print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants")
+# The six original gallery clips must exist independently on each rig.
+named = bytearray(valid)
+for i, clip in enumerate(GALLERY_IDLE_CLIPS):
+    named[32 + i * 40:32 + i * 40 + 24] = clip.encode().ljust(24, bytes((0,)))
+ensure_gallery_clips(named, "synthetic")
+missing = bytearray(named)
+missing[32:56] = b"Other".ljust(24, bytes((0,)))
+try:
+    ensure_gallery_clips(missing, "synthetic")
+except ValueError:
+    pass
+else:
+    raise AssertionError("missing gallery idle clip was accepted")
+print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip name coverage")
