@@ -54,6 +54,7 @@ int main(void)
     powerOn(POWER_ALL_2D);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
+    int gender_return_screen=MDS_SCREEN_HOME;
     unsigned page=0,drawn_page=99;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
@@ -89,9 +90,11 @@ int main(void)
             else if(action==MDS_HOME_CREATE){
                 unsigned free_slot=0;while(free_slot<100&&gallery.used[free_slot])free_slot++;
                 if(free_slot==100)notice="All 100 Mii slots are occupied";
-                else{editor.slot=free_slot;mds_editor_request(&editor,MDS_EDIT_NEW);editor.field=2;
-                    unsigned personal=0;for(unsigned i=0;i<100;i++)if(gallery.used[i])personal+=gallery.miis[i].value[51];if(!personal){editor.draft.value[51]=1;editor.draft.value[46]=1;}
-                    mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);screen=MDS_SCREEN_GENDER;notice="";}
+                else if(mds_editor_create(&editor,free_slot)){
+                    gender_return_screen=MDS_SCREEN_HOME;
+                    mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
+                    screen=MDS_SCREEN_GENDER;notice="";
+                }else notice=editor.status;
             }else if(action==MDS_HOME_TRANSFER){mds_ui_import_open(&importer);screen=MDS_SCREEN_IMPORT;}
             else if(action==MDS_HOME_QR){screen=MDS_SCREEN_QR;qr_select_image=0;mds_ui_qr_reset();notice="L/R: choose a saved Mii";if(!gallery.used[editor.slot]){for(unsigned i=0;i<100;i++)if(gallery.used[i]){editor.slot=i;break;}}}
             else if(action==MDS_HOME_HELP)notice="Choose View or Create. B returns here.";
@@ -145,7 +148,17 @@ int main(void)
                 if(next>=0){editor.slot=(unsigned)next;page=editor.slot/10;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;int slot=mds_gallery_touch(t.px,t.py,page);if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);}}
-            if(down&KEY_A){if(gallery.used[editor.slot]&&!mds_editor_locked(&gallery.miis[editor.slot])){mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;}else editor.status=gallery.used[editor.slot]?"This received Mii cannot be edited.":"Choose a saved Mii to edit";}
+            if(down&KEY_A){
+                if(!gallery.used[editor.slot]){
+                    if(mds_editor_create(&editor,editor.slot)){
+                        gender_return_screen=MDS_SCREEN_GALLERY;
+                        mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
+                        screen=MDS_SCREEN_GENDER;
+                    }
+                }else if(!mds_editor_locked(&gallery.miis[editor.slot])){
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);screen=MDS_SCREEN_EDITOR;
+                }else editor.status="This received Mii cannot be edited.";
+            }
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             if(down&KEY_SELECT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
@@ -156,7 +169,13 @@ int main(void)
             if(down&KEY_A)chosen=profile.choice;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
             if(chosen>=0){profile.choice=chosen;mds_profile_done(&profile,&editor.draft);screen=MDS_SCREEN_EDITOR;}
-            if(down&KEY_B){mds_profile_cancel(&profile);screen=MDS_SCREEN_HOME;}
+            if(down&KEY_B){
+                mds_profile_cancel(&profile);
+                /* Cancel new-Mii creation without leaving a dirty draft. */
+                editor.draft=editor.baseline;editor.pending=MDS_EDIT_NONE;
+                editor.status="Creation cancelled";
+                screen=gender_return_screen;
+            }
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PROFILE){
             unsigned favorites=0;for(unsigned i=0;i<100;i++)if(i!=editor.slot&&gallery.used[i])favorites+=gallery.miis[i].value[46];
