@@ -84,6 +84,7 @@ jobs:
           python3 tests/rom_regions.py
           python3 tests/rom_nitrofs_assets.py mii-ds.nds
           python3 tests/rom_body_models.py mii-ds.nds
+          python3 tests/rom_motion_packs.py mii-ds.nds
           python3 tests/rom_arm_sections.py mii-ds.nds
       - name: Publish playable candidate
         uses: actions/upload-artifact@v4
