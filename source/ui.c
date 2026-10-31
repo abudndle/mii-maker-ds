@@ -171,8 +171,9 @@ static int preview(const MdsAvatar *a,int mode)
    unsigned frame=mds_motion_frame(&motions[gender].clips[clip],motion_clip_ticks,NULL);
    unsigned key=clip*7200+frame;
    if(!motion_cached[gender]||motion_cached_key[gender]!=key){
+    /* A failed NitroFS read must remain retryable on a later preview. */
     motion_cached[gender]=mds_motion_pose(&motions[gender],clip,frame,body_bytes[gender],body_sizes[gender],motion_pose_bytes[gender],sizeof motion_pose_bytes[gender]);
-    motion_cached_key[gender]=key;
+    if(motion_cached[gender])motion_cached_key[gender]=key;
    }
    if(motion_cached[gender]){body=motion_pose_bytes[gender];size=56+(body_sizes[gender]-56)/12*18;pose_index=key;}
   }
@@ -199,7 +200,7 @@ static void paint_head(uint16_t *dest,int x,int y,int w,int h)
 const char *mds_ui_export_image(const MdsAvatar*a,unsigned slot)
 {
  if(!a)return "Choose a saved Mii first.";
- if(!preview(a,2)||memcmp(a->value,head_avatars[2].value,46))return "Mii image is unavailable.";
+ if(!preview(a,2)||memcmp(a->value,head_avatars[2].value,sizeof a->value))return "Mii image is unavailable.";
  if(!fatInitDefault())return "SD card is unavailable.";
  const char *drive=isDSiMode()?"sd:":"fat:";
  char directory[64],path[96];
