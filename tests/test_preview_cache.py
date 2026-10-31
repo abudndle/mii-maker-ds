@@ -43,4 +43,15 @@ if len(success_markers) != 1 or success_markers[0] <= fail_end:
     raise SystemExit("FAIL: successful-render cache marker has unsafe placement")
 if preview.index("memcpy(head_pixels,render_pixels", fail_end) > success_markers[0]:
     raise SystemExit("FAIL: preview marked cached before copying rendered pixels")
-print("PASS: preview input guards, 62-field cache, skeletal retry and render retry")
+# Legacy sampled animations must refresh both male and female previews.
+tick_start = source.index("int mds_ui_animation_tick(")
+tick_end = source.index("static void load_head_resource(", tick_start)
+tick = source[tick_start:tick_end]
+for fragment in (
+        "mds_animation_pose(&animations[0],ticks,&frame)",
+        "mds_animation_pose(&animations[1],ticks,&frame)",
+        "female_index!=animation_female_index",
+        "animation_female_index=female_index;"):
+    if fragment not in tick:
+        raise SystemExit("FAIL: sampled animation fallback does not refresh both genders")
+print("PASS: preview input guards, 62-field cache, skeletal retry and render retry and dual-gender sampled animation fallback")
