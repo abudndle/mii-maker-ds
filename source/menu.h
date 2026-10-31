@@ -4,5 +4,6 @@ typedef enum {MDS_SCREEN_HOME,MDS_SCREEN_EDITOR,MDS_SCREEN_GALLERY,MDS_SCREEN_PR
 typedef enum {MDS_HOME_NONE,MDS_HOME_VIEW,MDS_HOME_CREATE,MDS_HOME_TRANSFER,MDS_HOME_QR,MDS_HOME_HELP} MdsHomeAction;
 int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
+int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 int mds_home_focus_step(int,int);
 #endif
