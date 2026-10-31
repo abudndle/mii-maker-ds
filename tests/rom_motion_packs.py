@@ -28,7 +28,7 @@ def validate(pack, label):
     for idx in range(count):
         offset = 32 + idx * 40
         raw_name = pack[offset:offset + 24]
-        name = raw_name.split(b"\0", 1)[0]
+        name = bytes(raw_name.split(b"\0", 1)[0])
         if (b"\0" not in raw_name or not name or
                 any(not (48 <= b <= 57 or 65 <= b <= 90 or 97 <= b <= 122 or b == 95) for b in name)
                 or name in seen):
@@ -72,7 +72,7 @@ def compare_rig_catalogs(male, female):
         entries = {}
         for i in range(EXPECTED_CLIPS):
             at = 32 + i * 40
-            name = pack[at:at + 24].split(bytes((0,)), 1)[0]
+            name = bytes(pack[at:at + 24].split(bytes((0,)), 1)[0])
             # Offset is allowed to differ between rigs; timing must match.
             entries[name] = struct.unpack_from("<3I", pack, at + 28)
         return entries
