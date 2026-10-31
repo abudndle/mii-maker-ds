@@ -1,0 +1,24 @@
+name: Portable source tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run asset-free source tests
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 tools/test_host.py --cc "$CC" --no-sanitizers
+      - name: Run sanitizer tests
+        if: matrix.compiler == 'clang'
+        run: python3 tools/test_host.py --cc clang
