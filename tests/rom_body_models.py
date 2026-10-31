@@ -16,7 +16,12 @@ try:
     for gender in ("Male", "Female"):
         name = f"models/{gender}Body.bin"
         start, end = files[name]
-        vertices, triangles = inspect_bytes(data[start:end], name)
-        print(f"PASS: embedded original {gender} body: {vertices} vertices / {triangles} triangles")
+        embedded = data[start:end]
+        vertices, triangles = inspect_bytes(embedded, name)
+        original_path = ROOT / "nitrofiles" / name
+        original = original_path.read_bytes()
+        if embedded != original:
+            raise ValueError(f"{name}: packaged mesh differs from the original converted source")
+        print(f"PASS: embedded original {gender} body: {vertices} vertices / {triangles} triangles; byte-for-byte fidelity")
 except (OSError, ValueError, KeyError) as error:
     raise SystemExit(f"FAIL: packaged original model validation: {error}")
