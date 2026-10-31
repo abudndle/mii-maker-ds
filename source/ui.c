@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ui.h"
 #include "head.h"
+#include "thumbnail.h"
 #include "animation.h"
 #include "motion.h"
 #include "gui_tween.h"
@@ -38,6 +39,8 @@ static int show_profile_hint=1;
 static MdsCflArchive cfl;
 static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
+static MdsThumbnailCache gallery_thumbnails;
+_Static_assert(MDS_HEAD_SIDE==MDS_THUMBNAIL_SOURCE_SIDE,"gallery thumbnail source geometry must match renderer");
 static uint16_t *head_pixels=head_cache[0];
 static uint16_t render_pixels[MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsAvatar head_avatars[3];
@@ -500,11 +503,19 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     if(!ok)return;
     mds_ui_gallery_top(g,page,selected,notice);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
+    mds_thumbnail_page(&gallery_thumbnails,page);
     for(unsigned i=0;i<10;i++){
         unsigned slot=page*10+i;
-        /* Original resource thumbnails; full original gallery labels are pending. */
-        if(g->used[slot]&&preview(&g->miis[slot],0)){
-            const MdsMenuHit *r=&gallery_hits[i];paint_head(bottom,r->x,r->y-2,r->w,r->h);status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
+        const MdsMenuHit *r=&gallery_hits[i];
+        /* Full software rasterization is expensive on DS. Only regenerate a
+         * thumbnail when its page/slot/62 appearance fields have changed. */
+        if(g->used[slot]){
+            if(!mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot])&&
+               preview(&g->miis[slot],0))
+                mds_thumbnail_capture(&gallery_thumbnails,page,i,&g->miis[slot],head_pixels);
+            if(mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot]))
+                mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
+            status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
         if(slot==selected)outline(&gallery_hits[i]);
     }
