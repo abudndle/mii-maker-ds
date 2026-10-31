@@ -13,6 +13,7 @@ void mds_ui_import_open(MdsImport *);
 void mds_ui_import(const MdsImport *);
 void mds_ui_present_top(void);
 void mds_ui_scene_transition_start(uint32_t now);
+void mds_ui_scene_transition_cancel(void);
 int mds_ui_scene_transition_step(uint32_t now,int redraw);
 void mds_ui_set_render_clock(uint32_t (*)(void));
 void mds_ui_set_render_abort(int (*)(void));
