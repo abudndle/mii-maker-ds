@@ -25,7 +25,7 @@ static void animation_vblank(void)
  /* Record the last valid stylus coordinate for the release event. */
  if(live_held&KEY_TOUCH){live_touch_x=current.px;live_touch_y=current.py;}
  MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=live_held,
-                 .up=keysUp()&KEY_TOUCH};
+                 .up=keysUp()};
  if(!(event.down||event.repeat||event.up))return;
  event.touch=current;
  if(event.up&KEY_TOUCH){event.touch.px=live_touch_x;event.touch.py=live_touch_y;}
@@ -108,6 +108,8 @@ int main(void)
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
             if(focus!=previous_focus)mds_ui_home_focus_start(animation_vblanks);
             int action=down&KEY_A?focus+1:0;
+            if(input.up&(KEY_TOUCH|KEY_LEFT|KEY_RIGHT|KEY_A))
+                mds_ui_editor_adjust_release(animation_vblanks,input.up);
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_home_touch(t.px,t.py);}
             if(action==MDS_HOME_VIEW){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;notice="";}
             else if(action==MDS_HOME_CREATE){
@@ -266,12 +268,14 @@ int main(void)
                 mds_adjust(&editor.draft,(unsigned)editor.field,-1);
                 if(editor.draft.value[editor.field]!=prior)
                     mds_ui_editor_adjust_key(animation_vblanks,editor.field,-1);
+                else mds_ui_editor_adjust_invalid_key(animation_vblanks,editor.field,-1);
             }
             if(k&(KEY_RIGHT|KEY_A)){
                 uint8_t prior=editor.draft.value[editor.field];
                 mds_adjust(&editor.draft,(unsigned)editor.field,1);
                 if(editor.draft.value[editor.field]!=prior)
                     mds_ui_editor_adjust_key(animation_vblanks,editor.field,1);
+                else mds_ui_editor_adjust_invalid_key(animation_vblanks,editor.field,1);
             }
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;if(t.px<30&&t.py>=128&&t.py<149)screen=MDS_SCREEN_ACCESSORIES;else mds_ui_touch(&editor.draft,&editor.field,t.px,t.py);if(mds_ui_slider_active()){slider_changed=animation_vblanks;slider_preview_pending=1;}drawn_screen=-1;}
             if(down&KEY_L){if(mds_ui_view_step(-1))drawn_screen=-1;}
