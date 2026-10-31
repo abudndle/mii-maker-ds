@@ -18,6 +18,18 @@ int main(int argc,char**argv){
    unsigned h=hash();if(!i)first=h;else different+=h!=first;
   }
   assert(different>12);
+  /* Confirm real original meshes change when the editor camera rotates, but
+   * the original front view remains unchanged after a full revolution. */
+  assert(mds_mii_render(&cfl,&m,a.data,a.pose_bytes,pixels,1));
+  unsigned front=hash();
+  assert(mds_mii_render_view(&cfl,&m,a.data,a.pose_bytes,pixels,1,6));
+  assert(hash()!=front);
+  assert(mds_mii_render_view(&cfl,&m,a.data,a.pose_bytes,pixels,1,24));
+  assert(hash()==front);
+  assert(mds_head_render_view(&cfl,&m,pixels,0));
+  unsigned face_front=hash();
+  assert(mds_head_render_view(&cfl,&m,pixels,6));
+  assert(hash()!=face_front);
   mds_render_set_abort(abort_render);assert(mds_mii_render(&cfl,&m,a.data,a.pose_bytes,pixels,1)==-1);mds_render_set_abort(NULL);assert(mds_mii_render(&cfl,&m,a.data,a.pose_bytes,pixels,1)==1);
   assert(mds_animation_pose(&a,240,NULL)==a.data);
   assert(mds_animation_pose(&a,UINT32_MAX,NULL));
