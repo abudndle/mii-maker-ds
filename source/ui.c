@@ -9,6 +9,7 @@
 #include "animation.h"
 #include "motion.h"
 #include "gui_tween.h"
+#include "clan_home.h"
 #include "clan_scene.h"
 #include "image.h"
 #include "mii_qr.h"
@@ -31,6 +32,8 @@ static u16 *top,*bottom,*top_vram;
 static u16 transition_base[256*192];
 static MdsGuiTween scene_fade;
 static int scene_fade_enabled,scene_fade_base_valid,scene_fade_clock_started;
+static uint32_t home_focus_started;
+static int home_focus_animating;
 static u16 top_canvas[256*192],top_backgrounds[2][256*192],body_background[256*192];
 static int slider_field=-1;
 static UiRect slider_track;
@@ -312,6 +315,21 @@ void mds_ui_scene_transition_start(uint32_t now)
  scene_fade_base_valid=0;
  scene_fade_clock_started=0;
 }
+void mds_ui_home_focus_start(uint32_t now)
+{
+ home_focus_started=now;
+ home_focus_animating=1;
+}
+int mds_ui_home_focus_tick(uint32_t now)
+{
+ if(!home_focus_animating)return 0;
+ if(!mds_clan_home_running(now,home_focus_started)){
+  /* Redraw once at the final base position even after a stalled render. */
+  home_focus_animating=0;
+  return 1;
+ }
+ return 1;
+}
 void mds_ui_scene_transition_cancel(void)
 {
  scene_fade_enabled=0;
@@ -498,7 +516,13 @@ void mds_ui_home(int focus,const char *notice)
         return;
     }
     memcpy(top,top_backgrounds[1],sizeof top_canvas);bitmap("nitro:/ui/home-bottom.rgb555",bottom);
-    if(focus>0)for(unsigned i=0;i<sizeof home_hits/sizeof home_hits[0];i++)if(home_hits[i].action==focus+1)outline(&home_hits[i]);
+    if(focus>0)for(unsigned i=0;i<sizeof home_hits/sizeof home_hits[0];i++)
+        if(home_hits[i].action==focus+1){
+            MdsMenuHit cue=home_hits[i];
+            if(home_focus_animating&&render_clock)
+                cue.y+=mds_clan_home_offset(focus,render_clock(),home_focus_started);
+            outline(&cue);
+        }
     if(notice&&notice[0])label(8,156,notice);
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)

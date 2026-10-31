@@ -100,8 +100,10 @@ int main(void)
                 pending_editor_return=0;
             }
         }else if(screen==MDS_SCREEN_HOME){
+            int previous_focus=focus;
             if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
+            if(focus!=previous_focus)mds_ui_home_focus_start(animation_vblanks);
             int action=down&KEY_A?focus+1:0;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_home_touch(t.px,t.py);}
             if(action==MDS_HOME_VIEW){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;notice="";}
@@ -277,7 +279,7 @@ int main(void)
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY);
         mds_ui_view_scene(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_ACCESSORIES);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
-        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
+        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);

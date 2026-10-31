@@ -14,7 +14,7 @@ art resources. Preserve private resources outside this public Git repository.
 | 100 Miis, Personal Mii, favorites | Save backends with CRC and older-bank recovery for checksum-valid invalid Personal-Mii snapshots, import/export, thumbnail cache, gallery selection | Confirm cold restart and EEPROM detection across supported emulator/hardware |
 | Original CFL face meshes/textures and body assets | Original-resource software renderer and BOD2/BOD3 body streams | Improve projection, lighting, materials, body proportions and verify visual parity |
 | 53 male/female skeletal animation clips | Original 53-clip stream and manual gallery clip selector; six automatic idles | Implement original scene/event clip triggers and transition/blend timing |
-| Original CLAN animation timeline | Inventory of 327 original GUI tracks | Convert/replay the actual tracks and replace provisional transitions |
+| Original CLAN animation timeline | Inventory of 327 original GUI tracks | Bind all decoded property channels to matching original CLYT widgets and replace provisional transitions; source-derived home focus cue is only partial |
 | QR transmit/receive, image exports | QR encode/decode, file image/QR export, DSi camera QR entry | Stock 3DS/DSi interop, actual SD reads/writes, QR scanner and camera tests |
 | Create Mii from photo | Recognition resources retained, not a working converter | Implement recognition/adaptation on camera-equipped DSi; original DS has no built-in camera |
 | Wireless Mii sharing, Wii reception | No completed wireless transport | Design and test DS-compatible transport; stock 3DS/Wii protocols cannot be assumed interoperable |
