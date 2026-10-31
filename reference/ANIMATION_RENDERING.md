@@ -41,3 +41,26 @@ full CLYT pane hierarchy or original CLMC/CLVC material/vertex playback.
 Local source tests used GCC/UBSan and compared 40,053 source samples against
 the floating reference (worst error 0.039 source units). The original DS
 ROM has not been built or boot-tested for this milestone.
+
+## CLAN home material/vertex visual milestone
+
+The DS home-menu selection border now evaluates nine properties from the user's
+original `PlazaTop_Select` clip: four CLPA Y positions, three CLMC RGB
+channels, one CLMC alpha, and one CLVC shadow opacity. A deterministic
+`tools/generate_clan_home_visual.py` converts the original numeric-key metadata
+from `tools/clan_keyframes.py` into a small fixed-point header, excluding
+copyrighted image/audio/model/binary CLAN payloads.
+
+`source/clan_home.[ch]` evaluates all nine on the VBlank clock.
+`source/clan_overlay.[ch]` blends a colored two-pixel outline and a
+one-pixel shadow using clipped RGB555 software compositing.
+`source/ui.c` applies the result to the home selection only; its
+original background bitmap is redrawn before each cue, and completion
+restores the fixed baseline border. The reconstruction **adapts** original
+pane color and shadow opacity to the DS bitmap menu; it does not reproduce
+the original 3DS shadow mesh, textures, pane hierarchy, or all 327 timelines.
+
+Host CI tests include color/opacity endpoints, halfway values, all four
+menu slots, timer wrap, RGB555 blending, pixel clipping (including extreme
+coordinates) and six generator-corruption cases. The actual DS ROM still
+needs BlocksDS build and melonDS visual/hardware testing.
