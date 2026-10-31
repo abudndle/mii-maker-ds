@@ -50,4 +50,13 @@ for field, value in ((32 + 24, 0), (32 + 28, 0), (32 + 32, 2),
     bad = bytearray(valid)
     struct.pack_into("<I", bad, field, value)
     must_reject(bad)
-print("PASS: valid 53-clip MSP1 and 14 corrupt motion-pack variants")
+frame_start = 32 + EXPECTED_CLIPS * 40
+for value in (float("nan"), float("inf"), 4097.0):
+    bad = bytearray(valid)
+    struct.pack_into("<f", bad, frame_start, value)
+    must_reject(bad)
+for value in (4096 * 65536 + 1, -4096 * 65536 - 1):
+    bad = bytearray(valid)
+    struct.pack_into("<i", bad, frame_start + 48, value)
+    must_reject(bad)
+print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants")
