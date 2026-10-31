@@ -23,6 +23,8 @@ jobs:
         run: python3 tests/test_motion_packs.py
       - name: Verify original body model validator rejects corrupt meshes
         run: python3 tests/test_body_models.py
+      - name: Verify DS cartridge save null-gallery guards
+        run: python3 tests/test_cart_save_guards.py
       - name: Verify saturated DS input queue preserves new presses
         run: python3 tests/test_input_queue.py
       - name: Verify Mii preview cache recovery and safety guards
