@@ -101,11 +101,11 @@ int mds_ui_animation_tick(uint32_t ticks)
   int clip=mds_motion_find(&motions[0],"Wait00");
   if(motion_scene){
    unsigned total=0;
-   for(unsigned i=0;i<6;i++){int c=mds_motion_find(&motions[0],idle[i]);if(c>=0)total+=motions[0].clips[c].count*2;}
+   for(unsigned i=0;i<6;i++){int c=mds_motion_find(&motions[0],idle[i]);if(c>=0)total+=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;}
    if(total)elapsed%=total;
    for(unsigned i=0;i<6;i++){
     int c=mds_motion_find(&motions[0],idle[i]);if(c<0)continue;
-    unsigned duration=motions[0].clips[c].count*2;
+    unsigned duration=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;
     if(elapsed<duration){clip=c;break;}elapsed-=duration;
    }
   }
