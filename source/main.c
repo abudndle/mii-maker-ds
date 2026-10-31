@@ -64,6 +64,7 @@ int main(void)
     MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
+    int last_profile_mode=-1;
     const char *notice="",*drawn_notice=NULL;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
@@ -268,6 +269,12 @@ int main(void)
         int defer_preview=mds_ui_slider_active()&&animation_vblanks-slider_changed<12;
         if(!defer_preview&&slider_preview_pending){drawn_screen=-1;slider_preview_pending=0;}
         swiWaitForVBlank();
+        /* Original DialogBase00 entrance whenever a profile page opens.
+         * Hitboxes stay at their final positions; only pixels animate. */
+        if(screen==MDS_SCREEN_PROFILE){
+            if(last_profile_mode!=profile.mode)mds_ui_profile_transition_start(animation_vblanks);
+            last_profile_mode=profile.mode;
+        }else last_profile_mode=-1;
         if(screen!=last_transition_screen){
             if((screen==MDS_SCREEN_GALLERY&&last_transition_screen==MDS_SCREEN_HOME)||
                (screen==MDS_SCREEN_HOME&&last_transition_screen==MDS_SCREEN_GALLERY))
@@ -279,7 +286,7 @@ int main(void)
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY);
         mds_ui_view_scene(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_ACCESSORIES);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
-        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
+        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||(screen==MDS_SCREEN_PROFILE&&mds_ui_profile_transition_tick(animation_vblanks))||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
