@@ -24,7 +24,7 @@ jobs:
           fi
       - uses: actions/checkout@v4
       - name: Install required Linux packages
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential curl unzip python3 python3-pil
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential curl unzip python3 python3-pil python3-venv
       - name: Install Wonderful Toolchain and BlocksDS
         shell: bash
         run: |
@@ -52,6 +52,18 @@ jobs:
             curl -fLsS --retry 3 -H "Authorization: Bearer $ASSETS_TOKEN" "$ASSETS_URL" -o /tmp/mii-assets.zip
           else
             curl -fLsS --retry 3 "$ASSETS_URL" -o /tmp/mii-assets.zip
+          fi
+          # Drive sharing links may return a 200 OK HTML confirmation page.
+          if ! python3 -c 'import sys,zipfile;sys.exit(0 if zipfile.is_zipfile(sys.argv[1]) else 1)' /tmp/mii-assets.zip; then
+            if [[ "$ASSETS_URL" == *drive.google.com/* || "$ASSETS_URL" == *docs.google.com/* ]]; then
+              echo "Google Drive returned a non-ZIP response. Retrying with a Drive-aware downloader."
+              python3 -m venv /tmp/mii-drive-venv
+              /tmp/mii-drive-venv/bin/python -m pip -q install 'gdown>=5.2,<6'
+              /tmp/mii-drive-venv/bin/gdown --fuzzy "$ASSETS_URL" -O /tmp/mii-assets.zip
+            else
+              echo "::error title=Asset download is not a ZIP::The asset URL returned non-ZIP data. Set MII_ASSETS_URL to a direct ZIP download."
+              exit 1
+            fi
           fi
           python3 tools/restore_asset_zip.py /tmp/mii-assets.zip --extract-to .
           rm -f /tmp/mii-assets.zip
