@@ -21,3 +21,23 @@ Regenerate local data with `python3 tools/motion_pack.py`; run the reference gen
 The home↔gallery navigation now starts a ten-VBlank, deterministic software fade on the bottom display. `source/gui_tween.c` handles timing and VBlank wrap; `source/ui.c` keeps an unmodified 256×192 base image and regenerates each fade frame from that base so repeated stepping does not progressively darken the source. A redraw replaces the cached base, and the transition stops at full brightness. The event loop starts the fade only on home/gallery changes, so editor/body previews and camera mode are not intentionally animated by this code. `tests/gui_tween.c` covers interpolation endpoints, timer wrap and zero-duration behavior.
 
 This is an independently implemented DS transition, **not** a decoded reproduction of the original 3DS CLAN tracks. The original resource timeline format, per-widget bindings, original fade choreography and their visual timing still need to be ported. The full updated ROM has not yet been built or emulator-tested after this change; actual screen behavior remains unverified.
+
+## Decoded original CLAN property-curve milestone
+
+The private Mii Maker resource ZIP has 327 valid CLAN animations containing **13,366**
+numeric animation channels (CLPA 782, CLVC 1,989, CLMC 10,580, CLVI 14,
+CLTP 1). The earlier 8,290 count described a narrower pane-tag inventory,
+not the full channel count. `tools/clan_keyframes.py` decodes bounded source
+frames, values, tangents and discrete visibility/pattern keys without copying
+Nintendo binary resources into the public Git repository.
+
+`source/clan_curve.[ch]` evaluates float tracks in Q16.16 with cubic Hermite
+interpolation and duplicated-frame endpoint rules; `source/clan_home.[ch]`
+adapts four original PlazaTop_Select CLPA pane-Y curves into a 2-3 pixel
+focus-outline cue on the existing DS home background. The state loop redraws
+once after the motion finishes, including when a slow render skipped its final
+animation frame. This is only one adapted original motion property, **not**
+full CLYT pane hierarchy or original CLMC/CLVC material/vertex playback.
+Local source tests used GCC/UBSan and compared 40,053 source samples against
+the floating reference (worst error 0.039 source units). The original DS
+ROM has not been built or boot-tested for this milestone.
