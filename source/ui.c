@@ -54,7 +54,8 @@ static unsigned motion_clip,motion_frame,motion_clip_ticks,motion_scene;
 static int motion_clip_valid;
 static const char*const gallery_idle_names[]={"Wait00","Wait01","Wait02","Wait03Pre","Wait03","Wait04"};
 static int gallery_idle_indices[6];
-static int gallery_female_idle_indices[6];
+static int gallery_female_by_male[MDS_MOTION_CLIPS];
+static int gallery_selected_clip=-1; /* -1: automatic six-idle playback */
 static uint32_t motion_started;
 static uint8_t motion_pose_bytes[2][56+1440*18];
 static unsigned motion_cached_key[2];
@@ -80,10 +81,12 @@ static void load_animations(void)
  }
  /* Resolve the original clip names once instead of scanning all 53 entries
   * on every VBlank. -1 preserves the existing missing-clip behavior. */
- for(unsigned i=0;i<6;i++){
+ for(unsigned i=0;i<6;i++)
   gallery_idle_indices[i]=mds_motion_find(&motions[0],gallery_idle_names[i]);
-  gallery_female_idle_indices[i]=mds_motion_find(&motions[1],gallery_idle_names[i]);
- }
+ /* Original female/male pack indices differ. Resolve each clip by name. */
+ for(unsigned i=0;i<MDS_MOTION_CLIPS;i++)gallery_female_by_male[i]=-1;
+ for(unsigned i=0;i<motions[0].count;i++)
+  gallery_female_by_male[i]=mds_motion_find(&motions[1],motions[0].clips[i].name);
  /* Keep the older sampled files as a fallback for older resource bundles. */
  const char *paths[]={"nitro:/models/MaleBody.ani","nitro:/models/FemaleBody.ani"};
  for(unsigned i=0;i<2;i++){
@@ -100,7 +103,23 @@ static void load_animations(void)
 void mds_ui_motion_scene(int gallery)
 {
  unsigned scene=gallery!=0;
- if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;}
+ if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;gallery_selected_clip=-1;animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;}
+}
+int mds_ui_motion_step(int direction)
+{
+ if(!motion_scene)return 0;
+ int next=mds_motion_cycle(&motions[0],gallery_selected_clip,direction);
+ if(next<0||next==gallery_selected_clip)return 0;
+ gallery_selected_clip=next;motion_started=animation_clock;
+ animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;
+ return 1;
+}
+int mds_ui_motion_auto(void)
+{
+ if(!motion_scene||gallery_selected_clip<0)return 0;
+ gallery_selected_clip=-1;motion_started=animation_clock;
+ animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;
+ return 1;
 }
 int mds_ui_animation_tick(uint32_t ticks)
 {
@@ -108,7 +127,8 @@ int mds_ui_animation_tick(uint32_t ticks)
  if(motions[0].file){
   unsigned elapsed=ticks-motion_started,key=UINT32_MAX;
   int clip=gallery_idle_indices[0];
-  if(motion_scene){
+  if(motion_scene&&gallery_selected_clip>=0)clip=gallery_selected_clip;
+  else if(motion_scene){
    unsigned total=0;
    for(unsigned i=0;i<6;i++){int c=gallery_idle_indices[i];if(c>=0)total+=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;}
    if(total)elapsed%=total;
@@ -124,8 +144,7 @@ int mds_ui_animation_tick(uint32_t ticks)
    * Refresh the visible Mii if either original animation advances. */
   unsigned female_key=UINT32_MAX;
   if(clip>=0&&motions[1].file){
-   int female_clip=-1;
-   for(unsigned i=0;i<6;i++)if(gallery_idle_indices[i]==clip){female_clip=gallery_female_idle_indices[i];break;}
+   int female_clip=gallery_female_by_male[clip];
    if(female_clip>=0)female_key=(unsigned)female_clip*7200u+
     mds_motion_frame(&motions[1].clips[female_clip],motion_clip_ticks,NULL);
   }
@@ -164,12 +183,8 @@ static int preview(const MdsAvatar *a,int mode)
    * clip name on each gender's original rig, not its numeric table index. */
   int selected=-1;
   if(motion_clip_valid&&gender==0&&motion_clip<motions[0].count)selected=(int)motion_clip;
-  else if(motion_clip_valid&&gender==1)for(unsigned i=0;i<6;i++){
-   if(gallery_idle_indices[i]==(int)motion_clip){
-    selected=gallery_female_idle_indices[i];
-    break;
-   }
-  }
+  else if(motion_clip_valid&&gender==1&&motion_clip<motions[0].count)
+   selected=gallery_female_by_male[motion_clip];
   if(selected>=0){
    unsigned clip=(unsigned)selected;
    /* Recompute from clip-local VBlank time; the two original rigs may
@@ -465,6 +480,10 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         paint_head(top,48,12,160,160);
         const char *name=g->miis[selected].name;label((256-text_width(name))/2,3,name);
     }else label(94,83,"Choose a Mii.");
+    if(motion_scene&&motions[0].file){
+        const char*clip_name=gallery_selected_clip<0?"Auto":motions[0].clips[gallery_selected_clip].name;
+        snprintf(text,sizeof text,"Motion: %s",clip_name);label(8,156,text);
+    }
     snprintf(text,sizeof text,"%u / 10",page+1);label(222-text_width(text),177,text);
     if(notice&&notice[0]&&strcmp(notice,"Ready"))label(8,177,display_status(notice));else label(8,177,"Y: Copy  X: Erase  SELECT: Image");
 }
