@@ -1,7 +1,7 @@
 #ifndef MDS_EDITOR_H
 #define MDS_EDITOR_H
 #include "save.h"
-typedef enum { MDS_EDIT_NONE, MDS_EDIT_PREV, MDS_EDIT_NEXT, MDS_EDIT_NEW, MDS_EDIT_DELETE, MDS_EDIT_RELOAD } MdsEditAction;
+typedef enum { MDS_EDIT_NONE, MDS_EDIT_PREV, MDS_EDIT_NEXT, MDS_EDIT_NEW, MDS_EDIT_DELETE, MDS_EDIT_RELOAD, MDS_EDIT_SORT_NAME, MDS_EDIT_SORT_FAVORITES } MdsEditAction;
 typedef struct {
     MdsGallery *gallery;
     MdsAvatar draft,baseline;

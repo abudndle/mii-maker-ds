@@ -64,10 +64,16 @@ int main(void)
                 if(camera_open){camera_open=mds_camera_update();mds_ui_camera(mds_camera_frame());if(!camera_qr)editor.status=mds_camera_status();mds_ui_camera_notice(editor.status);mds_ui_present_top();}
             }
         }else if(editor.pending){
+            if((editor.pending==MDS_EDIT_SORT_NAME||editor.pending==MDS_EDIT_SORT_FAVORITES)&&(down&(KEY_L|KEY_R)))
+                editor.pending=editor.pending==MDS_EDIT_SORT_NAME?MDS_EDIT_SORT_FAVORITES:MDS_EDIT_SORT_NAME;
             int response=-1;
             if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
-            else if(down&KEY_TOUCH){touchPosition t;t=input.touch;response=mds_ui_confirm_touch(t.px,t.py);}
-            if(response>=0){mds_editor_confirm(&editor,response,persist,NULL);if(response&&return_home)screen=MDS_SCREEN_HOME;return_home=0;}
+            else if(down&KEY_TOUCH){touchPosition t;t=input.touch;
+                if((editor.pending==MDS_EDIT_SORT_NAME||editor.pending==MDS_EDIT_SORT_FAVORITES)&&t.px>=24&&t.px<232&&t.py>=40&&t.py<64)
+                    editor.pending=editor.pending==MDS_EDIT_SORT_NAME?MDS_EDIT_SORT_FAVORITES:MDS_EDIT_SORT_NAME;
+                else response=mds_ui_confirm_touch(t.px,t.py);
+            }
+            if(response>=0){mds_editor_confirm(&editor,response,persist,NULL);if(screen==MDS_SCREEN_GALLERY)page=editor.slot/10;if(response&&return_home)screen=MDS_SCREEN_HOME;return_home=0;}
         }else if(screen==MDS_SCREEN_HOME){
             if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
@@ -120,6 +126,7 @@ int main(void)
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_GALLERY){
+            if(down&KEY_START){mds_editor_request(&editor,MDS_EDIT_SORT_NAME);continue;}
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
             int horizontal=((k&KEY_RIGHT)!=0)-((k&KEY_LEFT)!=0);
             int vertical=((k&KEY_DOWN)!=0)-((k&KEY_UP)!=0);
@@ -199,7 +206,8 @@ int main(void)
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
-            if(editor.pending)mds_ui_confirm(editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":"Discard your changes?");
+            if(editor.pending==MDS_EDIT_SORT_NAME||editor.pending==MDS_EDIT_SORT_FAVORITES)mds_ui_sort_confirm(editor.pending==MDS_EDIT_SORT_FAVORITES);
+            else if(editor.pending)mds_ui_confirm(editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":"Discard your changes?");
             mds_ui_scene_transition_step(animation_vblanks,1);
             mds_ui_present_top();
             drawn=editor;drawn_screen=screen;drawn_focus=focus;drawn_page=page;drawn_notice=notice;
