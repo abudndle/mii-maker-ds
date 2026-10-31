@@ -19,6 +19,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_generate_clan_home_visual.py
       - name: Verify CLAN keyframe decoder
         run: python3 -m unittest discover -s tests -p test_clan_keyframes.py
+      - name: Verify NitroFS UI and sprite runtime preflight
+        run: python3 -m unittest discover -s tests -p test_runtime_asset_parity.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
       - name: Run asset-free sanitizer tests

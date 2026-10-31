@@ -35,6 +35,9 @@ def check_zip(archive: Path) -> None:
     # proprietary files or attempting the BlocksDS build. Reads private ZIP
     # in memory and compares 41 committed Q16.16 keyframe tracks.
     run(sys.executable, "tools/verify_private_clan.py", archive)
+    # Validate every source-referenced editor icon and all NitroFS UI bitmaps/sprites.
+    # This gate runs before private resource restoration and compiler invocation.
+    run(sys.executable, "tools/verify_runtime_assets.py", archive)
 
 
 def build(archive: Path, validate_only=False, jobs=2) -> None:
@@ -42,7 +45,7 @@ def build(archive: Path, validate_only=False, jobs=2) -> None:
         raise ValueError("private resource archive does not exist: " + str(archive))
     check_zip(archive)
     if validate_only:
-        print("PASS: private ZIP, both original 53-clip motion catalogs and 41 GUI CLAN tables validated.")
+        print("PASS: private ZIP, original motion catalogs, 41 GUI CLAN tables, and every UI/sprite resource validated.")
         print("No assets were extracted and no ROM was built.")
         return
 

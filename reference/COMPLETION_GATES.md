@@ -51,3 +51,10 @@ without running the resulting ROM through a compatible emulator or hardware.
 - [ ] BlocksDS compiler and SDK installed in an isolated reproducible build environment
 - [ ] Build `mii-ds.nds` from owner's private original-resource ZIP
 - [ ] Verify the ROM's NitroFS payloads, ARM9/ARM7 sections, and emulator scenes
+
+### Runtime resource parity
+- [x] Extract all 13 original editor layout names and 62 original editor field maxima from existing DS source
+- [x] Validate **365** NitroFS paths required by the DS interface against the user's private archive
+- [x] Validate all **30** shipped RGB555 screen bitmaps and **331** packed sprite payloads
+- [x] Reject missing feature art, unsupported dynamic path templates, malformed sprite sizes and invalid screen dimensions before any private ROM build
+- [ ] Compile and boot an actual private DS ROM with BlocksDS and melonDS
