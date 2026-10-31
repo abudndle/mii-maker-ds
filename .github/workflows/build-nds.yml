@@ -75,6 +75,8 @@ jobs:
           fi
           python3 tools/restore_asset_zip.py /tmp/mii-assets.zip --extract-to .
           rm -f /tmp/mii-assets.zip
+      - name: Render original male and female Mii poses on host
+        run: python3 tools/test_original_render.py
       - name: Validate input and compile ROM
         shell: bash
         run: |
