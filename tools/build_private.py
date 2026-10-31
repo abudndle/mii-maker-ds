@@ -31,6 +31,10 @@ def check_zip(archive: Path) -> None:
     # catalogs without extracting or needing the Nintendo DS compiler.
     run(sys.executable, "tests/rom_motion_packs.py", "--source-only",
         "--asset-zip", archive)
+    # Reject stale/incorrect original GUI animation tables before restoring
+    # proprietary files or attempting the BlocksDS build. Reads private ZIP
+    # in memory and compares 41 committed Q16.16 keyframe tracks.
+    run(sys.executable, "tools/verify_private_clan.py", archive)
 
 
 def build(archive: Path, validate_only=False, jobs=2) -> None:
@@ -38,7 +42,7 @@ def build(archive: Path, validate_only=False, jobs=2) -> None:
         raise ValueError("private resource archive does not exist: " + str(archive))
     check_zip(archive)
     if validate_only:
-        print("PASS: private ZIP and both original 53-clip motion catalogs validated.")
+        print("PASS: private ZIP, both original 53-clip motion catalogs and 41 GUI CLAN tables validated.")
         print("No assets were extracted and no ROM was built.")
         return
 
