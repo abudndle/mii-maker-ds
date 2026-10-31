@@ -15,3 +15,9 @@ Timing still assumes 30 source fps, driven by a 60 Hz VBlank clock. The original
 The top image is composed in RAM and presented only as a complete frame. New queued input cancels unfinished rendering and retains the previous frame. Body sliders capture the stylus continuously, clamp 0–127 outside the track, and redraw their knobs independently of expensive model previews. Rendering remains a software implementation; original camera/light/material fidelity and body-proportion coefficients still need work.
 
 Regenerate local data with `python3 tools/motion_pack.py`; run the reference generator with `python3 tools/motion_reference.py`. Original resources and generated private reports stay outside the source-only GitHub repository.
+
+## DS scene-transition milestone
+
+The home↔gallery navigation now starts a ten-VBlank, deterministic software fade on the bottom display. `source/gui_tween.c` handles timing and VBlank wrap; `source/ui.c` keeps an unmodified 256×192 base image and regenerates each fade frame from that base so repeated stepping does not progressively darken the source. A redraw replaces the cached base, and the transition stops at full brightness. The event loop starts the fade only on home/gallery changes, so editor/body previews and camera mode are not intentionally animated by this code. `tests/gui_tween.c` covers interpolation endpoints, timer wrap and zero-duration behavior.
+
+This is an independently implemented DS transition, **not** a decoded reproduction of the original 3DS CLAN tracks. The original resource timeline format, per-widget bindings, original fade choreography and their visual timing still need to be ported. The full updated ROM has not yet been built or emulator-tested after this change; actual screen behavior remains unverified.
