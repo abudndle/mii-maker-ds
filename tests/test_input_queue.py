@@ -8,7 +8,7 @@ start = source.index("static void animation_vblank(void)")
 end = source.index("static MdsInput next_input(void)", start)
 producer = source[start:end]
 checks = [
-    (r"if\\s*\\(!event\\.down&&queued>=23\\)return;", "reserve eight slots for fresh presses"),
+    (r"if\s*\(!event\.down&&queued>=23\)return;", "reserve eight slots for fresh presses"),
     (r"if\s*\(next==input_read\)", "queue-full detection"),
     (r"if\s*\(!event\.down\)return;", "discard saturated repeat-only events"),
     (r"input_read\s*=\s*\(input_read\+1\)%32;", "evict oldest event for new press"),
