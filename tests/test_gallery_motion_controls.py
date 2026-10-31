@@ -33,9 +33,13 @@ require("mds_motion_find(&motions[1],motions[0].clips[i].name)" in ui,
 require("gallery_female_by_male[motion_clip]" in ui and
         "gallery_female_by_male[clip]" in ui,
         "preview and redraw must both resolve female clip by name")
+require("else if(!motions[1].file){" in ui and
+        "mds_animation_pose(&animations[1],ticks,&sampled)" in ui and
+        "female_key=sampled;" in ui,
+        "female sampled-animation fallback must advance without a female MSP1 pack")
 require("Motion: %s" in ui and "UP/DOWN: Clip   START: Auto" in ui,
         "gallery does not display selected clip and controls")
 require("mds_ui_motion_step(int direction)" in header and
         "mds_ui_motion_auto(void)" in header,
         "public UI control declarations missing")
-print("PASS: original 53-clip gallery controls, autoplay and gender name matching")
+print("PASS: original 53-clip controls, gender name matching and mixed-pack fallback")
