@@ -12,4 +12,10 @@ int mds_gallery_touch(int x,int y,unsigned page)
     for(unsigned i=0;i<sizeof gallery_hits/sizeof gallery_hits[0];i++)if(inside(&gallery_hits[i],x,y))return (int)(page*10)+gallery_hits[i].action;
     return -1;
 }
+int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
+{
+    if(page>=10||!direction)return -1;
+    unsigned local=selected/10==page?selected%10:0;
+    return (int)(page*10+(unsigned)((int)(local+10)+(direction>0?1:-1))%10);
+}
 int mds_home_focus_step(int current,int delta){int v=(current+delta)%4;return v<0?v+4:v;}
