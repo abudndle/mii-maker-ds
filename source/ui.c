@@ -36,6 +36,7 @@ static MdsGuiTween scene_fade;
 static int scene_fade_enabled,scene_fade_base_valid,scene_fade_clock_started;
 static uint32_t profile_dialog_started;
 static int profile_dialog_active,profile_dialog_painted;
+static int profile_dialog_exiting,profile_dialog_exit_up;
 static uint32_t home_focus_started;
 static int home_focus_animating;
 static u16 top_canvas[256*192],top_backgrounds[2][256*192],body_background[256*192];
@@ -339,6 +340,20 @@ void mds_ui_profile_transition_start(uint32_t now)
  profile_dialog_started=now;
  profile_dialog_active=1;
  profile_dialog_painted=0;
+ profile_dialog_exiting=0;
+ profile_dialog_exit_up=0;
+}
+void mds_ui_profile_transition_exit(uint32_t now,int up)
+{
+ profile_dialog_started=now;
+ profile_dialog_active=1;
+ profile_dialog_painted=0;
+ profile_dialog_exiting=1;
+ profile_dialog_exit_up=!!up;
+}
+int mds_ui_profile_transition_active(void)
+{
+ return profile_dialog_active;
 }
 int mds_ui_profile_transition_tick(uint32_t now)
 {
@@ -675,7 +690,10 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
    profile_dialog_painted=1;
   }
   mds_clan_dialog_translate(bottom,
-      mds_clan_dialog_y(now,profile_dialog_started),RGB15(26,29,27)|BIT(15));
+      profile_dialog_exiting?
+       mds_clan_dialog_exit_y(now,profile_dialog_started,profile_dialog_exit_up):
+       mds_clan_dialog_y(now,profile_dialog_started),
+      RGB15(26,29,27)|BIT(15));
  }
 }
 void mds_ui_gender(int create,int choice)
