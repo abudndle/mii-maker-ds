@@ -115,3 +115,27 @@ Limitations: these animations move the *reconstructed whole panel*,
 not original individual CLYT pane geometry. The source 30-fps
 cadence is provisional, and no real BlocksDS ROM or melonDS
 visual parity run is confirmed for this milestone.
+
+## Original editor selection animations: tab material RGB and feature scale
+
+The DS editor now uses numeric tracks from the user's original
+`Editor.arc.files/EditorCommon_Select`, `EditHair_Select` and
+`EditFace_Select` CLAN clips. `tools/generate_clan_editor.py` extracts
+eight source-derived tracks into a small Q16.16 header: tab icon CLMC
+red/green/blue, pane CLMC red/green/blue, and selected feature CLPA X-scale
+curves (1.00→1.08→1.00 and 1.00→1.10→1.00).
+
+`source/clan_editor.[ch]` maps the existing 13 DS editor categories to
+eight original tabs, plays the selected item enlargement at 30fps over
+the VBlank clock, and evaluates original tab colors. `source/ui.c`
+applies color to a reconstructed selection border and enlarges only
+the currently selected feature icon using the previously supplied
+original feature art. Input and touch hitboxes remain stationary.
+`source/main.c` retriggers on actual category/item selection changes,
+begins timing at first draw to tolerate expensive software previews,
+and redraws the original unmodified bitmap on completion.
+
+The color transition affects the DS outlines, not the original CLYT
+material hierarchy; scaling affects selected feature sprites, not every
+3DS pane. All original game resources remain private. The ROM still
+requires a BlocksDS build plus actual melonDS and DS/DSi visual/input tests.
