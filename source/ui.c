@@ -147,6 +147,8 @@ static int preview(const MdsAvatar *a,int mode)
  if(!cfl.data||mode<0||mode>2)return 0;
  head_pixels=head_cache[mode];
  unsigned gender=a->value[0],pose_index=0;
+ /* Corrupt or imported profile bytes must never index beyond the two rigs. */
+ if(gender>=2)return 0;
  const void*body=mode?mds_animation_pose(&animations[gender],animation_clock,&pose_index):NULL;
  size_t size=body?animations[gender].pose_bytes:body_sizes[gender];
  if(mode&&motions[gender].file&&body_bytes[gender]&&body_sizes[gender]<=sizeof motion_pose_bytes[gender]){
