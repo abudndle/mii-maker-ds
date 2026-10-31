@@ -324,8 +324,9 @@ int mds_ui_home_focus_tick(uint32_t now)
 {
  if(!home_focus_animating)return 0;
  if(!mds_clan_home_running(now,home_focus_started)){
+  /* Redraw once at the final base position even after a stalled render. */
   home_focus_animating=0;
-  return 0;
+  return 1;
  }
  return 1;
 }
