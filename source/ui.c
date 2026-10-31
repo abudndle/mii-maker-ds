@@ -51,6 +51,8 @@ static uint32_t animation_clock;
 static unsigned rendered_animation_frames;
 static MdsMotion motions[2];
 static unsigned motion_clip,motion_frame,motion_clip_ticks,motion_scene;
+static const char*const gallery_idle_names[]={"Wait00","Wait01","Wait02","Wait03Pre","Wait03","Wait04"};
+static int gallery_idle_indices[6];
 static uint32_t motion_started;
 static uint8_t motion_pose_bytes[2][56+1440*18];
 static unsigned motion_cached_key[2];
@@ -74,6 +76,9 @@ static void load_animations(void)
   FILE*f=fopen(packs[i],"rb");
   if(f&&!mds_motion_open(&motions[i],f))fclose(f);
  }
+ /* Resolve the original clip names once instead of scanning all 53 entries
+  * on every VBlank. -1 preserves the existing missing-clip behavior. */
+ for(unsigned i=0;i<6;i++)gallery_idle_indices[i]=mds_motion_find(&motions[0],gallery_idle_names[i]);
  /* Keep the older sampled files as a fallback for older resource bundles. */
  const char *paths[]={"nitro:/models/MaleBody.ani","nitro:/models/FemaleBody.ani"};
  for(unsigned i=0;i<2;i++){
@@ -96,15 +101,14 @@ int mds_ui_animation_tick(uint32_t ticks)
 {
  animation_clock=ticks;
  if(motions[0].file){
-  static const char*const idle[]={"Wait00","Wait01","Wait02","Wait03Pre","Wait03","Wait04"};
   unsigned elapsed=ticks-motion_started,key=0;
-  int clip=mds_motion_find(&motions[0],"Wait00");
+  int clip=gallery_idle_indices[0];
   if(motion_scene){
    unsigned total=0;
-   for(unsigned i=0;i<6;i++){int c=mds_motion_find(&motions[0],idle[i]);if(c>=0)total+=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;}
+   for(unsigned i=0;i<6;i++){int c=gallery_idle_indices[i];if(c>=0)total+=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;}
    if(total)elapsed%=total;
    for(unsigned i=0;i<6;i++){
-    int c=mds_motion_find(&motions[0],idle[i]);if(c<0)continue;
+    int c=gallery_idle_indices[i];if(c<0)continue;
     unsigned duration=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;
     if(elapsed<duration){clip=c;break;}elapsed-=duration;
    }
