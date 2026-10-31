@@ -1,5 +1,7 @@
 # Original feature to DS implementation
 
+For the explicit unimplemented-feature inventory and finish criteria, see [COMPLETION_GATES.md](COMPLETION_GATES.md).
+
 The original compiled ARM11 executable is evidence, not recovered Nintendo C/C++ source. The DS runtime is independently authored. Models and artwork are extracted originals, not replica meshes or generated replacements. Data and code provenance do not by themselves prove functional parity.
 
 | Original component | DS mapping | Current evidence / limit |
