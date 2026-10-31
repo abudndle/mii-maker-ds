@@ -9,7 +9,7 @@ The original compiled ARM11 executable is evidence, not recovered Nintendo C/C++
 | CFL_Res.dat meshes, anchors, masks and feature textures | cfl_resource.c, head.c, view.c | Real original geometry/textures; 24-step L/R yaw is implemented, but software lighting/projection/materials and exact camera easing remain provisional |
 | MaleBody/FemaleBody rigid meshes and skeleton | body_models.py, head.c, view.c | Original triangle/palette/bone streams and head attachment; body y-axis yaw is implemented; exact body proportion coefficients incomplete |
 | MiiAnim.arc, all 53 clips | animation_curves.py, motion_pack.py, motion.c, ui.c | All 12,164 gender/source frames supported via streamed bone transforms; all 53 clips selectable in gallery, six idle clips cycle automatically; original scene/event choreography incomplete |
-| PlazaTop / SelectMii / EDITSelectBase | menu.c, ui.c, menu_assets.py, thumbnail.c | Original menu/gallery art and bounds with D-pad selection, page-local thumbnail cache, animation clip controls; animated plaza/sorting incomplete |
+| PlazaTop / SelectMii / EDITSelectBase | menu.c, ui.c, menu_assets.py, thumbnail.c | Original menu/gallery art and bounds with D-pad selection, touch drag-to-move/swap, page-local thumbnail cache and animation controls; animated plaza/advanced sorting incomplete |
 | Thirteen original editor pages | layouts.py, ui_hitboxes.py, ui.c | Icons, transform/reset controls, colors and captured sliders |
 | Editor/Profile and original gender/date/permission dialogs | profile.c, profile_assets.py | Names/profile controls, original numeral font and dialog hits |
 | QR/BtnQR, Dialog/DialogPhotoSelect | qr_assets.py, qr_generated.h, ui.c | Original QR menu and Face/Entire Mii selector; camera row hidden on DS |
