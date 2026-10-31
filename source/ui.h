@@ -38,6 +38,8 @@ void mds_ui_gender(int,int);
 void mds_ui_accessories(void);
 void mds_ui_confirm(const char *);
 int mds_ui_confirm_touch(int,int);
+void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *,int field,int editing);
+int mds_ui_editor_selection_tick(uint32_t now);
 void mds_ui_draw(const MdsAvatar *a,int field);
 int mds_ui_slider_active(void);
 int mds_ui_slider_move(MdsAvatar *,int);

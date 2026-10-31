@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify source-derived editor CLAN selection tracks
+        run: python3 -m unittest discover -s tests -p test_generate_clan_editor.py
       - name: Verify source-derived dialog pane keys
         run: python3 -m unittest discover -s tests -p test_generate_clan_dialog.py
       - name: Verify source-derived CLAN home track generator

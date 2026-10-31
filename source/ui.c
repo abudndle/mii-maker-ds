@@ -10,6 +10,8 @@
 #include "motion.h"
 #include "gui_tween.h"
 #include "clan_home.h"
+#include "clan_editor.h"
+#include "clan_overlay.h"
 #include "clan_dialog.h"
 #include "clan_overlay.h"
 #include "clan_scene.h"
@@ -44,6 +46,8 @@ static int slider_field=-1;
 static UiRect slider_track;
 static u16 scratch[128*128];
 static unsigned category;
+static MdsClanEditorAnim editor_selection_fx;
+static int editor_last_category=-1,editor_last_selection=-1;
 static int ok;
 static int show_profile_hint=1;
 static MdsCflArchive cfl;
@@ -404,11 +408,45 @@ void mds_ui_present_top(void)
 static void feature(const char *prefix,int digits,int index,UiRect r){char path[96];snprintf(path,sizeof path,"nitro:/art/%s%0*d.bin",prefix,digits,index);FILE *f=fopen(path,"rb");if(!f)return;unsigned char b[4];if(fread(b,1,4,f)!=4){fclose(f);return;}int w=b[0]|b[1]<<8,h=b[2]|b[3]<<8;if(w<1||h<1||w*h>128*128){fclose(f);return;}int read=fread(scratch,2,(size_t)(w*h),f)==(size_t)(w*h);fclose(f);if(!read)return;
  for(int y=0;y<r.h;y++)for(int x=0;x<r.w;x++){int dx=r.x+x,dy=r.y+y;if(dx<0||dx>=256||dy<0||dy>=192)continue;u16 color=scratch[(y*h/r.h)*w+x*w/r.w];if(color&BIT(15))bottom[dy*256+dx]=color;}
 }
+void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *a,
+                                    int field,int editing)
+{
+ if(!editing||!a){
+  editor_selection_fx.active=0;
+  editor_last_category=-1;
+  editor_last_selection=-1;
+  return;
+ }
+ unsigned current=pick(field);
+ if(current>=UI_CATEGORY_COUNT)return;
+ const UiCategory *c=&ui_categories[current];
+ int selection=c->count?a->value[c->field]:0;
+ if(editor_last_category!=(int)current||editor_last_selection!=selection){
+  int changed=editor_last_category!=(int)current;
+  mds_clan_editor_begin(&editor_selection_fx,now,current,(unsigned)selection,changed);
+  editor_last_category=(int)current;
+  editor_last_selection=selection;
+ }
+}
+int mds_ui_editor_selection_tick(uint32_t now)
+{
+ return mds_clan_editor_tick(&editor_selection_fx,now);
+}
+static void editor_tab_color_cue(const MdsClanEditorStyle *style)
+{
+ if(!style->tab_active||editor_selection_fx.tab>=8)return;
+ int y=2+21*(int)editor_selection_fx.tab;
+ /* Source material colors projected onto DS bitmap selection outlines. */
+ mds_clan_border_tint(bottom,256,192,1,y,28,20,style->tab_pane_rgb555,255);
+ mds_clan_border_tint(bottom,256,192,3,y+2,24,16,style->tab_icon_rgb555,160);
+}
 void mds_ui_draw(const MdsAvatar *a,int field)
 {
  if(!ok)return;
  show_profile_hint=1;
  category=pick(field);const UiCategory *c=&ui_categories[category];char path[96];
+ MdsClanEditorStyle cue;
+ mds_clan_editor_style(&editor_selection_fx,render_clock?render_clock():0,&cue);
  snprintf(path,sizeof path,"nitro:/ui/%s.rgb555",c->layout);
  if(category==12)memcpy(bottom,body_background,sizeof body_background);else bitmap(path,bottom);
  if(category==12){
@@ -419,13 +457,25 @@ void mds_ui_draw(const MdsAvatar *a,int field)
    UiRect knob={track.x+a->value[f]*(track.w-1)/127-UI_BODY_SLIDER_W/2,track.y+(track.h-UI_BODY_SLIDER_H)/2,UI_BODY_SLIDER_W,UI_BODY_SLIDER_H};
    feature("BodySlider",1,0,knob);
   }
+  editor_tab_color_cue(&cue);
   return;
  }
- if(!c->prefix||!c->count)return;
+ if(!c->prefix||!c->count){editor_tab_color_cue(&cue);return;}
  int page=a->value[c->field]/c->count;
  for(int i=0;i<c->count;i++){
-  int n=page*c->count+i;if(n<=mds_fields[c->field].maximum)feature(c->prefix,c->digits,n,c->slots[i]);
+  int n=page*c->count+i;
+  if(n<=mds_fields[c->field].maximum){
+   UiRect r=c->slots[i];
+   if(n==a->value[c->field]&&cue.part_scale_q16>65536){
+    /* Adapt original CLPA image scale without moving touch hitboxes. */
+    int w=(int)(((int64_t)r.w*cue.part_scale_q16+32768)/65536);
+    int h=(int)(((int64_t)r.h*cue.part_scale_q16+32768)/65536);
+    r.x-=(w-r.w)/2;r.y-=(h-r.h)/2;r.w=w;r.h=h;
+   }
+   feature(c->prefix,c->digits,n,r);
+  }
  }
+ editor_tab_color_cue(&cue);
 }
 int mds_ui_slider_active(void){return slider_field>=0;}
 void mds_ui_slider_release(void){slider_field=-1;}
