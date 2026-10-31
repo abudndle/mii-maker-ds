@@ -47,6 +47,9 @@ def build(archive: Path, validate_only=False, jobs=2) -> None:
         raise ValueError("could not restore the private resource archive")
     run(sys.executable, "tools/check_assets.py")
     run(sys.executable, "tools/validate_body_models.py")
+    # Use the user's private assets to execute the real C renderer on host:
+    # all male/female original poses and four discrete camera angles.
+    run(sys.executable, "tools/test_original_render.py", "--asset-zip", archive)
     run(sys.executable, "tools/build_preflight.py")
     run("make", "-j" + str(jobs))
     if not ROM.is_file() or not ROM.stat().st_size:
