@@ -147,6 +147,12 @@ int mds_ui_animation_tick(uint32_t ticks)
    int female_clip=gallery_female_by_male[clip];
    if(female_clip>=0)female_key=(unsigned)female_clip*7200u+
     mds_motion_frame(&motions[1].clips[female_clip],motion_clip_ticks,NULL);
+  }else if(!motions[1].file){
+   /* Mixed resource bundles may contain the male MSP1 stream but only the
+    * older female ANI1 poses. Track female samples independently so a slow
+    * male clip never freezes the female gallery preview. */
+   unsigned sampled=0;
+   if(mds_animation_pose(&animations[1],ticks,&sampled))female_key=sampled;
   }
   int changed=key!=animation_index||female_key!=animation_female_index;
   animation_index=key;animation_female_index=female_key;return changed;
