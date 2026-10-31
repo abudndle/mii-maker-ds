@@ -13,6 +13,7 @@ static int ready,compact;
 int mds_cart_open(MdsGallery *g)
 {
     ready=0;compact=0;
+    if(!g)return 0;
     /* A raw cardReadHeader command is invalid after NitroFS initializes the
        gamecard; use the bootloader header copy for the launched application. */
     if(memcmp(__NDSHeader->gameCode,"MDSD",4))return 0;
@@ -33,7 +34,7 @@ int mds_cart_open(MdsGallery *g)
 }
 int mds_cart_flush(MdsGallery *g)
 {
-    if(!ready)return 0;
+    if(!g||!ready)return 0;
     if(compact){
         if(!mds_compact_encode(g,image,MDS_COMPACT_SIZE))return 0;
         sysSetCardOwner(BUS_OWNER_ARM9);
