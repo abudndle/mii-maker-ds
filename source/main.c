@@ -65,6 +65,8 @@ int main(void)
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     int last_profile_mode=-1;
+    MdsProfile profile_exit_visual;
+    int profile_exit_pending=0,profile_exit_to_editor=0;
     const char *notice="",*drawn_notice=NULL;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
@@ -227,6 +229,8 @@ int main(void)
             }
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PROFILE){
+          if(!profile_exit_pending){
+            MdsProfile previous_profile=profile;
             unsigned favorites=0;for(unsigned i=0;i<100;i++)if(i!=editor.slot&&gallery.used[i])favorites+=gallery.miis[i].value[46];
             int action=0;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_profile_touch(&profile,&editor.draft,t.px,t.py,favorites);}
@@ -236,9 +240,21 @@ int main(void)
             if(profile.mode==MDS_PROFILE_NAME||profile.mode==MDS_PROFILE_CREATOR){if(down&KEY_X)mds_profile_backspace(&profile);if(down&KEY_Y)profile.upper^=1;}
             else if(profile.mode==MDS_PROFILE_BIRTHDAY){if(k&KEY_LEFT)mds_profile_date_step(&profile,1,-1);if(k&KEY_RIGHT)mds_profile_date_step(&profile,1,1);if(k&KEY_UP)mds_profile_date_step(&profile,0,1);if(k&KEY_DOWN)mds_profile_date_step(&profile,0,-1);if(down&KEY_X){profile.month=profile.day=0;mds_profile_done(&profile,&editor.draft);}}
             else if(profile.mode!=MDS_PROFILE_ROOT&&k&(KEY_LEFT|KEY_RIGHT))mds_profile_choice_step(&profile,k&KEY_LEFT?-1:1);
-            if(action==1)screen=MDS_SCREEN_EDITOR;
             if(action==2){profile.status="";mds_editor_save(&editor,persist,NULL);}
+            /* Keep the prior visual page on-screen until the original
+             * DialogOut/OutUp curve completes; prevent input from skipping it.
+             * The avatar mutations (OK/Cancel) have already happened. */
+            if(action==1||(previous_profile.mode!=MDS_PROFILE_ROOT&&
+                           profile.mode==MDS_PROFILE_ROOT)){
+                profile_exit_visual=previous_profile;
+                profile_exit_pending=1;
+                profile_exit_to_editor=action==1;
+                mds_ui_profile_transition_exit(animation_vblanks,
+                                               !profile_exit_to_editor);
+                drawn_screen=-1;
+            }
             if(down||k)drawn_screen=-1;
+          }
         }else if(screen==MDS_SCREEN_ACCESSORIES){
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(8,t.px,t.py);int f=-1;if(!strcmp(h,"B_Glasses"))f=30;else if(!strcmp(h,"B_Mustache"))f=34;else if(!strcmp(h,"B_Beard"))f=35;else if(!strcmp(h,"B_Mole"))f=39;if(f>=0){editor.field=f;screen=MDS_SCREEN_EDITOR;}}
             if(down&KEY_B)screen=MDS_SCREEN_EDITOR;
@@ -272,9 +288,21 @@ int main(void)
         /* Original DialogBase00 entrance whenever a profile page opens.
          * Hitboxes stay at their final positions; only pixels animate. */
         if(screen==MDS_SCREEN_PROFILE){
-            if(last_profile_mode!=profile.mode)mds_ui_profile_transition_start(animation_vblanks);
-            last_profile_mode=profile.mode;
+            if(!profile_exit_pending){
+                if(last_profile_mode!=profile.mode)
+                    mds_ui_profile_transition_start(animation_vblanks);
+                last_profile_mode=profile.mode;
+            }
         }else last_profile_mode=-1;
+        /* Advance even when another redraw condition short-circuits. */
+        int profile_transition_changed=screen==MDS_SCREEN_PROFILE&&
+            mds_ui_profile_transition_tick(animation_vblanks);
+        if(profile_exit_pending&&!mds_ui_profile_transition_active()){
+            profile_exit_pending=0;
+            if(profile_exit_to_editor)screen=MDS_SCREEN_EDITOR;
+            drawn_screen=-1;
+            profile_transition_changed=1;
+        }
         if(screen!=last_transition_screen){
             if((screen==MDS_SCREEN_GALLERY&&last_transition_screen==MDS_SCREEN_HOME)||
                (screen==MDS_SCREEN_HOME&&last_transition_screen==MDS_SCREEN_GALLERY))
@@ -286,12 +314,19 @@ int main(void)
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY);
         mds_ui_view_scene(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_ACCESSORIES);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
-        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||(screen==MDS_SCREEN_PROFILE&&mds_ui_profile_transition_tick(animation_vblanks))||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
+        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||(screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
             else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);
-            else if(screen==MDS_SCREEN_PROFILE){mds_ui_profile(&profile,&editor.draft);mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));}
+            else if(screen==MDS_SCREEN_PROFILE){
+                const MdsProfile *shown=profile_exit_pending?
+                    &profile_exit_visual:&profile;
+                mds_ui_profile(shown,&editor.draft);
+                mds_ui_info(&editor.draft,editor.slot,45,
+                    shown->status[0]?shown->status:editor.status,
+                    mds_editor_dirty(&editor));
+            }
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
