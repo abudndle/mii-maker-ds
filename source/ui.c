@@ -132,8 +132,14 @@ int mds_ui_animation_tick(uint32_t ticks)
   int changed=key!=animation_index||female_key!=animation_female_index;
   animation_index=key;animation_female_index=female_key;return changed;
  }
- unsigned index=0;mds_animation_pose(&animations[0],ticks,&index);
- int changed=index!=animation_index;animation_index=index;return changed;
+ /* Legacy ANI1 fallback can use different pose timing on each gender.
+  * Invalidate the preview when either sampled timeline advances. */
+ unsigned male_index=UINT32_MAX,female_index=UINT32_MAX,frame=0;
+ if(mds_animation_pose(&animations[0],ticks,&frame))male_index=frame;
+ if(mds_animation_pose(&animations[1],ticks,&frame))female_index=frame;
+ int changed=male_index!=animation_index||female_index!=animation_female_index;
+ animation_index=male_index;animation_female_index=female_index;
+ return changed;
 }
 static void load_head_resource(void)
 {
