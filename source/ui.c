@@ -50,7 +50,7 @@ static unsigned animation_index,preview_pose[3];
 static uint32_t animation_clock;
 static unsigned rendered_animation_frames;
 static MdsMotion motions[2];
-static unsigned motion_clip,motion_frame,motion_scene;
+static unsigned motion_clip,motion_frame,motion_clip_ticks,motion_scene;
 static uint32_t motion_started;
 static uint8_t motion_pose_bytes[2][56+1440*18];
 static unsigned motion_cached_key[2];
@@ -109,7 +109,7 @@ int mds_ui_animation_tick(uint32_t ticks)
     if(elapsed<duration){clip=c;break;}elapsed-=duration;
    }
   }
-  if(clip>=0){motion_clip=(unsigned)clip;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
+  if(clip>=0){motion_clip=(unsigned)clip;motion_clip_ticks=elapsed;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
   int changed=key!=animation_index;animation_index=key;return changed;
  }
  unsigned index=0;mds_animation_pose(&animations[0],ticks,&index);
@@ -139,9 +139,9 @@ static int preview(const MdsAvatar *a,int mode)
    selected=mds_motion_find(&motions[gender],motions[0].clips[motion_clip].name);
   if(selected>=0){
    unsigned clip=(unsigned)selected;
-   unsigned frame=motion_frame;
-   if(frame>=motions[gender].clips[clip].count)
-    frame=motions[gender].clips[clip].count-1;
+   /* Recompute from clip-local VBlank time; the two original rigs may
+    * have different source FPS or frame counts. */
+   unsigned frame=mds_motion_frame(&motions[gender].clips[clip],motion_clip_ticks,NULL);
    unsigned key=clip*7200+frame;
    if(!motion_cached[gender]||motion_cached_key[gender]!=key){
     motion_cached[gender]=mds_motion_pose(&motions[gender],clip,frame,body_bytes[gender],body_sizes[gender],motion_pose_bytes[gender],sizeof motion_pose_bytes[gender]);
