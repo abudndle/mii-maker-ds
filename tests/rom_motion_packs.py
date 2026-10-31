@@ -91,13 +91,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("rom", nargs="?", type=Path, default=ROOT / "mii-ds.nds")
     parser.add_argument("--asset-zip", type=Path,
-                        help="validate original motion packs directly from a private resource ZIP")
+                        help="read original motion packs from a private resource ZIP, including ROM comparison")
     parser.add_argument("--source-only", action="store_true",
                         help="validate source motion assets before compiling a ROM")
     args = parser.parse_args()
     try:
-        if args.asset_zip and not args.source_only:
-            parser.error("--asset-zip requires --source-only")
         archive = zipfile.ZipFile(args.asset_zip) if args.asset_zip else None
         rom = args.rom.read_bytes() if not args.source_only else None
         files = check(rom, with_ranges=True) if rom is not None else None
