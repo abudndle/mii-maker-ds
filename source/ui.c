@@ -10,6 +10,7 @@
 #include "motion.h"
 #include "gui_tween.h"
 #include "clan_home.h"
+#include "clan_dialog.h"
 #include "clan_overlay.h"
 #include "clan_scene.h"
 #include "image.h"
@@ -33,6 +34,8 @@ static u16 *top,*bottom,*top_vram;
 static u16 transition_base[256*192];
 static MdsGuiTween scene_fade;
 static int scene_fade_enabled,scene_fade_base_valid,scene_fade_clock_started;
+static uint32_t profile_dialog_started;
+static int profile_dialog_active,profile_dialog_painted;
 static uint32_t home_focus_started;
 static int home_focus_animating;
 static u16 top_canvas[256*192],top_backgrounds[2][256*192],body_background[256*192];
@@ -328,6 +331,22 @@ int mds_ui_home_focus_tick(uint32_t now)
   /* Redraw once at the final base position even after a stalled render. */
   home_focus_animating=0;
   return 1;
+ }
+ return 1;
+}
+void mds_ui_profile_transition_start(uint32_t now)
+{
+ profile_dialog_started=now;
+ profile_dialog_active=1;
+ profile_dialog_painted=0;
+}
+int mds_ui_profile_transition_tick(uint32_t now)
+{
+ if(!profile_dialog_active)return 0;
+ if(!profile_dialog_painted)return 1;
+ if(!mds_clan_dialog_active(now,profile_dialog_started)){
+  profile_dialog_active=0;
+  return 1; /* Restore the unshifted source bitmap. */
  }
  return 1;
 }
@@ -648,6 +667,16 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
   if(p->mode==MDS_PROFILE_BIRTHDAY){char value[16];snprintf(value,sizeof value,"%02d",p->month);numbers(92,78,value);snprintf(value,sizeof value,"%02d",p->day);numbers(164,78,value);center_bottom(128,151,"X: Clear birthday");}
  }
  button(8,168,112,22,p->mode==MDS_PROFILE_ROOT?"Back":"Cancel");button(136,168,112,22,p->mode==MDS_PROFILE_ROOT?"Save":"OK");
+ if(profile_dialog_active&&render_clock){
+  uint32_t now=render_clock();
+  if(!profile_dialog_painted){
+   /* Expensive first model previews must not consume the entrance motion. */
+   profile_dialog_started=now;
+   profile_dialog_painted=1;
+  }
+  mds_clan_dialog_translate(bottom,
+      mds_clan_dialog_y(now,profile_dialog_started),RGB15(26,29,27)|BIT(15));
+ }
 }
 void mds_ui_gender(int create,int choice)
 {

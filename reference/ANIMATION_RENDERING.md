@@ -64,3 +64,27 @@ Host CI tests include color/opacity endpoints, halfway values, all four
 menu slots, timer wrap, RGB555 blending, pixel clipping (including extreme
 coordinates) and six generator-corruption cases. The actual DS ROM still
 needs BlocksDS build and melonDS visual/hardware testing.
+
+## Original dialog pane entrance animation milestone
+
+The `Dialog.arc.files/DialogBase00_DialogIn.bclan` original `W_Dialog`
+pane Y track has three Hermite keys: frame 0 at -240, frame 17 at +2, and
+frame 20 at 0 (21 source frames). `tools/generate_clan_dialog.py`
+reproduces a small numeric-only header using the user's private
+`clan_curves.json` metadata; no original Nintendo game archive is published.
+
+`source/clan_dialog.[ch]` samples this curve with the existing Q16.16
+Hermite evaluator at a provisional 30 fps, rescales original 240-pixel
+coordinates to 192-pixel DS screen space, and shifts the freshly rendered
+profile-bottom bitmap in place using a bounded RGB555 row move.
+The profile page and nested profile dialogs now start an entrance motion
+when opened. The UI begins the animation at the first rendered frame to
+avoid skipping it during expensive model rasterization, and performs an
+unshifted final redraw even if the game missed intermediate VBlanks.
+The underlying profile touch hitboxes remain at their normal positions.
+
+The current implementation animates the full reconstructed bottom panel,
+not the original independent CLYT pane hierarchy. This is not a complete
+replacement for original dialog exit sequences, texture/material animations,
+or all 327 CLAN clips. The full private ROM is **not** yet built or
+visually validated in melonDS after this milestone.
