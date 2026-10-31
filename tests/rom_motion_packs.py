@@ -66,15 +66,24 @@ def ensure_gallery_clips(pack, label):
 
 
 def compare_rig_catalogs(male, female):
-    """Both original rigs must expose the same named animations."""
+    """Both original rigs must expose matching named clips and playback timing."""
     def catalog(pack):
-        return {pack[32 + i * 40:32 + i * 40 + 24].split(bytes((0,)), 1)[0]
-                for i in range(EXPECTED_CLIPS)}
-    male_names, female_names = catalog(male), catalog(female)
-    if male_names != female_names:
-        missing_female = sorted(n.decode("ascii") for n in male_names - female_names)
-        missing_male = sorted(n.decode("ascii") for n in female_names - male_names)
+        entries = {}
+        for i in range(EXPECTED_CLIPS):
+            at = 32 + i * 40
+            name = pack[at:at + 24].split(bytes((0,)), 1)[0]
+            # Offset is allowed to differ between rigs; timing must match.
+            entries[name] = struct.unpack_from("<3I", pack, at + 28)
+        return entries
+    male_clips, female_clips = catalog(male), catalog(female)
+    if male_clips.keys() != female_clips.keys():
+        missing_female = sorted(n.decode("ascii") for n in male_clips.keys() - female_clips.keys())
+        missing_male = sorted(n.decode("ascii") for n in female_clips.keys() - male_clips.keys())
         raise ValueError(f"original rig clip catalog mismatch: female lacks {missing_female}; male lacks {missing_male}")
+    mismatched = sorted(name.decode("ascii") for name in male_clips
+                        if male_clips[name] != female_clips[name])
+    if mismatched:
+        raise ValueError(f"original rig animation timing mismatch: {', '.join(mismatched)}")
 
 
 def main():
