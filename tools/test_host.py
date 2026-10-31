@@ -17,4 +17,4 @@ with tempfile.TemporaryDirectory(prefix='mii-ds-tests-') as td:
   import_dir=Path(td)/'import';import_dir.mkdir(exist_ok=True)
   command=[str(exe)]+([str(Path(td)/'image.bmp')] if name=='image' else [str(import_dir)] if name=='exchange' else [str(Path(td)/'qr.bin'),str(Path(td)/'qr.png')] if name=='mii_qr' else [])
   subprocess.run(command,check=True,env=env)
-print('PASS: all eighteen asset-free portable suites')
+print('PASS: all nineteen asset-free portable suites')
