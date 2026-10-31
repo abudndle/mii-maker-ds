@@ -32,5 +32,6 @@ int main(void){
     assert(!mds_editor_import(&e,&imported,failed,NULL)&&!g.used[0]&&g.generation==0&&g.active_bank==-1);
     assert(mds_editor_import(&e,&imported,saved,NULL)&&g.used[0]&&!g.miis[0].value[51]&&!g.miis[0].value[46]&&!strcmp(g.miis[0].name,"Imported"));
     imported.value[49]=2;imported.value[50]=30;assert(!mds_editor_import(&e,&imported,saved,NULL)&&!g.used[1]);
+    e.slot=0;g.miis[0].value[61]=3;g.miis[0].value[48]=1;assert(!mds_editor_copy(&e,saved,NULL));
     puts("PASS: dirty navigation, cancellation, failed-save rollback, failed-delete rollback, personal protection, wrap");
 }

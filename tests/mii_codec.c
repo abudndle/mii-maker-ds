@@ -19,5 +19,6 @@ int main(void){
  }
  r=guard;strcpy(r.avatar.name,"\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e");strcpy(r.avatar.creator,"\xf0\x9f\x98\x80");assert(mds_cfs_encode(&r,out,96));assert(mds_cfs_decode(&decoded,out,96));assert(!strcmp(r.avatar.name,decoded.avatar.name)&&!strcmp(r.avatar.creator,decoded.avatar.creator));
  r=guard;r.avatar.value[50]=30;assert(!mds_cfs_encode(&r,out,96));r=guard;r.avatar.name[0]=0;assert(!mds_cfs_encode(&r,out,96));
+ r=guard;r.avatar.value[61]=2;assert(!mds_cfs_create(&decoded,&r.avatar,1,2));
  puts("PASS: reference CFSD mapping, metadata-preserving encode, CRC, all corrupt/truncated records, field extrema, UTF-16/surrogates and profile validation");
 }

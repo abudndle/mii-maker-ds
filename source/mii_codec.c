@@ -69,7 +69,7 @@ int mds_cfs_encode(const MdsMiiRecord*r,void*bytes,size_t size)
 
 int mds_cfs_create(MdsMiiRecord*out,const MdsAvatar*a,uint32_t creation,uint64_t serial)
 {
- if(!out||!a||!valid(a))return 0;
+ if(!out||!a||!valid(a)||(a->value[61]&2))return 0;
  MdsMiiRecord r;memset(&r,0,sizeof r);r.avatar=*a;r.raw[0]=3;r.raw[3]=0x20;
  memcpy(r.raw+4,"MDSDMAKE",8);
  /* Normal DS-family copy with a software-assigned ID and locally administered

@@ -69,7 +69,7 @@ int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 {
  MdsGallery*g=e->gallery;
  if(e->slot>=MDS_SLOTS||!g->used[e->slot]){e->status="Choose a saved Mii to copy.";return 0;}
- if(!g->miis[e->slot].value[48]){e->status="Copying is not allowed.";return 0;}
+ if((g->miis[e->slot].value[61]&2)||!g->miis[e->slot].value[48]){e->status="Copying is not allowed.";return 0;}
  unsigned dest=0;while(dest<MDS_SLOTS&&g->used[dest])dest++;
  if(dest==MDS_SLOTS){e->status="All 100 Mii slots are occupied";return 0;}
  MdsAvatar prior=g->miis[dest],copy=g->miis[e->slot];uint32_t generation=g->generation;int bank=g->active_bank;
