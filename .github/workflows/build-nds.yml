@@ -81,6 +81,7 @@ jobs:
           make -j2
           test -s mii-ds.nds
           python3 tests/rom_regions.py
+          python3 tests/rom_nitrofs_assets.py mii-ds.nds
       - name: Publish playable candidate
         uses: actions/upload-artifact@v4
         with:
