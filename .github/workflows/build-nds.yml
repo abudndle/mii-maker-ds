@@ -11,6 +11,17 @@ jobs:
       BLOCKSDS: /opt/wonderful/thirdparty/blocksds/core
       WONDERFUL_TOOLCHAIN: /opt/wonderful
     steps:
+      # Validate private inputs before the expensive compiler installation.
+      - name: Check private asset configuration
+        env:
+          ASSETS_URL: ${{ secrets.MII_ASSETS_URL }}
+        shell: bash
+        run: |
+          if [ -z "$ASSETS_URL" ]; then
+            echo "::error title=Missing resource archive::Set Actions secret MII_ASSETS_URL to a private direct-download ZIP URL in Settings > Secrets and variables > Actions."
+            echo "The source-only tests may run without assets, but ROM packaging requires your extracted assets."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - name: Install required Linux packages
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential curl unzip python3 python3-pil
