@@ -41,6 +41,8 @@ jobs:
         run: python3 tests/test_preview_cache.py
       - name: Verify complete NitroFS asset parity validator
         run: python3 tests/test_rom_all_assets.py
+      - name: Verify original Mii L/R camera controls and view cache
+        run: python3 tests/test_view_controls.py
       - name: Verify original Mii model RGB555 color parity
         run: python3 tests/test_flat_rgb555.py
       - name: Link original Mii software renderer without private assets
