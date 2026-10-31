@@ -51,7 +51,7 @@ python3 tools/build_private.py /path/to/MiiMaker_DS_Resources.zip --validate-onl
 python3 tools/build_private.py /path/to/MiiMaker_DS_Resources.zip
 ```
 
-The first command validates the archive and every frame in both original 53-clip animation catalogs **without extracting assets or requiring BlocksDS**. The second restores them locally, verifies the meshes, checks BlocksDS prerequisites, compiles `mii-ds.nds`, and rejects the result unless its ARM sections and every original NitroFS payload pass the existing ROM tests. The final output includes the ROM SHA-256. Use `--jobs 1` for memory-constrained systems. On Windows, run the commands inside a BlocksDS-compatible MSYS2 environment with `python3` and `make` on PATH.
+The first command validates the archive and every frame in both original 53-clip animation catalogs **without extracting assets or requiring BlocksDS**. The second restores them locally, verifies the meshes, renders actual original male/female poses and camera views on the host, checks BlocksDS prerequisites, compiles `mii-ds.nds`, and rejects the result unless its ARM sections and every original NitroFS payload pass the existing ROM tests. The final output includes the ROM SHA-256. Use `--jobs 1` for memory-constrained systems. On Windows, run the commands inside a BlocksDS-compatible MSYS2 environment with `python3` and `make` on PATH.
 
 This is not an asset downloader: you must supply your own extraction. Builds and generated ROMs containing Nintendo assets remain **local**, not GitHub release artifacts. Once the build succeeds, test `mii-ds.nds` in melonDS with DS mode and Direct Boot. Passing a host test does not replace hardware/emulator gameplay testing.
 
