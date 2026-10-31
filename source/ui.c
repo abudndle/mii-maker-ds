@@ -178,7 +178,7 @@ static int preview(const MdsAvatar *a,int mode)
   }
  }
  if(!body)body=body_bytes[gender];
- if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,46)||a->value[46]!=head_avatars[mode].value[46]||a->value[51]!=head_avatars[mode].value[51]||a->value[61]!=head_avatars[mode].value[61]||(mode&&preview_pose[mode]!=pose_index)){
+ if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,sizeof a->value)||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;
   int result=mode&&body?mds_mii_render(&cfl,a,body,size,render_pixels,mode==2):mds_head_render(&cfl,a,render_pixels);
   if(result<0){render_cancelled_count++;return preview_ready[mode];}
