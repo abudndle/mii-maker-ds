@@ -20,6 +20,9 @@ void mds_ui_set_render_abort(int (*)(void));
 const char *mds_ui_export_image(const MdsAvatar *,unsigned);
 int mds_ui_animation_tick(uint32_t);
 void mds_ui_motion_scene(int);
+/* Original 3DS L/R camera rotation in editor; gallery remains front-facing. */
+void mds_ui_view_scene(int editing);
+int mds_ui_view_step(int direction);
 /* Gallery: cycle original clips; START restores six-idle automatic playback. */
 int mds_ui_motion_step(int direction);
 int mds_ui_motion_auto(void);
