@@ -27,7 +27,7 @@ checks={
     "reject empty source": "gallery.used[drag_slot]" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)drag_slot=-1;" in main,
-    "public sorting API": "int mds_editor_move(MdsEditor *,unsigned,MdsPersist,void *);" in api,
+    "public sorting API": "int mds_editor_move(MdsEditor *,unsigned destination,MdsPersist,void *);" in api,
     "move or swap two saved Mii records": "g->miis[destination]=old_source;" in move and
                                            "g->miis[source]=old_dest;" in move,
     "restore both slots on failed write": "g->miis[source]=old_source;g->miis[destination]=old_dest;" in move,
