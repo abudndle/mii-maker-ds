@@ -144,7 +144,7 @@ static void load_head_resource(void)
 }
 static int preview(const MdsAvatar *a,int mode)
 {
- if(!cfl.data||mode<0||mode>2)return 0;
+ if(!a||!cfl.data||mode<0||mode>2)return 0;
  head_pixels=head_cache[mode];
  unsigned gender=a->value[0],pose_index=0;
  /* Corrupt or imported profile bytes must never index beyond the two rigs. */
