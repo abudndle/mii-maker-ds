@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate build prerequisite diagnostics
         run: python3 tools/test_build_preflight.py
+      - name: Reject corrupt original skeletal motion packs
+        run: python3 tests/test_motion_packs.py
       - name: Verify original body model validator rejects corrupt meshes
         run: python3 tests/test_body_models.py
       - name: Verify original Mii model RGB555 color parity
