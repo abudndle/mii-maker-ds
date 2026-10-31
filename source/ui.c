@@ -106,7 +106,7 @@ int mds_ui_animation_tick(uint32_t ticks)
 {
  animation_clock=ticks;
  if(motions[0].file){
-  unsigned elapsed=ticks-motion_started,key=0;
+  unsigned elapsed=ticks-motion_started,key=UINT32_MAX;
   int clip=gallery_idle_indices[0];
   if(motion_scene){
    unsigned total=0;
