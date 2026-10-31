@@ -1,6 +1,12 @@
 name: Build Mii Maker DS ROM
 on:
   workflow_dispatch:
+    inputs:
+      publish_rom_artifact:
+        description: "Publish built ROM artifact (contains original assets; use only if you have redistribution rights)"
+        required: true
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -97,7 +103,10 @@ jobs:
           python3 tests/rom_body_models.py mii-ds.nds
           python3 tests/rom_motion_packs.py mii-ds.nds
           python3 tests/rom_arm_sections.py mii-ds.nds
-      - name: Publish playable candidate
+      # Public repository workflow artifacts can be downloaded by other users.
+      # Keep the compiled ROM private by default: it embeds original game files.
+      - name: Publish playable candidate (explicit opt-in)
+        if: ${{ inputs.publish_rom_artifact == true }}
         uses: actions/upload-artifact@v4
         with:
           name: mii-maker-ds-nds
