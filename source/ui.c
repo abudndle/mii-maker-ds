@@ -10,6 +10,7 @@
 #include "motion.h"
 #include "gui_tween.h"
 #include "clan_home.h"
+#include "clan_overlay.h"
 #include "clan_scene.h"
 #include "image.h"
 #include "mii_qr.h"
@@ -519,9 +520,19 @@ void mds_ui_home(int focus,const char *notice)
     if(focus>0)for(unsigned i=0;i<sizeof home_hits/sizeof home_hits[0];i++)
         if(home_hits[i].action==focus+1){
             MdsMenuHit cue=home_hits[i];
-            if(home_focus_animating&&render_clock)
-                cue.y+=mds_clan_home_offset(focus,render_clock(),home_focus_started);
+            MdsClanHomeStyle style;
+            int active=home_focus_animating&&render_clock&&
+                mds_clan_home_style(focus,render_clock(),home_focus_started,&style);
+            if(active)cue.y+=style.offset_y;
             outline(&cue);
+            if(active){
+                /* Original CLMC RGB+alpha and CLVC shadow opacity.
+                 * Geometry is adapted to the DS selection border. */
+                mds_clan_border_shadow(bottom,256,192,cue.x,cue.y,cue.w,cue.h,
+                                       style.shadow_alpha);
+                mds_clan_border_tint(bottom,256,192,cue.x,cue.y,cue.w,cue.h,
+                                     style.color_rgb555,style.alpha);
+            }
         }
     if(notice&&notice[0])label(8,156,notice);
 }
