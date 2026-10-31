@@ -20,6 +20,14 @@ require("if(!motion_cached[gender]||motion_cached_key[gender]!=key)",
         "skeletal pose is not retried on a cache miss")
 require("if(motion_cached[gender])motion_cached_key[gender]=key;",
         "failed skeletal motion read is being marked as cached")
+require("if(result<0){", "cancelled preview renders are not handled")
+cancel_start = preview.index("if(result<0){")
+cancel_end = preview.index("\n  }", cancel_start)
+cancel_branch = preview[cancel_start:cancel_end]
+if ("preview_cached[mode]" not in cancel_branch or
+        "memcmp(a->value,head_avatars[mode].value,sizeof a->value)" not in cancel_branch or
+        "preview_ready[mode]:0" not in cancel_branch):
+    raise SystemExit("FAIL: interrupted render may display a different Mii")
 require("if(!result){", "failed Mii render is not handled")
 fail_start = preview.index("if(!result){")
 fail_end = preview.index("\n  }", fail_start)
