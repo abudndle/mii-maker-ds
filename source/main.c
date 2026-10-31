@@ -44,6 +44,7 @@ int main(void)
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
     unsigned page=0,drawn_page=99;
     uint32_t slider_changed=0;int slider_preview_pending=0;
+    int last_transition_screen=MDS_SCREEN_HOME;
     const char *notice="",*drawn_notice=NULL;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
@@ -175,6 +176,12 @@ int main(void)
         int defer_preview=mds_ui_slider_active()&&animation_vblanks-slider_changed<12;
         if(!defer_preview&&slider_preview_pending){drawn_screen=-1;slider_preview_pending=0;}
         swiWaitForVBlank();
+        if(screen!=last_transition_screen){
+            if((screen==MDS_SCREEN_GALLERY&&last_transition_screen==MDS_SCREEN_HOME)||
+               (screen==MDS_SCREEN_HOME&&last_transition_screen==MDS_SCREEN_GALLERY))
+                mds_ui_scene_transition_start(animation_vblanks);
+            last_transition_screen=screen;
+        }
         int animate=0;
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
@@ -188,13 +195,17 @@ int main(void)
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
             if(editor.pending)mds_ui_confirm(editor.pending==MDS_EDIT_DELETE?"Erase this Mii?":"Discard your changes?");
+            mds_ui_scene_transition_step(animation_vblanks,1);
             mds_ui_present_top();
             drawn=editor;drawn_screen=screen;drawn_focus=focus;drawn_page=page;drawn_notice=notice;
         }else if(!camera_open&&animate){
+            mds_ui_scene_transition_step(animation_vblanks,0);
             if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery_top(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_ACCESSORIES)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));
             else if(screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_GENDER)mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));
             mds_ui_present_top();
+        }else if(!camera_open){
+            mds_ui_scene_transition_step(animation_vblanks,0);
         }
     }
 }
