@@ -58,7 +58,7 @@ def ensure_gallery_clips(pack, label):
     names = set()
     count = struct.unpack_from("<I", pack, 8)[0]
     for i in range(count):
-        name = pack[32 + i * 40:32 + i * 40 + 24].split(b"\\0", 1)[0]
+        name = pack[32 + i * 40:32 + i * 40 + 24].split(bytes((0,)), 1)[0]
         names.add(name.decode("ascii"))
     missing = sorted(set(GALLERY_IDLE_CLIPS) - names)
     if missing:
