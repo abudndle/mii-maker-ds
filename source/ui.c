@@ -482,7 +482,8 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     }else label(94,83,"Choose a Mii.");
     if(motion_scene&&motions[0].file){
         const char*clip_name=gallery_selected_clip<0?"Auto":motions[0].clips[gallery_selected_clip].name;
-        snprintf(text,sizeof text,"Motion: %s",clip_name);label(8,156,text);
+        snprintf(text,sizeof text,"Motion: %s",clip_name);label(8,150,text);
+        label(8,163,"UP/DOWN: Clip   START: Auto");
     }
     snprintf(text,sizeof text,"%u / 10",page+1);label(222-text_width(text),177,text);
     if(notice&&notice[0]&&strcmp(notice,"Ready"))label(8,177,display_status(notice));else label(8,177,"Y: Copy  X: Erase  SELECT: Image");
