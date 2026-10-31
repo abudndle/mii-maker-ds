@@ -18,4 +18,11 @@ int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
     unsigned local=selected/10==page?selected%10:0;
     return (int)(page*10+(unsigned)((int)(local+10)+(direction>0?1:-1))%10);
 }
+int mds_gallery_page_step(unsigned page,unsigned selected,int direction)
+{
+    if(page>=10||!direction)return -1;
+    unsigned position=selected/10==page?selected%10:0;
+    unsigned next_page=(page+(direction>0?1:9))%10;
+    return (int)(next_page*10+position);
+}
 int mds_home_focus_step(int current,int delta){int v=(current+delta)%4;return v<0?v+4:v;}
