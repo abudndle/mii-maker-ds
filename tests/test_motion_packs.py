@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, GALLERY_IDLE_CLIPS, ensure_gallery_clips, validate
+from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, GALLERY_IDLE_CLIPS, ensure_gallery_clips, compare_rig_catalogs, validate
 
 
 def example():
@@ -72,4 +72,14 @@ except ValueError:
     pass
 else:
     raise AssertionError("missing gallery idle clip was accepted")
+compare_rig_catalogs(named, bytearray(named))
+different = bytearray(named)
+different[32:56] = b"Different".ljust(24, bytes((0,)))
+assert validate(different, "synthetic") == EXPECTED_CLIPS
+try:
+    compare_rig_catalogs(named, different)
+except ValueError:
+    pass
+else:
+    raise AssertionError("mismatched male/female clip catalog was accepted")
 print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip name coverage")
