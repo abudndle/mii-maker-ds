@@ -25,6 +25,8 @@ jobs:
         run: python3 tests/test_preview_cache.py
       - name: Verify original Mii model RGB555 color parity
         run: python3 tests/test_flat_rgb555.py
+      - name: Link original Mii software renderer without private assets
+        run: python3 tools/test_original_render.py --compile-only --cc ${{ matrix.compiler }}
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
