@@ -29,6 +29,9 @@ jobs:
         run: |
           python3 tools/test_host.py --cc gcc --no-sanitizers
           python3 tools/test_build_preflight.py
+          python3 tests/test_motion_packs.py
+          python3 tests/test_body_models.py
+          python3 tests/test_flat_rgb555.py
       - name: Install Wonderful Toolchain and BlocksDS
         shell: bash
         run: |
