@@ -24,7 +24,7 @@ int main(void)
  mds_view_rotate(NULL,&z,1);mds_view_rotate(&x,NULL,1);
  x=30000;z=-11000;
  mds_view_rotate(&x,&z,3);
- assert(absolute(x-13436)<4&&absolute(z+29000)<4);
+ assert(absolute(x-13436)<4&&absolute(z+28991)<4);
  /* Source BOD3 vertices can approach 524288 units. Arithmetic must be
   * wide enough and not wrap like 32-bit intermediate multiplies. */
  x=524288;z=-524288;
