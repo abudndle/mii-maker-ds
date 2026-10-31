@@ -40,6 +40,7 @@ def check(rom: bytes) -> dict:
     if dir_count < 1 or dir_count * 8 > fnt_size:
         raise ValueError("Invalid NitroFS directory count")
     files = {}
+    ranges = []
     visited = set()
 
     def walk(directory, prefix):
@@ -79,11 +80,16 @@ def check(rom: bytes) -> dict:
                 if path in files:
                     raise ValueError("Duplicate NitroFS filename: " + path)
                 files[path] = file_id
+                ranges.append((first, last, path))
                 file_id += 1
 
     walk(0xf000, "")
     if len(files) != count or set(files.values()) != set(range(count)):
         raise ValueError("Not all NitroFS FAT entries are indexed")
+    ranges.sort()
+    for previous, following in zip(ranges, ranges[1:]):
+        if previous[1] > following[0]:
+            raise ValueError('Overlapping NitroFS file payloads: ' + previous[2] + ' and ' + following[2])
     missing = sorted(set(REQUIRED) - files.keys())
     if missing:
         raise ValueError("Required original resources missing from ROM: " + ", ".join(missing))
