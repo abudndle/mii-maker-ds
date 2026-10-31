@@ -485,7 +485,8 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     if(g->used[selected]&&preview(&g->miis[selected],2)){
         paint_head(top,48,12,160,160);
         const char *name=g->miis[selected].name;label((256-text_width(name))/2,3,name);
-    }else label(94,83,"Choose a Mii.");
+    }else if(g->used[selected])label(75,83,"Preview unavailable.");
+    else label(82,83,"A: Create a Mii");
     if(motion_scene&&motions[0].file){
         const char*clip_name=gallery_selected_clip<0?"Auto":motions[0].clips[gallery_selected_clip].name;
         snprintf(text,sizeof text,"Motion: %s",clip_name);label(8,150,text);
