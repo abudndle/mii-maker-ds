@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ui.h"
 #include "head.h"
+#include "view.h"
 #include "thumbnail.h"
 #include "animation.h"
 #include "motion.h"
@@ -43,6 +44,8 @@ static MdsThumbnailCache gallery_thumbnails;
 static int gallery_retry_pending;
 _Static_assert(MDS_HEAD_SIDE==MDS_THUMBNAIL_SOURCE_SIDE,"gallery thumbnail source geometry must match renderer");
 static uint16_t *head_pixels=head_cache[0];
+static unsigned preview_view[3],editor_yaw;
+static int editor_view_active;
 static uint16_t render_pixels[MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsAvatar head_avatars[3];
 static int preview_cached[3],preview_ready[3];
@@ -179,11 +182,25 @@ static void load_head_resource(void)
  if(cfl_bytes&&(fread(cfl_bytes,1,(size_t)n,f)!=(size_t)n||!mds_cfl_open(&cfl,cfl_bytes,(size_t)n))){free(cfl_bytes);cfl_bytes=NULL;}
  fclose(f);
 }
+void mds_ui_view_scene(int editing)
+{
+ int active=editing!=0;
+ if(active!=editor_view_active){editor_view_active=active;editor_yaw=0;}
+}
+int mds_ui_view_step(int direction)
+{
+ if(!editor_view_active||!direction)return 0;
+ unsigned next=mds_view_step(editor_yaw,direction);
+ if(next==editor_yaw)return 0;
+ editor_yaw=next;
+ return 1;
+}
 static int preview(const MdsAvatar *a,int mode)
 {
  if(!a||!cfl.data||mode<0||mode>2)return 0;
  head_pixels=head_cache[mode];
  unsigned gender=a->value[0],pose_index=0;
+ unsigned requested_view=mode&&editor_view_active?editor_yaw:0;
  /* Corrupt or imported profile bytes must never index beyond the two rigs. */
  if(gender>=2)return 0;
  const void*body=mode?mds_animation_pose(&animations[gender],animation_clock,&pose_index):NULL;
@@ -210,15 +227,16 @@ static int preview(const MdsAvatar *a,int mode)
   }
  }
  if(!body)body=body_bytes[gender];
- if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,sizeof a->value)||(mode&&preview_pose[mode]!=pose_index)){
+ if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,sizeof a->value)||preview_view[mode]!=requested_view||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;
-  int result=mode&&body?mds_mii_render(&cfl,a,body,size,render_pixels,mode==2):mds_head_render(&cfl,a,render_pixels);
+  int result=mode&&body?mds_mii_render_view(&cfl,a,body,size,render_pixels,mode==2,requested_view):mds_head_render_view(&cfl,a,render_pixels,requested_view);
   if(result<0){
    render_cancelled_count++;
    /* A cancelled redraw may reuse the previous pose only for the same
     * appearance. Never present a different Mii's cached pixels. */
    return preview_cached[mode]&&
      !memcmp(a->value,head_avatars[mode].value,sizeof a->value)&&
+     preview_view[mode]==requested_view&&
      (!mode||preview_pose[mode]==pose_index)
      ?preview_ready[mode]:0;
   }
@@ -232,7 +250,7 @@ static int preview(const MdsAvatar *a,int mode)
   }
   memcpy(head_pixels,render_pixels,sizeof render_pixels);
   preview_ready[mode]=1;
-  preview_pose[mode]=pose_index;if(mode)rendered_animation_frames++;
+  preview_pose[mode]=pose_index;preview_view[mode]=requested_view;if(mode)rendered_animation_frames++;
   head_avatars[mode]=*a;preview_cached[mode]=1;
  }
  return preview_ready[mode];
@@ -446,6 +464,7 @@ void mds_ui_info(const MdsAvatar *a,unsigned slot,int field,const char *status,i
     char name[40];snprintf(name,sizeof name,"%.30s%s",a->name,dirty?" *":"");label((256-text_width(name))/2,3,name);
     const char *message=display_status(status);
     if(dirty&&status&&!strcmp(status,"ROM save written"))message="";
+    if(editor_view_active)label(8,159,"L/R: Rotate");
     if(message[0])label((256-text_width(message))/2,173,message);else if(show_profile_hint)label(91,176,"SELECT: Profile");
 
 }
