@@ -44,6 +44,10 @@ def fix(data):
             raise ValueError('ARM9 entry overlaps reserved secure area')
         b[arm9:arm9+8]=marker
         struct.pack_into('<H',b,0x6c,crc16(b[arm9:arm9+0x4000]))
+    # BlocksDS defaults this header to HOMEBREW even with GAME_TITLE set.
+    # The 12-byte game title must match the intended cartridge identity.
+    if b[0x0c:0x10]!=b'MDSD': raise ValueError('Unexpected game code; refusing to rename cartridge')
+    b[:12]=b'Mii Maker DS'
     struct.pack_into('<H',b,0x15e,crc16(b[:0x15e]))
     return bytes(b)
 
