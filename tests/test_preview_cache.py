@@ -26,8 +26,9 @@ cancel_end = preview.index("\n  }", cancel_start)
 cancel_branch = preview[cancel_start:cancel_end]
 if ("preview_cached[mode]" not in cancel_branch or
         "memcmp(a->value,head_avatars[mode].value,sizeof a->value)" not in cancel_branch or
+        "(!mode||preview_pose[mode]==pose_index)" not in cancel_branch or
         "preview_ready[mode]:0" not in cancel_branch):
-    raise SystemExit("FAIL: interrupted render may display a different Mii")
+    raise SystemExit("FAIL: interrupted render may display a different Mii or stale animation frame")
 require("if(!result){", "failed Mii render is not handled")
 fail_start = preview.index("if(!result){")
 fail_end = preview.index("\n  }", fail_start)
