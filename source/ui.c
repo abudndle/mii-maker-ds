@@ -6,6 +6,7 @@
 #include "head.h"
 #include "animation.h"
 #include "motion.h"
+#include "gui_tween.h"
 #include "image.h"
 #include "mii_qr.h"
 #include "qr_generated.h"
@@ -24,6 +25,9 @@ static int init_error;
 #include "ui_hits.h"
 #include "menu_generated.h"
 static u16 *top,*bottom,*top_vram;
+static u16 transition_base[256*192];
+static MdsGuiTween scene_fade;
+static int scene_fade_enabled,scene_fade_base_valid;
 static u16 top_canvas[256*192],top_backgrounds[2][256*192],body_background[256*192];
 static int slider_field=-1;
 static UiRect slider_track;
@@ -193,6 +197,39 @@ int mds_ui_init(void){
 }
 void mds_ui_set_render_clock(uint32_t (*callback)(void)){render_clock=callback;}
 void mds_ui_set_render_abort(int (*callback)(void)){mds_render_set_abort(callback);}
+/* A short native DS fade-in for home/gallery changes. Original CLAN
+   timelines are still separate work: this does not claim their timing. */
+void mds_ui_scene_transition_start(uint32_t now)
+{
+ if(!ok)return;
+ mds_gui_tween_start(&scene_fade,now,10,0,16);
+ scene_fade_enabled=1;
+ scene_fade_base_valid=0;
+}
+int mds_ui_scene_transition_step(uint32_t now,int redraw)
+{
+ if(!scene_fade_enabled||!ok)return 0;
+ if(redraw||!scene_fade_base_valid){
+  memcpy(transition_base,bottom,sizeof transition_base);
+  scene_fade_base_valid=1;
+ }
+ unsigned light=(unsigned)mds_gui_tween_value(&scene_fade,now);
+ if(light>16)light=16;
+ if(light==16){
+  memcpy(bottom,transition_base,sizeof transition_base);
+  scene_fade_enabled=0;
+  return 1;
+ }
+ for(unsigned i=0;i<256*192;i++){
+  uint16_t pixel=transition_base[i];
+  unsigned r=(pixel&31)*light/16;
+  unsigned g=((pixel>>5)&31)*light/16;
+  unsigned b=((pixel>>10)&31)*light/16;
+  bottom[i]=(uint16_t)(0x8000|r|(g<<5)|(b<<10));
+ }
+ return 1;
+}
+
 void mds_ui_present_top(void)
 {
  DC_FlushRange(top_canvas,sizeof top_canvas);dmaCopy(top_canvas,top_vram,sizeof top_canvas);
