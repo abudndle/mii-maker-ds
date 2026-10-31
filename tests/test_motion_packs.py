@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, GALLERY_IDLE_CLIPS, ensure_gallery_clips, compare_rig_catalogs, validate
+from rom_motion_packs import FRAME_BYTES, EXPECTED_CLIPS, GALLERY_IDLE_CLIPS, ensure_gallery_clips, compare_rig_catalogs, verify_packaged_motion, validate
 
 
 def example():
@@ -121,4 +121,23 @@ with tempfile.TemporaryDirectory() as directory:
                              "--asset-zip", str(archive_path)], capture_output=True, text=True)
     assert result.returncode != 0, "ZIP CLI accepted missing gallery idle clips"
 
-print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip and ZIP CLI coverage")
+# Exercise byte-exact ROM comparison independently of NitroFS directory parsing.
+rom = b"HEADER" + bytes(named) + b"FOOTER"
+key = "models/MaleBody.msp"
+ranges = {key: (6, 6 + len(named))}
+verify_packaged_motion(rom, ranges, key, named)
+for corrupted in (bytes(named[:-1]), bytes(different_fps)):
+    try:
+        verify_packaged_motion(rom, ranges, key, corrupted)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("modified or truncated packaged animation accepted")
+for wrong_ranges in ({}, {key: (6, len(rom) + 1)}):
+    try:
+        verify_packaged_motion(rom, wrong_ranges, key, named)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("invalid NitroFS animation range accepted")
+print("PASS: valid 53-clip MSP1 and 19 corrupt motion-pack variants plus gallery clip and ZIP CLI and ROM byte parity coverage")
