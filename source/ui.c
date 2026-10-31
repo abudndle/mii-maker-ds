@@ -27,7 +27,7 @@ static int init_error;
 static u16 *top,*bottom,*top_vram;
 static u16 transition_base[256*192];
 static MdsGuiTween scene_fade;
-static int scene_fade_enabled,scene_fade_base_valid;
+static int scene_fade_enabled,scene_fade_base_valid,scene_fade_clock_started;
 static u16 top_canvas[256*192],top_backgrounds[2][256*192],body_background[256*192];
 static int slider_field=-1;
 static UiRect slider_track;
@@ -205,15 +205,23 @@ void mds_ui_scene_transition_start(uint32_t now)
  mds_gui_tween_start(&scene_fade,now,10,0,16);
  scene_fade_enabled=1;
  scene_fade_base_valid=0;
+ scene_fade_clock_started=0;
 }
 void mds_ui_scene_transition_cancel(void)
 {
  scene_fade_enabled=0;
  scene_fade_base_valid=0;
+ scene_fade_clock_started=0;
 }
 int mds_ui_scene_transition_step(uint32_t now,int redraw)
 {
  if(!scene_fade_enabled||!ok)return 0;
+ /* Expensive gallery model draws may take many VBlanks; begin at first
+    presentation rather than letting the fade expire during rendering. */
+ if(!scene_fade_clock_started){
+  mds_gui_tween_start(&scene_fade,now,10,0,16);
+  scene_fade_clock_started=1;
+ }
  if(redraw||!scene_fade_base_valid){
   memcpy(transition_base,bottom,sizeof transition_base);
   scene_fade_base_valid=1;
