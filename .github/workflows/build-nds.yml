@@ -18,15 +18,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL https://wonderful.asie.pl/bootstrap/wf-installer.sh -o /tmp/wf-installer.sh
-          chmod +x /tmp/wf-installer.sh
-          # The installer is maintained by Wonderful Toolchain.
-          sudo /tmp/wf-installer.sh
+          sudo mkdir -p /opt/wonderful
+          sudo chown "$USER:$USER" /opt/wonderful
+          curl -fsSL https://wonderful.asie.pl/bootstrap/wf-bootstrap-x86_64.tar.gz | tar -xz -C /opt/wonderful
           export PATH="/opt/wonderful/bin:$PATH"
-          sudo /opt/wonderful/bin/wf-pacman -Syu --noconfirm wf-tools
-          sudo /opt/wonderful/bin/wf-config repo enable blocksds
-          sudo /opt/wonderful/bin/wf-pacman -Syu --noconfirm
-          sudo /opt/wonderful/bin/wf-pacman -S --noconfirm blocksds-toolchain
+          wf-pacman -Syu --noconfirm wf-tools
+          wf-config repo enable blocksds
+          wf-pacman -Syu --noconfirm
+          wf-pacman -S --noconfirm blocksds-toolchain
       - name: Restore original assets from private archive
         shell: bash
         env:
