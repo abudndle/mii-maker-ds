@@ -5,6 +5,12 @@ static uint32_t checksum(const uint8_t *p,size_t n){uint32_t c=~0u;for(size_t i=
 static uint32_t get(const uint8_t *p){return p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;}
 static void put(uint8_t *p,uint32_t v){for(int i=0;i<4;i++)p[i]=(uint8_t)(v>>(i*8));}
 void mds_gallery_new(MdsGallery *g){if(!g)return;memset(g,0,sizeof *g);g->active_bank=-1;}
+int mds_gallery_empty(const MdsGallery *g)
+{
+ if(!g)return 0;
+ for(unsigned i=0;i<MDS_SLOTS;i++)if(g->used[i])return 0;
+ return 1;
+}
 static int valid(const uint8_t *p)
 {
  if(memcmp(p,"MDSV",4)||get(p+4)!=1||get(p+12)!=BODY||
