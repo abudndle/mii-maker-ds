@@ -2,6 +2,18 @@
 #define MDS_MENU_H
 typedef enum {MDS_SCREEN_HOME,MDS_SCREEN_EDITOR,MDS_SCREEN_GALLERY,MDS_SCREEN_PROFILE,MDS_SCREEN_GENDER,MDS_SCREEN_ACCESSORIES,MDS_SCREEN_IMPORT,MDS_SCREEN_QR,MDS_SCREEN_SAVED} MdsScreen;
 typedef enum {MDS_HOME_NONE,MDS_HOME_VIEW,MDS_HOME_CREATE,MDS_HOME_TRANSFER,MDS_HOME_QR,MDS_HOME_HELP} MdsHomeAction;
+/* Gallery A recalls walkers; SELECT+A edits the selected Mii.
+ * A plain SELECT release exports its image without firing during a chord. */
+typedef enum {
+ MDS_GALLERY_CONTROL_NONE=0,
+ MDS_GALLERY_CONTROL_RECALL=1,
+ MDS_GALLERY_CONTROL_EDIT=2,
+ MDS_GALLERY_CONTROL_EXPORT=4
+} MdsGalleryControlAction;
+typedef struct { unsigned char select_used,select_active; } MdsGalleryControls;
+void mds_gallery_controls_reset(MdsGalleryControls *controls);
+unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
+ int a_down,int a_held,int select_down,int select_held,int select_up);
 int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
 /* Room tabs from original EDITSelectBase, independent of Mii destination boxes. */

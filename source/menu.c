@@ -86,3 +86,34 @@ int mds_home_focus_step(int current,int delta)
     int v=(a+b)%4;
     return v<0?v+4:v;
 }
+
+/* Use the VBlank-captured held state, never the auto-repeat bitmask, to
+ * distinguish SELECT+A from an ordinary A press. Defer standalone SELECT
+ * export until release: holding SELECT to edit must not export first. */
+void mds_gallery_controls_reset(MdsGalleryControls *controls)
+{
+ if(controls){controls->select_used=0;controls->select_active=0;}
+}
+unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
+ int a_down,int a_held,int select_down,int select_held,int select_up)
+{
+ if(!controls)return MDS_GALLERY_CONTROL_NONE;
+ if(select_down){
+  controls->select_active=1;
+  controls->select_used=(unsigned char)(a_held!=0);
+ }
+ unsigned action=MDS_GALLERY_CONTROL_NONE;
+ if(a_down){
+  if(select_held){
+   controls->select_used=1;
+   action|=MDS_GALLERY_CONTROL_EDIT;
+  }else action|=MDS_GALLERY_CONTROL_RECALL;
+ }
+ if(select_up){
+  if(controls->select_active&&!controls->select_used&&!a_held&&!a_down)
+   action|=MDS_GALLERY_CONTROL_EXPORT;
+  controls->select_used=0;
+  controls->select_active=0;
+ }
+ return action;
+}

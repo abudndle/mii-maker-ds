@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify original editor release, invalid and key-up wiring
-        run: python3 tests/test_clan_adjust_input.py && python3 tests/test_input_queue.py
+        run: python3 tests/test_clan_adjust_input.py && python3 tests/test_input_queue.py && python3 tests/test_gallery_controls_wiring.py
       - name: Verify original editor arrow and adjustment CLAN curves
         run: python3 -m unittest discover -s tests -p test_generate_clan_adjust.py
       - name: Verify source-derived editor CLAN selection tracks
