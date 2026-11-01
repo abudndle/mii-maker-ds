@@ -60,4 +60,10 @@ int mds_gallery_next_saved(const unsigned char *used,unsigned current,int direct
     }
     return -1;
 }
-int mds_home_focus_step(int current,int delta){int v=(current+delta)%4;return v<0?v+4:v;}
+int mds_home_focus_step(int current,int delta)
+{
+    /* Reduce before adding so arbitrary D-pad deltas cannot overflow int. */
+    int a=current%4,b=delta%4;
+    int v=(a+b)%4;
+    return v<0?v+4:v;
+}
