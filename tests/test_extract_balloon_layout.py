@@ -72,7 +72,7 @@ assert [p["depth"] for p in base["panes"]] == [0, 1, 1, 1, 1, 1]
 # A nested group cannot reorder overlapping source icons. After the nested
 # subtree ends, subsequent siblings must paint over earlier children.
 nested_parts = [
-    section(b"lyt1", b"\\0"*4 + struct.pack("<ff", 320, 240)),
+    section(b"lyt1", b"\0"*4 + struct.pack("<ff", 320, 240)),
     pane("Root"), section(b"pas1"),
     pane("B_Favorite", tag=b"bnd1"),
     pane("Group"), section(b"pas1"),
