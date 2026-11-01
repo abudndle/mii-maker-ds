@@ -24,7 +24,7 @@ checks={
     "touch-down captures occupied source for optional drag": "mds_gallery_drag_begin(&gallery_drag,page,slot,1)" in gallery,
     "touch release ends drag": "if(input.up&KEY_TOUCH){" in gallery and "mds_gallery_drag_end(&gallery_drag,page," in gallery,
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
-    "room selector is separate from directional arrows": "mds_gallery_room_button(input.touch.px,input.touch.py)" in gallery and "int mds_gallery_room_button(int x,int y)" in (root/"source/menu.c").read_text(),
+    "gallery keeps original artwork without placeholder labels": "text_at(bottom,103,10,\"ROOM\")" not in (root/"source/ui.c").read_text(),
     "tap selects without requiring a drop move": "Tap box to select; drag the Mii" in (root/"source/ui.c").read_text(),
     "drag renders Mii sprite instead of moving box": "mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23)" in (root/"source/ui.c").read_text() and "if(slot==selected)outline(&gallery_hits[i]);" in (root/"source/ui.c").read_text(),
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
