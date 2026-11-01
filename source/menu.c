@@ -87,6 +87,10 @@ int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsi
     *source=(unsigned)start;
     return destination;
 }
+int mds_gallery_drag_blocks_actions(int was_dragging,int dragging)
+{
+    return was_dragging!=0||dragging!=0;
+}
 int mds_gallery_next_saved(const unsigned char *used,unsigned current,int direction)
 {
     if(!used||current>=100)return -1;
