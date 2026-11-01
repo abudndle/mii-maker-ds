@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from restore_asset_zip import validate
+from private_validation_cache import cache_hit, cache_store
 
 ROOT = Path(__file__).resolve().parents[1]
 ROM = ROOT / "mii-ds.nds"
@@ -24,7 +25,10 @@ def run(*command):
     subprocess.run([str(c) for c in command], cwd=ROOT, check=True)
 
 
-def check_zip(archive: Path) -> None:
+def check_zip(archive: Path, use_cache: bool = True) -> None:
+    if use_cache and cache_hit(ROOT,archive):
+        print('PASS: unchanged private resource ZIP and validation source; reusing prior full verification')
+        return
     if validate(archive):
         raise ValueError("private original-resource archive is invalid")
     # Source-only parser validates every animation frame and matching 53-clip
@@ -38,12 +42,14 @@ def check_zip(archive: Path) -> None:
     # Validate every source-referenced editor icon and all NitroFS UI bitmaps/sprites.
     # This gate runs before private resource restoration and compiler invocation.
     run(sys.executable, "tools/verify_runtime_assets.py", archive)
+    # Only fully successful checks may produce the private, gitignored stamp.
+    cache_store(ROOT,archive)
 
 
-def build(archive: Path, validate_only=False, jobs=2) -> None:
+def build(archive: Path, validate_only=False, jobs=2, no_cache=False) -> None:
     if not archive.is_file():
         raise ValueError("private resource archive does not exist: " + str(archive))
-    check_zip(archive)
+    check_zip(archive,use_cache=not no_cache)
     if validate_only:
         print("PASS: private ZIP, original motion catalogs, 41 GUI CLAN tables, and every UI/sprite resource validated.")
         print("No assets were extracted and no ROM was built.")
@@ -82,6 +88,8 @@ def main() -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("asset_zip", type=Path,
                         help="path to your privately extracted Mii Maker resource ZIP")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="re-run all private resource, motion and CLAN validators")
     parser.add_argument("--validate-only", action="store_true",
                         help="validate archive and original animations without extracting or building")
     parser.add_argument("--jobs", type=int, default=2,
@@ -90,7 +98,8 @@ def main() -> int:
     if not 1 <= args.jobs <= 16:
         parser.error("--jobs must be between 1 and 16")
     try:
-        build(args.asset_zip.expanduser().resolve(), args.validate_only, args.jobs)
+        build(args.asset_zip.expanduser().resolve(), args.validate_only, args.jobs,
+              args.no_cache)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         print("FAIL: private build: " + str(error), file=sys.stderr)
         return 1
