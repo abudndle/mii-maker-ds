@@ -29,6 +29,20 @@ static OriginalSprite room_tab_selected = {
 static OriginalSprite arrow_shadow = {
     "nitro:/art/Select/BtnScrollShadow.bin",16,16,0,{0}
 };
+/* Original SelectBalloonButton picture textures, converted only inside the
+ * owner's private resource build. These are never synthesized or committed. */
+static OriginalSprite favorite_icon = {
+    "nitro:/art/Select/IconFavorite.bin",32,32,0,{0}
+};
+static OriginalSprite personal_icon = {
+    "nitro:/art/Select/IconMyMii.bin",32,32,0,{0}
+};
+static OriginalSprite copy_icon = {
+    "nitro:/art/Select/IconCopyB.bin",20,18,0,{0}
+};
+static OriginalSprite edit_icon = {
+    "nitro:/art/Select/IconOpen.bin",16,16,0,{0}
+};
 
 static int original_sprite_ready(OriginalSprite *sprite)
 {
@@ -154,4 +168,18 @@ int mds_original_gallery_room_tab(uint16_t *canvas,int width,int height,
 {
     return mds_original_gallery_room_tab_tinted(canvas,width,height,
                                                 x,y,w,h,selected,0xffffu);
+}
+
+/* Source icon pixels are exact; positions remain provisional until the
+ * SelectBalloonButton runtime anchor is recovered. */
+int mds_original_gallery_action_icon(uint16_t *canvas,int width,int height,
+                                     int x,int y,int w,int h,
+                                     int action,int personal)
+{
+    OriginalSprite *sprite=NULL;
+    if(action==1)sprite=personal?&personal_icon:&favorite_icon;
+    else if(action==2)sprite=&copy_icon;
+    else if(action==3)sprite=&edit_icon;
+    if(!sprite)return 0;
+    return original_sprite_blit(sprite,canvas,width,height,x,y,w,h,0xffffu);
 }
