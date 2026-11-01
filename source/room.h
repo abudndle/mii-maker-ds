@@ -23,4 +23,9 @@ void mds_room_select(MdsRoomCache *,unsigned selected);
 int mds_room_matches(const MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *);
 int mds_room_capture(MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *,const uint16_t *rendered);
 int mds_room_blit(const MdsRoomCache *,unsigned selected,unsigned local,uint16_t *dst,unsigned width,unsigned height,int x,int y);
+/* Choose the next occupied cached actor to animate, or -1 while any
+ * renderable occupied slot still awaits its first preview. */
+int mds_room_next_refresh(const MdsRoomCache *cache,
+ const uint8_t occupied[MDS_ROOM_SLOTS],
+ const unsigned attempts[MDS_ROOM_SLOTS],unsigned cursor);
 #endif

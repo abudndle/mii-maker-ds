@@ -77,6 +77,24 @@ int main(void)
  assert(!mds_room_blit(&cache,20,10,dst,256,192,0,0));
  assert(!mds_room_capture(NULL,20,0,&a,rendered));
  assert(!mds_room_blit(NULL,20,0,dst,256,192,0,0));
+ /* Refresh scheduling must not starve unseen Miis or empty slots. */
+ uint8_t occupied[MDS_ROOM_SLOTS]={0};
+ unsigned attempts[MDS_ROOM_SLOTS]={0};
+ memset(&cache,0,sizeof cache);
+ occupied[1]=1;occupied[4]=1;
+ cache.actor[1].valid=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ cache.actor[4].valid=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==1);
+ assert(mds_room_next_refresh(&cache,occupied,attempts,2)==4);
+ assert(mds_room_next_refresh(&cache,occupied,attempts,5)==1);
+ attempts[1]=3;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==4);
+ cache.actor[4].valid=0;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ attempts[4]=3;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ assert(mds_room_next_refresh(NULL,occupied,attempts,0)==-1);
  puts("PASS: source-derived ten-Mii room positions, independent cached model images, invalidation and clipping");
  return 0;
 }

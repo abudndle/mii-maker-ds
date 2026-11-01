@@ -155,25 +155,15 @@ static void gallery_advance_actor_pose(void)
   last_room_start=gallery_room.start;
   next_actor=0;
  }
- /* Fill all occupied preview slots before evicting a rendered pose.
-  * Check once per animation tick, not once for every cached actor. */
- for(unsigned j=0;j<MDS_ROOM_SLOTS;j++)
-  if(gallery_room_occupied[j]&&!gallery_room.actor[j].valid&&
-     gallery_room_attempts[j]<3u)return;
- for(unsigned n=0;n<MDS_ROOM_SLOTS;n++){
-  unsigned local=(next_actor+n)%MDS_ROOM_SLOTS;
-  /* A removed Mii can still have a cached actor until the next repaint.
-   * Never spend the limited animation render budget on an empty slot. */
-  if(!gallery_room_occupied[local]||!gallery_room.actor[local].valid)continue;
-  /* A failed model decode must not permanently hold the round-robin cursor
-   * on this actor when other valid Miis can still animate. */
-  if(gallery_room_attempts[local]>=3u)continue;
-  gallery_room.actor[local].valid=0;
-  gallery_room_attempts[local]=0;
-  next_actor=(local+1u)%MDS_ROOM_SLOTS;
-  gallery_retry_pending=1;
-  return;
- }
+ /* Preserve initial-preview priority, then refresh one cached actor in
+  * round-robin order. The portable room helper is regression-tested. */
+ int local=mds_room_next_refresh(&gallery_room,gallery_room_occupied,
+                               gallery_room_attempts,next_actor);
+ if(local<0)return;
+ gallery_room.actor[local].valid=0;
+ gallery_room_attempts[local]=0;
+ next_actor=((unsigned)local+1u)%MDS_ROOM_SLOTS;
+ gallery_retry_pending=1;
 }
 static void gallery_invalidate_motion_previews(void)
 {
