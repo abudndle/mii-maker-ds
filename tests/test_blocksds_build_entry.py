@@ -86,16 +86,23 @@ class PrivateDockerTests(unittest.TestCase):
         self.assertIn('--cap-drop',cmd)
         self.assertIn('--security-opt',cmd)
         self.assertIn('no-new-privileges',cmd)
-        self.assertIn('type=bind,source='+str(self.archive.resolve())+',target=/private/resources.zip,readonly',cmd)
+        self.assertNotIn('/private/resources.zip',repr(cmd))
+        self.assertNotIn(str(self.archive.resolve()),repr(cmd))
         self.assertIn('type=bind,source='+str(self.project.resolve())+',target=/work',cmd)
-        self.assertEqual(cmd[-5:],['python3','tools/build_private.py','/private/resources.zip','--jobs','4'])
+        self.assertEqual(cmd[-4:],['skylyrac/blocksds:slim-latest','SDK_STAGE=1','-j4','mii-ds.nds'])
+        self.assertEqual(cmd[cmd.index('--entrypoint')+1],'make')
         self.assertNotIn('upload',repr(cmd).lower())
         self.assertNotIn('--privileged',cmd)
         self.assertEqual(self.archive.stat().st_size,len(b'private synthetic archive, not actual Nintendo files'))
 
-    def test_validate_only_passes_down(self):
-        cmd=docker.command(self.archive,self.project,validate_only=True)
-        self.assertEqual(cmd[-4:],['python3','tools/build_private.py','/private/resources.zip','--validate-only'])
+    def test_validate_only_needs_no_docker_and_never_extracts(self):
+        with patch.object(docker,'check_zip') as precheck, \
+             patch.object(docker,'validate') as extract, \
+             patch.object(docker.subprocess,'run') as compiler:
+            docker.build(self.archive,validate_only=True)
+        precheck.assert_called_once()
+        extract.assert_not_called()
+        compiler.assert_not_called()
 
     def test_never_accepts_docker_cli_injection(self):
         for image in ('-it', 'bad image', '', '--privileged'):
