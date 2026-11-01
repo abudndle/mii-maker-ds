@@ -24,6 +24,34 @@ MdsGalleryTouchAction mds_gallery_action_touch(int x,int y)
  if(x>=172)return MDS_GALLERY_ACTION_EDIT;
  return MDS_GALLERY_ACTION_NONE;
 }
+void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture)
+{
+ if(gesture)gesture->pressed=MDS_GALLERY_ACTION_NONE;
+}
+void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
+                                    MdsGalleryTouchAction action)
+{
+ if(!gesture)return;
+ gesture->pressed=(action>=MDS_GALLERY_ACTION_FAVORITE&&
+                   action<=MDS_GALLERY_ACTION_EDIT)?
+                   action:MDS_GALLERY_ACTION_NONE;
+}
+void mds_gallery_action_press_hold(MdsGalleryActionPress *gesture,int x,int y)
+{
+ if(gesture&&gesture->pressed!=MDS_GALLERY_ACTION_NONE&&
+    mds_gallery_action_touch(x,y)!=gesture->pressed)
+  gesture->pressed=MDS_GALLERY_ACTION_NONE;
+}
+MdsGalleryTouchAction mds_gallery_action_press_release(
+    MdsGalleryActionPress *gesture,int x,int y)
+{
+ if(!gesture)return MDS_GALLERY_ACTION_NONE;
+ MdsGalleryTouchAction action=gesture->pressed;
+ gesture->pressed=MDS_GALLERY_ACTION_NONE;
+ return action!=MDS_GALLERY_ACTION_NONE&&
+        mds_gallery_action_touch(x,y)==action?
+        action:MDS_GALLERY_ACTION_NONE;
+}
 MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied)
 {
  if(slot<0||slot>=100)return MDS_GALLERY_BOX_NONE;
