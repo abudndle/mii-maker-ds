@@ -7,13 +7,15 @@ static MdsGallery g,h;
 int main(void){MdsAvatar a;
  /* Every public gallery API must reject invalid pointers safely. */
  mds_gallery_new(NULL);
+ assert(!mds_gallery_empty(NULL));
+ mds_gallery_new(&g);assert(mds_gallery_empty(&g));
  assert(!mds_gallery_load(NULL,image,sizeof image));
  assert(!mds_gallery_load(&h,NULL,sizeof image));
  assert(!mds_gallery_store(NULL,0,&a));
  assert(!mds_gallery_store(&g,0,NULL));
  assert(!mds_gallery_delete(NULL,0));
  assert(!mds_gallery_commit(NULL,image,sizeof image));
- assert(!mds_gallery_commit(&g,NULL,sizeof image));memset(image,255,sizeof image);mds_gallery_new(&g);assert(!mds_gallery_load(&h,image,sizeof image));mds_new(&a);a.value[51]=1;assert(mds_gallery_store(&g,0,&a));assert(!mds_gallery_delete(&g,0));assert(!mds_gallery_store(&g,1,&a));
+ assert(!mds_gallery_commit(&g,NULL,sizeof image));memset(image,255,sizeof image);mds_gallery_new(&g);assert(!mds_gallery_load(&h,image,sizeof image));mds_new(&a);a.value[51]=1;assert(mds_gallery_store(&g,0,&a));assert(!mds_gallery_empty(&g));assert(!mds_gallery_delete(&g,0));assert(!mds_gallery_store(&g,1,&a));
  /* A corrupted in-memory gallery must never write two Personal Miis. */
  g.miis[1]=a;g.used[1]=1;
  uint32_t before_generation=g.generation;int before_bank=g.active_bank;
