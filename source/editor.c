@@ -180,7 +180,15 @@ int mds_editor_toggle_favorite(MdsEditor *e,MdsPersist persist,void *ctx)
 
 int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 {
+ if(!e||!e->gallery)return 0;
  MdsGallery*g=e->gallery;
+ /* Touch and Y copying must not bypass a pending confirmation or
+  * silently discard an unsaved editor draft. Received-Mii copy-before-edit
+  * reaches here only after its explicit confirmation clears pending. */
+ if(e->pending||mds_editor_dirty(e)){
+  e->status="Discard unsaved edits before copying.";
+  return 0;
+ }
  if(e->slot>=MDS_SLOTS||!g->used[e->slot]){e->status="Choose a saved Mii to copy.";return 0;}
  if((g->miis[e->slot].value[61]&2)||!g->miis[e->slot].value[48]){e->status="Copying is not allowed.";return 0;}
  unsigned dest=0;while(dest<MDS_SLOTS&&g->used[dest])dest++;
