@@ -26,6 +26,15 @@ typedef enum {
  MDS_GALLERY_ACTION_EDIT=3
 } MdsGalleryTouchAction;
 MdsGalleryTouchAction mds_gallery_action_touch(int x,int y);
+/* An action activates only on release over its original pressed button.
+ * Leaving its bounds cancels; sliding back does not re-arm the action. */
+typedef struct { MdsGalleryTouchAction pressed; } MdsGalleryActionPress;
+void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture);
+void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
+                                    MdsGalleryTouchAction action);
+void mds_gallery_action_press_hold(MdsGalleryActionPress *gesture,int x,int y);
+MdsGalleryTouchAction mds_gallery_action_press_release(
+    MdsGalleryActionPress *gesture,int x,int y);
 /* All ten boxes are selectable; only occupied boxes can begin a drag. */
 typedef enum {
  MDS_GALLERY_BOX_NONE=0,
