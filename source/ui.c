@@ -155,9 +155,11 @@ static void gallery_advance_actor_pose(void)
   last_room_start=gallery_room.start;
   next_actor=0;
  }
- /* A pose update must not repeatedly discard a preview still awaiting its
-  * first render. Prefer a valid actor, so the one-render-per-repaint budget
-  * eventually fills every room slot even when animation advances quickly. */
+ /* Fill all occupied preview slots before evicting a rendered pose.
+  * Check once per animation tick, not once for every cached actor. */
+ for(unsigned j=0;j<MDS_ROOM_SLOTS;j++)
+  if(gallery_room_occupied[j]&&!gallery_room.actor[j].valid&&
+     gallery_room_attempts[j]<3u)return;
  for(unsigned n=0;n<MDS_ROOM_SLOTS;n++){
   unsigned local=(next_actor+n)%MDS_ROOM_SLOTS;
   /* A removed Mii can still have a cached actor until the next repaint.
@@ -166,14 +168,6 @@ static void gallery_advance_actor_pose(void)
   /* A failed model decode must not permanently hold the round-robin cursor
    * on this actor when other valid Miis can still animate. */
   if(gallery_room_attempts[local]>=3u)continue;
-  /* Do not evict a successfully rendered actor while another occupied slot
-   * still needs its initial preview. Otherwise high-FPS clips can keep the
-   * first actor perpetually refreshing while later Miis remain invisible. */
-  int pending=0;
-  for(unsigned j=0;j<MDS_ROOM_SLOTS;j++)
-   if(gallery_room_occupied[j]&&!gallery_room.actor[j].valid&&
-      gallery_room_attempts[j]<3u){pending=1;break;}
-  if(pending)return;
   gallery_room.actor[local].valid=0;
   gallery_room_attempts[local]=0;
   next_actor=(local+1u)%MDS_ROOM_SLOTS;
