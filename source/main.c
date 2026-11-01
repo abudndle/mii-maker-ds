@@ -281,9 +281,11 @@ int main(void)
             MdsGalleryTouchAction touch_action=MDS_GALLERY_ACTION_NONE;
             if(down&KEY_TOUCH){
                 mds_gallery_action_press_begin(&gallery_action_press,
-                    gallery_drag.source<0&&mds_ui_gallery_actions_visible(animation_vblanks)?
+                    gallery_drag.source<0&&
+                    (!gallery.used[editor.slot]||mds_ui_gallery_actions_visible(animation_vblanks))?
                     mds_gallery_action_touch(input.touch.px,input.touch.py):
                     MDS_GALLERY_ACTION_NONE);
+                mds_gallery_action_press_bind_slot(&gallery_action_press,editor.slot);
                 if(gallery_action_press.pressed!=MDS_GALLERY_ACTION_NONE&&
                    (input.held&KEY_SELECT))
                     gallery_controls.select_used=1;
@@ -343,8 +345,10 @@ int main(void)
                 mds_gallery_action_press_hold(&gallery_action_press,
                                               live_touch_x,live_touch_y);
             if(input.up&KEY_TOUCH)
-                touch_action=mds_gallery_action_press_release(
-                    &gallery_action_press,input.touch.px,input.touch.py);
+                touch_action=mds_gallery_action_press_release_for_slot(
+                    &gallery_action_press,input.touch.px,input.touch.py,
+                    editor.slot,!gallery.used[editor.slot]||
+                    mds_ui_gallery_actions_visible(animation_vblanks));
             /* Empty gallery slots can be selected for Create, but cannot
              * be favorited or copied. Do not dispatch invisible actions. */
             if(!gallery.used[editor.slot]&&

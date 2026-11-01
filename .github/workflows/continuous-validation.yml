@@ -36,8 +36,18 @@ jobs:
             tests/test_gallery_drag.py \
             tests/test_first_boot_flow.py \
             tests/test_gallery_exit_wiring.py \
-            tests/test_gallery_empty_action_wiring.py; do
+            tests/test_gallery_empty_action_wiring.py \
+            tests/test_gallery_action_target_wiring.py; do
             python3 "$test_file"
+          done
+      - name: Portable C gallery input regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in menu gallery_exit gallery_action_target; do
+            cc -std=c11 -Wall -Wextra -Werror -Isource \
+              "tests/${test}.c" source/menu.c -o "/tmp/mds-${test}"
+            "/tmp/mds-${test}"
           done
       - name: Check for prohibited committed ROMs and archives
         shell: bash
