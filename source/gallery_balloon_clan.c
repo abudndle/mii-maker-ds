@@ -35,7 +35,7 @@ void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state)
 void mds_gallery_balloon_clan_play(MdsGalleryBalloonClan *state,
                                    MdsGalleryBalloonClip clip,uint32_t now)
 {
-    if(!state||clip<MDS_BALLOON_SELECT||clip>MDS_BALLOON_UNDECIDE)return;
+    if(!state||(unsigned)clip>(unsigned)MDS_BALLOON_UNDECIDE)return;
     state->active=1;state->started=now;state->clip=(uint8_t)clip;
 }
 void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now)
