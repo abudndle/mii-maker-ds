@@ -240,6 +240,16 @@ int main(void)
                 drawn_screen=-1;
             }
          }else if(screen==MDS_SCREEN_GALLERY){
+            /* B wins over every same-frame edit, copy, delete, Favorite,
+             * image export and stylus drop. Never mutate a Mii while
+             * leaving the gallery, even for simultaneous key presses. */
+            if(down&KEY_B){
+                mds_gallery_cancel_for_exit(&gallery_drag,&gallery_controls,
+                                            &gallery_action_press,
+                                            &gallery_drag_arrow_latch);
+                screen=MDS_SCREEN_HOME;
+                drawn_screen=-1;
+            }else{
             int was_gallery_dragging=gallery_drag.source>=0;
             unsigned gallery_action=mds_gallery_controls_step(&gallery_controls,
                 (down&KEY_A)!=0,(input.held&KEY_A)!=0,
@@ -250,7 +260,6 @@ int main(void)
             if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
-            if(down&KEY_B)screen=MDS_SCREEN_HOME;
             /* Physical L/R and original touchscreen arrows can page through
              * destination rooms while a grabbed Mii stays attached. */
             if(down&(KEY_L|KEY_R)){
@@ -421,6 +430,7 @@ int main(void)
                 drawn_screen=-1;
             }
             if(gallery_action&MDS_GALLERY_CONTROL_EXPORT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
+            } /* Only non-B gallery input may reach mutations above. */
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
             if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
