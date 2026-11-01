@@ -977,10 +977,20 @@ static void draw_original_room_arrows(const MdsGalleryNavStyle *style)
     }
     if(original_room_arrow_state!=1)return;
     /* EDITSelectBase B_ArrowL and B_ArrowR: 3DS source pane bounds
-     * 320x240 -> DS 256x192, centers y=95, x=9.5/246.5. */
+     * 320x240 -> DS 256x192, centers y=95, x=9.5/246.5.
+     * BtnScrollShadow is the actual 16x16 source image; center it on the
+     * same original arrow pane. BCLAN CLVC controls its visible opacity. */
     int left_dx=style?style->left_arrow_dx:0;
     int right_dx=style?style->right_arrow_dx:0;
-    for(int y=0;y<18;y++)
+    unsigned shadow_alpha=style?style->shadow_alpha:200u;
+    /* Source 16x16 stamp becomes 13x13 at the exact 4/5 DS scale.
+     * It must be drawn first, behind the original arrow icons, and
+     * must never move the stationary touchscreen hitbox. */
+    mds_original_gallery_arrow_shadow(bottom,256,192,
+                                      3+left_dx,89,13,13,shadow_alpha);
+    mds_original_gallery_arrow_shadow(bottom,256,192,
+                                      240+right_dx,89,13,13,shadow_alpha);
+    for(int y=0;y<18;y>
         for(int x=0;x<12;x++){
             uint16_t left=original_room_arrow[y*12+x];
             uint16_t right=original_room_arrow[y*12+(11-x)];
