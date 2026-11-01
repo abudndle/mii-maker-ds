@@ -6,6 +6,7 @@
 #include "head.h"
 #include "view.h"
 #include "thumbnail.h"
+#include "original_gallery_art.h"
 #include "room.h"
 #include "animation.h"
 #include "motion.h"
@@ -972,10 +973,21 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     mds_ui_gallery_top(g,page,selected,notice);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
     draw_original_room_arrows();
+    /* 3DS EDITSelectBase room tabs are separate touch panes above the boxes.
+     * Only the private source-converted resource is used; absent art leaves
+     * the existing gallery background unchanged. */
+    for(unsigned room=0;room<10;room++){
+        const MdsMenuHit *tab=&gallery_room_hits[room];
+        mds_original_gallery_room_tab(bottom,256,192,
+            tab->x,tab->y,tab->w,tab->h,room==page);
+    }
     mds_thumbnail_page(&gallery_thumbnails,page);
     for(unsigned i=0;i<10;i++){
         unsigned slot=page*10+i;
         const MdsMenuHit *r=&gallery_hits[i];
+        /* Draw the actual private Select.arc BtnMiiB fill under each Mii;
+         * the original destination-box bounds never move during dragging. */
+        mds_original_gallery_box_base(bottom,256,192,r->x,r->y,r->w,r->h);
         /* Full software rasterization is expensive on DS. Only regenerate a
          * thumbnail when its page/slot/62 appearance fields have changed. */
         if(g->used[slot]){
@@ -989,7 +1001,14 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                 mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
-        if(slot==selected)outline(&gallery_hits[i]);
+        int hovered=gallery_drag_slot>=0&&gallery_drag_x>=r->x&&
+                    gallery_drag_x<r->x+r->w&&gallery_drag_y>=r->y&&
+                    gallery_drag_y<r->y+r->h;
+        if(slot==selected||hovered){
+            if(!mds_original_gallery_box_border(bottom,256,192,
+                                                 r->x,r->y,r->w,r->h))
+                outline(&gallery_hits[i]);
+        }
     }
     /* Keep a compact copy of the grabbed Mii's thumbnail. The gallery cache
      * deliberately holds only one room; it is cleared when L/R changes page.
