@@ -70,8 +70,9 @@ static int original_sprite_ready(OriginalSprite *sprite)
     return valid;
 }
 
-static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
-                                int width,int height,int x,int y,int w,int h,uint16_t tint)
+static int original_sprite_blit_alpha(OriginalSprite *sprite,uint16_t *canvas,
+                                      int width,int height,int x,int y,int w,int h,
+                                      uint16_t tint,unsigned alpha)
 {
     if(!canvas||width<=0||height<=0||width>512||height>512||
        w<=0||h<=0||w>512||h>512)return 0;
@@ -91,12 +92,24 @@ static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
                 unsigned r=((unsigned)(pixel&31u)*((unsigned)tint&31u)+15u)/31u;
                 unsigned g=((unsigned)((pixel>>5)&31u)*((unsigned)(tint>>5)&31u)+15u)/31u;
                 unsigned blue=((unsigned)((pixel>>10)&31u)*((unsigned)(tint>>10)&31u)+15u)/31u;
-                canvas[(size_t)dest_y*(unsigned)width+(size_t)dest_x]=
-                    (uint16_t)(0x8000u|r|(g<<5)|(blue<<10));
+                size_t index=(size_t)dest_y*(unsigned)width+(size_t)dest_x;
+                if(alpha<255u){
+                    uint16_t previous=canvas[index];
+                    r=(r*alpha+(unsigned)(previous&31u)*(255u-alpha)+127u)/255u;
+                    g=(g*alpha+(unsigned)((previous>>5)&31u)*(255u-alpha)+127u)/255u;
+                    blue=(blue*alpha+(unsigned)((previous>>10)&31u)*(255u-alpha)+127u)/255u;
+                }
+                if(alpha)canvas[index]=(uint16_t)(0x8000u|r|(g<<5)|(blue<<10));
             }
         }
     }
     return 1;
+}
+
+static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
+                                int width,int height,int x,int y,int w,int h,uint16_t tint)
+{
+    return original_sprite_blit_alpha(sprite,canvas,width,height,x,y,w,h,tint,255u);
 }
 
 /* Blend the PRIVATE original 16x16 shadow stamp using source CLVC alpha.
@@ -172,14 +185,22 @@ int mds_original_gallery_room_tab(uint16_t *canvas,int width,int height,
 
 /* Source icon pixels are exact; positions remain provisional until the
  * SelectBalloonButton runtime anchor is recovered. */
-int mds_original_gallery_action_icon(uint16_t *canvas,int width,int height,
-                                     int x,int y,int w,int h,
-                                     int action,int personal)
+int mds_original_gallery_action_icon_alpha(uint16_t *canvas,int width,int height,
+                                           int x,int y,int w,int h,
+                                           int action,int personal,unsigned alpha)
 {
+    if(alpha>255u)alpha=255u;
     OriginalSprite *sprite=NULL;
     if(action==1)sprite=personal?&personal_icon:&favorite_icon;
     else if(action==2)sprite=&copy_icon;
     else if(action==3)sprite=&edit_icon;
     if(!sprite)return 0;
-    return original_sprite_blit(sprite,canvas,width,height,x,y,w,h,0xffffu);
+    return original_sprite_blit_alpha(sprite,canvas,width,height,x,y,w,h,0xffffu,alpha);
+}
+int mds_original_gallery_action_icon(uint16_t *canvas,int width,int height,
+                                     int x,int y,int w,int h,
+                                     int action,int personal)
+{
+    return mds_original_gallery_action_icon_alpha(canvas,width,height,
+                                                   x,y,w,h,action,personal,255u);
 }
