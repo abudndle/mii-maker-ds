@@ -6,6 +6,7 @@
 #include "head.h"
 #include "view.h"
 #include "thumbnail.h"
+#include "original_gallery_art.h"
 #include "room.h"
 #include "animation.h"
 #include "motion.h"
@@ -954,6 +955,54 @@ static int gallery_drag_slot=-1;
 static int gallery_drag_x=-1,gallery_drag_y=-1;
 static MdsThumbnail gallery_drag_snapshot;
 static int gallery_drag_snapshot_slot=-1;
+/* The floating Mii is updated directly in bottom-screen VRAM without
+ * repainting all ten expensive model thumbnails on each stylus move. */
+static uint16_t gallery_drag_under[MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT];
+static int gallery_drag_under_valid,gallery_drag_under_x,gallery_drag_under_y;
+static void gallery_drag_restore_under(void)
+{
+    if(!gallery_drag_under_valid)return;
+    for(unsigned y=0;y<MDS_THUMBNAIL_HEIGHT;y++){
+        int py=gallery_drag_under_y+(int)y;
+        if(py<0||py>=192)continue;
+        for(unsigned x=0;x<MDS_THUMBNAIL_WIDTH;x++){
+            int px=gallery_drag_under_x+(int)x;
+            if(px>=0&&px<256)
+                bottom[py*256+px]=gallery_drag_under[y*MDS_THUMBNAIL_WIDTH+x];
+        }
+    }
+    gallery_drag_under_valid=0;
+}
+static void gallery_drag_draw_at(int x,int y)
+{
+    if(!gallery_drag_snapshot.valid||x<0||y<0)return;
+    int left=x-(int)MDS_THUMBNAIL_WIDTH/2;
+    int top_edge=y-(int)MDS_THUMBNAIL_HEIGHT/2;
+    for(unsigned row=0;row<MDS_THUMBNAIL_HEIGHT;row++){
+        int py=top_edge+(int)row;
+        for(unsigned col=0;col<MDS_THUMBNAIL_WIDTH;col++){
+            int px=left+(int)col;
+            unsigned index=row*MDS_THUMBNAIL_WIDTH+col;
+            uint16_t backdrop=0;
+            if(px>=0&&px<256&&py>=0&&py<192){
+                backdrop=bottom[py*256+px];
+                uint16_t pixel=gallery_drag_snapshot.pixels[index];
+                if(pixel&0x8000u)bottom[py*256+px]=pixel;
+            }
+            gallery_drag_under[index]=backdrop;
+        }
+    }
+    gallery_drag_under_x=left;gallery_drag_under_y=top_edge;
+    gallery_drag_under_valid=1;
+}
+void mds_ui_gallery_drag_follow(int x,int y)
+{
+    if(!ok||gallery_drag_slot<0||!gallery_drag_snapshot.valid||
+       x<0||y<0||(x==gallery_drag_x&&y==gallery_drag_y))return;
+    gallery_drag_restore_under();
+    gallery_drag_x=x;gallery_drag_y=y;
+    gallery_drag_draw_at(x,y);
+}
 void mds_ui_gallery_drag(int slot,int x,int y)
 {
     int next=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;
@@ -971,11 +1020,24 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
+    /* Full background redraw invalidates the previous sprite backing store. */
+    gallery_drag_under_valid=0;
     draw_original_room_arrows();
+    /* 3DS EDITSelectBase room tabs are separate touch panes above the boxes.
+     * Only the private source-converted resource is used; absent art leaves
+     * the existing gallery background unchanged. */
+    for(unsigned room=0;room<10;room++){
+        const MdsMenuHit *tab=&gallery_room_hits[room];
+        mds_original_gallery_room_tab(bottom,256,192,
+            tab->x,tab->y,tab->w,tab->h,room==page);
+    }
     mds_thumbnail_page(&gallery_thumbnails,page);
     for(unsigned i=0;i<10;i++){
         unsigned slot=page*10+i;
         const MdsMenuHit *r=&gallery_hits[i];
+        /* Draw the actual private Select.arc BtnMiiB fill under each Mii;
+         * the original destination-box bounds never move during dragging. */
+        mds_original_gallery_box_base(bottom,256,192,r->x,r->y,r->w,r->h);
         /* Full software rasterization is expensive on DS. Only regenerate a
          * thumbnail when its page/slot/62 appearance fields have changed. */
         if(g->used[slot]){
@@ -989,7 +1051,14 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                 mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
-        if(slot==selected)outline(&gallery_hits[i]);
+        int hovered=gallery_drag_slot>=0&&gallery_drag_x>=r->x&&
+                    gallery_drag_x<r->x+r->w&&gallery_drag_y>=r->y&&
+                    gallery_drag_y<r->y+r->h;
+        if(slot==selected||hovered){
+            if(!mds_original_gallery_box_border(bottom,256,192,
+                                                 r->x,r->y,r->w,r->h))
+                outline(&gallery_hits[i]);
+        }
     }
     /* Keep a compact copy of the grabbed Mii's thumbnail. The gallery cache
      * deliberately holds only one room; it is cleared when L/R changes page.
@@ -1000,16 +1069,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
            mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
             gallery_drag_snapshot=gallery_thumbnails.slots[local];
         if(gallery_drag_snapshot.valid&&gallery_drag_x>=0&&gallery_drag_y>=0)
-            for(unsigned y=0;y<MDS_THUMBNAIL_HEIGHT;y++){
-                int py=gallery_drag_y-23+(int)y;
-                if(py<0||py>=192)continue;
-                for(unsigned x=0;x<MDS_THUMBNAIL_WIDTH;x++){
-                    int px=gallery_drag_x-21+(int)x;
-                    if(px<0||px>=256)continue;
-                    uint16_t pixel=gallery_drag_snapshot.pixels[y*MDS_THUMBNAIL_WIDTH+x];
-                    if(pixel&0x8000u)bottom[py*256+px]=pixel;
-                }
-            }
+            gallery_drag_draw_at(gallery_drag_x,gallery_drag_y);
     }
     text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
 }

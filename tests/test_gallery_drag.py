@@ -27,15 +27,19 @@ checks={
     "gallery keeps original artwork without placeholder labels": "text_at(bottom,103,10,\"ROOM\")" not in (root/"source/ui.c").read_text(),
     "tap selects without requiring a drop move": "Tap box to select; drag the Mii" in (root/"source/ui.c").read_text(),
     "drag renders separate cached Mii sprite, not a moving box": "gallery_drag_snapshot.pixels" in (root/"source/ui.c").read_text() and
-                                   "if(slot==selected)outline(&gallery_hits[i]);" in (root/"source/ui.c").read_text(),
+                                   "if(slot==selected||hovered)" in (root/"source/ui.c").read_text() and
+                                   "mds_original_gallery_box_border(bottom,256,192" in (root/"source/ui.c").read_text(),
     "drag thumbnail persists across rooms": "gallery_drag_snapshot=gallery_thumbnails.slots[local];" in (root/"source/ui.c").read_text(),
     "room tab touch uses recovered original pane": "mds_gallery_room_touch(input.touch.px,input.touch.py)" in gallery,
     "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "arrow!=gallery_drag_arrow_latch" in gallery,
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
-    "continuous touch drag browses rooms over arrows": "if((k&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
+    "continuous touch drag browses rooms over arrows": "if((input.held&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
                                       "mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow)" in gallery,
+    "continuous arrow hover uses live VBlank coordinates": "mds_gallery_room_arrow(live_touch_x,live_touch_y,page)" in gallery,
+    "no ghost sprite after a cancelled drop": "drawn_screen=-1;\n                    if(destination>=0){" in gallery,
+    "stylus movement does not require key-repeat events": "mds_ui_gallery_drag_follow(live_touch_x,live_touch_y)" in main,
     "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);" in main,

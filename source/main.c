@@ -217,8 +217,8 @@ int main(void)
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
-            /* Physical L/R and touchscreen arrows both navigate rooms.
-             * Never change rooms while a Mii drag is in progress. */
+            /* Physical L/R and original touchscreen arrows can page through
+             * destination rooms while a grabbed Mii stays attached. */
             if(down&(KEY_L|KEY_R)){
                 int direction=(down&KEY_L)?-1:1;
                 if(gallery_drag.source>=0){
@@ -234,8 +234,8 @@ int main(void)
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
-                /* A bare arrow tap changes rooms; an active drag never pages
-                 * until release, so the displayed room stays stable. */
+                /* A bare arrow tap changes rooms; held drags page when they
+                 * reach an arrow without moving the fixed Mii boxes. */
                 int room=mds_gallery_room_touch(input.touch.px,input.touch.py);
                 /* Room tabs, arrow controls, and Mii boxes are separate
                  * original 3DS panes. A room-tab tap never starts a drag. */
@@ -259,8 +259,8 @@ int main(void)
             /* During a continuous stylus drag, crossing a room arrow pages
              * the bottom destination boxes while retaining the grabbed Mii.
              * The move itself is committed only when released on a box. */
-            if((k&KEY_TOUCH)&&gallery_drag.source>=0){
-                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+            if((input.held&KEY_TOUCH)&&gallery_drag.source>=0){
+                int arrow=mds_gallery_room_arrow(live_touch_x,live_touch_y,page);
                 if(arrow&&arrow!=gallery_drag_arrow_latch){
                     int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                     if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;drawn_screen=-1;}
@@ -271,17 +271,22 @@ int main(void)
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 if(gallery_drag.source>=0&&arrow){
-                    /* Do not double-page on release after crossing an arrow
-                     * while held. Source remains grabbed until a box drop. */
+                    /* A stylus release on an arrow cancels the drag rather
+                     * than leaving a ghost Mii permanently attached. */
                     if(gallery_drag_arrow_latch!=arrow){
                         int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                         if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
                     }
+                    mds_gallery_drag_reset(&gallery_drag);
+                    drawn_screen=-1;
                     gallery_drag_arrow_latch=0;
                 }else if(gallery_drag.source>=0){
                     gallery_drag_arrow_latch=0;
                     int destination=mds_gallery_drag_end(&gallery_drag,page,
                         mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                    /* Erase the floating thumbnail even when tap selects the
+                     * same slot or a drag is cancelled outside the grid. */
+                    drawn_screen=-1;
                     if(destination>=0){
                         editor.slot=source;
                         mds_editor_request(&editor,MDS_EDIT_RELOAD);
@@ -439,7 +444,12 @@ int main(void)
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||editor_selection_repaint||editor_adjust_repaint||((screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED)&&
                      mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
-            else if(screen==MDS_SCREEN_GALLERY){mds_ui_gallery_drag(gallery_drag.source,input.touch.px,input.touch.py);mds_ui_gallery(&gallery,page,editor.slot,editor.status);}
+            else if(screen==MDS_SCREEN_GALLERY){
+                mds_ui_gallery_drag(gallery_drag.source,
+                    (live_held&KEY_TOUCH)?live_touch_x:input.touch.px,
+                    (live_held&KEY_TOUCH)?live_touch_y:input.touch.py);
+                mds_ui_gallery(&gallery,page,editor.slot,editor.status);
+            }
             else if(screen==MDS_SCREEN_SAVED)mds_ui_saved(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected));
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
             else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);
@@ -471,5 +481,13 @@ int main(void)
         }else if(!camera_open){
             mds_ui_scene_transition_step(animation_vblanks,0);
         }
+        /* Only the 42x46 floating Mii is repainted while the stylus moves;
+         * original fixed room tabs, box hitboxes, and saved records stay put.
+         * The touch coordinates refresh every VBlank, even when no new key
+         * event was placed into the input queue. */
+        if(!camera_open&&screen==MDS_SCREEN_GALLERY&&
+           drawn_screen==screen&&gallery_drag.source>=0&&
+           (live_held&KEY_TOUCH))
+            mds_ui_gallery_drag_follow(live_touch_x,live_touch_y);
     }
 }

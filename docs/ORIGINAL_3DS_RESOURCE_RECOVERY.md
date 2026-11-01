@@ -79,3 +79,46 @@ was also checked locally using the user's private textures.
 Keep the extracted archives and converted artwork **out of the public
 repository**. The Makefile already packages local `nitrofiles`
 resources in a private ROM.
+
+
+## Milestone 67: original selection-room controls and responsive drag
+
+The private Mii Maker `layout/Select.arc/timg` has the actual
+`BtnMiiB.bclim` (54×60), `BtnMiiLine.bclim` (54×60),
+`BtnRoomEDITline.bclim` (32×28),
+`BtnRoomEDITline01.bclim` (32×28), and
+`BtnArrow.bclim` (12×18).
+The corresponding local `.bin` files were produced with
+`tools/convert_original_bclim.py` in milestone 66.
+
+**To enable the new native DS gallery widgets locally:** extract the private
+converted-asset ZIP into the project root, preserving
+`nitrofiles/art/Select/`. The ROM build already packages local NitroFS.
+The public repository deliberately does not contain Nintendo artwork.
+
+The gallery now:
+- renders all 10 original, separately selectable room-tab shapes using
+  the exact scaled pane rectangles from `EDITSelectBase.bclyt`;
+- displays the original Mii-box fill beneath each thumbnail and original
+  source selection border instead of the provisional green outline,
+  while falling back safely if the original files are not installed;
+- preserves fixed original Mii destination box geometry during dragging;
+- uses a clipped 42×46 backing-store refresh to move the floating Mii
+  directly in bottom-screen VRAM, without rerendering 10 avatar previews
+  on each stylus position update;
+- pages destination rooms with L/R and held stylus arrow-hover input, and
+  cancels a dropped-outside/arrow-released drag without a ghost sprite;
+- loads each optional original sprite once, with strict dimension and
+  payload-length validation; failed private reads are not retried per frame.
+
+The selected/unselected border variants are conservative uses of real
+Nintendo textures, **not** a proven reproduction of their complete original
+BCLAN tint/alpha/keyframe states. Exact 3DS timings, sound cues and full
+visual parity remain open tasks. The host test synthesizes images with the
+same dimensions (no Nintendo data) and verifies transparent compositing,
+hitbox sizing, clipping, and missing/corrupt-asset fallbacks.
+
+Run `python3 tests/test_original_gallery_art.py` and
+`python3 tests/test_original_gallery_runtime.py` without any private
+assets, or build the private NitroFS ROM to check real original images in
+melonDS. An ARM9 compile smoke test alone does not count as emulator proof.

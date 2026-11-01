@@ -34,6 +34,8 @@ int mds_ui_motion_step(int direction);
 int mds_ui_motion_auto(void);
 void mds_ui_room_recall(void);
 void mds_ui_gallery_drag(int slot,int x,int y);
+/* Move the floating actor on the BOTTOM VRAM screen without a full redraw. */
+void mds_ui_gallery_drag_follow(int x,int y);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);

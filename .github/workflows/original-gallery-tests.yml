@@ -1,0 +1,38 @@
+name: Original 3DS gallery artwork and drag (synthetic assets only)
+
+on:
+  push:
+    paths:
+      - 'source/original_gallery_art.*'
+      - 'source/ui.c'
+      - 'source/ui.h'
+      - 'source/main.c'
+      - 'tests/test_original_gallery_art.py'
+      - 'tests/test_original_gallery_runtime.py'
+      - 'tests/test_gallery_drag.py'
+      - '.github/workflows/original-gallery-tests.yml'
+  pull_request:
+    paths:
+      - 'source/original_gallery_art.*'
+      - 'source/ui.c'
+      - 'source/ui.h'
+      - 'source/main.c'
+      - 'tests/test_original_gallery_art.py'
+      - 'tests/test_original_gallery_runtime.py'
+      - 'tests/test_gallery_drag.py'
+      - '.github/workflows/original-gallery-tests.yml'
+
+jobs:
+  gallery-art:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host compile and exercise source-art renderer
+        run: python3 tests/test_original_gallery_art.py
+      - name: Test original gallery integration and touch tracking
+        run: python3 tests/test_original_gallery_runtime.py
+      - name: Test touch drag and transaction safety
+        run: python3 tests/test_gallery_drag.py
