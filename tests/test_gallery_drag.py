@@ -44,6 +44,8 @@ checks={
     "reject empty source": "slot,slot>=0&&gallery.used[slot]" in gallery and
                            "if(box_action==MDS_GALLERY_BOX_DRAG)" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
+    "reject invisible destination room before saving":
+        "(unsigned)destination/10!=page" in (root/"source/menu.c").read_text(),
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);" in main,
     "public sorting API": "int mds_editor_move(MdsEditor *,unsigned destination,MdsPersist,void *);" in api,
     "move or swap two saved Mii records": "g->miis[destination]=old_source;" in move and
