@@ -71,6 +71,27 @@ assert next(p for p in extract(fixture(hide=True))["panes"] if p["name"] == "B_F
 shifted = extract(fixture(), (5, -7))
 shift = next(p for p in shifted["panes"] if p["name"] == "B_Favorite")
 assert shift["ds_bounds"] == [173.0, 65.0, 16.0, 16.0]
+# An enclosing scene can rotate/shear the local CLYT geometry. Transform all
+# four corners before calculating bounds; transforming the AABB is incorrect.
+turned = extract(fixture(), scene_affine=(0, -1, 256, 1, 0, 0))
+assert turned["runtime_anchor_verified"] is False
+assert turned["external_scene_affine_ds"] == [0, -1, 256, 1, 0, 0]
+assert next(p for p in turned["panes"] if p["name"] == "B_Favorite")["ds_bounds"] == [168.0, 168.0, 16.0, 16.0]
+sheared = extract(fixture(), scene_affine=(1, 0.5, 3, 0, 1, 4))
+assert next(p for p in sheared["panes"] if p["name"] == "B_Favorite")["ds_bounds"] == [207.0, 76.0, 24.0, 16.0]
+for bad in ((1, 0, 0, 0, 0, 0), (1, 0, 0, 0, 1, math.inf),
+            (1, 0, 0, 0, 1), (17, 0, 0, 0, 1, 0)):
+    try:
+        extract(fixture(), scene_affine=bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("accepted invalid scene affine")
+# A new hierarchy start after an end marker must have a new parent pane.
+orphan = bytearray(fixture() + section(b"pas1"))
+struct.pack_into("<I", orphan, 12, len(orphan))
+struct.pack_into("<H", orphan, 16, struct.unpack_from("<H", orphan, 16)[0] + 1)
+fail(bytes(orphan), "orphan pane hierarchy start")
 fail(fixture()[:-1], "header size")
 fail(fixture()+b"x", "header size")
 fail(fixture().replace(b"I_MiiOpen", b"I_MiiOpeX"), "missing or ambiguous")
@@ -97,4 +118,11 @@ with tempfile.TemporaryDirectory() as temp:
     result = json.loads(report.read_text())
     assert result["runtime_anchor_verified"] is False
     assert result["source_sha256"] == base["source_sha256"]
-print("PASS: synthetic CLYT pane hierarchy, nested rotation/scale, visibility, DS bounds and fail-closed parsing")
+    subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "tools" / "extract_balloon_layout.py"),
+                    str(archive), "--report", str(report), "--scene-affine",
+                    "0", "-1", "256", "1", "0", "0"], check=True, capture_output=True)
+    transformed = json.loads(report.read_text())
+    assert transformed["runtime_anchor_verified"] is False
+    assert transformed["external_scene_affine_ds"] == [0, -1, 256, 1, 0, 0]
+    assert next(p for p in transformed["panes"] if p["name"] == "B_Favorite")["ds_bounds"] == [168.0, 168.0, 16.0, 16.0]
+print("PASS: synthetic CLYT pane hierarchy, scene affine, nested rotation/scale, visibility, DS bounds and fail-closed parsing")

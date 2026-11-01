@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Inspect PRIVATE SelectBalloonButton.bclyt pane hierarchy without exporting art.
 
-This recovers local CLYT affine transforms (including nested rotation and scale),
-not the runtime placement of SelectBalloonButton within the full Select scene.
-A separate scene anchor must be established before using bounds for DS input.
+This recovers local CLYT affine transforms (including nested rotation and scale).
+An optional externally measured scene affine can map the original pane geometry
+into DS pixels, but supplying a transform is NOT proof of the actual runtime
+Select scene anchor. Never wire generated bounds to gameplay without checking
+against observed runtime positions and overlapping gallery controls.
 Never commit the generated report or original layout files.
 """
 import argparse
@@ -39,7 +41,7 @@ def _compose(parent, local):
             c*e+d*g, c*f+d*h, c*ux+d*uy+ty)
 
 
-def _rect(matrix, origin, width, height, canvas, offset):
+def _rect(matrix, origin, width, height, canvas, offset, scene_affine):
     ox = (origin % 3) / 2
     oy = (origin // 3) / 2
     x0, x1 = -ox*width, (1-ox)*width
@@ -48,14 +50,18 @@ def _rect(matrix, origin, width, height, canvas, offset):
     points = []
     for x, y in ((x0, y0), (x1, y0), (x0, y1), (x1, y1)):
         px, py = a*x+b*y+tx, c*x+d*y+ty
-        points.append(((px+canvas[0]/2)*256/canvas[0]+offset[0],
-                       (canvas[1]/2-py)*192/canvas[1]+offset[1]))
+        ds_x = (px+canvas[0]/2)*256/canvas[0]
+        ds_y = (canvas[1]/2-py)*192/canvas[1]
+        if scene_affine is not None:
+            aa, bb, anchor_x, cc, dd, anchor_y = scene_affine
+            ds_x, ds_y = aa*ds_x+bb*ds_y+anchor_x, cc*ds_x+dd*ds_y+anchor_y
+        points.append((ds_x+offset[0], ds_y+offset[1]))
     xs, ys = zip(*points)
     return [round(min(xs), 4), round(min(ys), 4),
             round(max(xs)-min(xs), 4), round(max(ys)-min(ys), 4)]
 
 
-def extract(payload, offset=(0, 0)):
+def extract(payload, offset=(0, 0), scene_affine=None):
     if not isinstance(payload, bytes) or len(payload) < 20 or len(payload) > MAX_SIZE:
         raise ValueError("invalid CLYT size")
     if payload[:4] != b"CLYT" or _read("<H", payload, 4)[0] != 0xfeff:
@@ -67,6 +73,17 @@ def extract(payload, offset=(0, 0)):
         raise ValueError("invalid CLYT section count")
     if len(offset) != 2 or any(not math.isfinite(v) or abs(v) > 4096 for v in offset):
         raise ValueError("invalid external scene offset")
+    if scene_affine is not None:
+        if (len(scene_affine) != 6 or
+                any(not math.isfinite(v) for v in scene_affine) or
+                any(abs(v) > 16 for v in (scene_affine[0], scene_affine[1],
+                                           scene_affine[3], scene_affine[4])) or
+                any(abs(v) > 4096 for v in (scene_affine[2], scene_affine[5]))):
+            raise ValueError("invalid external scene affine")
+        a, b, _, cc, d, _ = scene_affine
+        determinant = a*d-b*cc
+        if abs(determinant) < 0.0001 or abs(determinant) > 256:
+            raise ValueError("degenerate external scene affine")
     pos, sections = 20, []
     for _ in range(count):
         if pos + 8 > len(payload):
@@ -98,6 +115,7 @@ def extract(payload, offset=(0, 0)):
             if not stack:
                 raise ValueError("unmatched pane hierarchy end")
             stack.pop()
+            last = None  # A new child hierarchy requires a new preceding pane.
         elif tag in PANE_TAGS:
             if len(section) < 76:
                 raise ValueError("truncated pane transform")
@@ -128,7 +146,7 @@ def extract(payload, offset=(0, 0)):
                      "alpha": (section[10] * parent["alpha"] // 255
                                if parent and (section[8] & 2) else section[10]),
                      "origin": origin, "local": [x, y, rotation, sx, sy, w, h],
-                     "matrix": list(matrix), "ds_bounds": _rect(matrix, origin, w, h, canvas, offset)}
+                     "matrix": list(matrix), "ds_bounds": _rect(matrix, origin, w, h, canvas, offset, scene_affine)}
             panes.append(entry)
             last = entry
     if stack:
@@ -140,8 +158,9 @@ def extract(payload, offset=(0, 0)):
     return {"source_sha256": hashlib.sha256(payload).hexdigest(),
             "source_canvas": list(canvas), "target_canvas": [256, 192],
             "external_offset_ds": list(offset),
+            "external_scene_affine_ds": list(scene_affine) if scene_affine is not None else None,
             "runtime_anchor_verified": False,
-            "note": "CLYT-local geometry only; verify enclosing scene transform before using hitboxes.",
+            "note": "Scene affine, when supplied, is a measurement hypothesis, not runtime proof; verify actual scene anchoring before using hitboxes.",
             "panes": panes}
 
 
@@ -152,13 +171,16 @@ def main():
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--offset-x", type=float, default=0)
     parser.add_argument("--offset-y", type=float, default=0)
+    parser.add_argument("--scene-affine", type=float, nargs=6,
+                        metavar=("A", "B", "TX", "C", "D", "TY"),
+                        help="optional externally measured DS-space scene affine; NOT verified")
     args = parser.parse_args()
     if args.private_bclyt.suffix.lower() == ".zip":
         with ZipFile(args.private_bclyt) as archive:
             payload = archive.read(PRIVATE_MEMBER)
     else:
         payload = args.private_bclyt.read_bytes()
-    result = extract(payload, (args.offset_x, args.offset_y))
+    result = extract(payload, (args.offset_x, args.offset_y), args.scene_affine)
     args.report.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print("PASS: local SelectBalloonButton hierarchy inspected; runtime anchor NOT verified")
 
