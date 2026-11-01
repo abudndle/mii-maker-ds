@@ -28,4 +28,8 @@ int mds_original_gallery_room_tab_tinted(uint16_t *canvas,int width,int height,
 int mds_original_gallery_action_icon(uint16_t *canvas,int width,int height,
                                      int x,int y,int w,int h,
                                      int action,int personal);
+/* Apply original balloon CLVC opacity to private source icon pixels. */
+int mds_original_gallery_action_icon_alpha(uint16_t *canvas,int width,int height,
+                                           int x,int y,int w,int h,
+                                           int action,int personal,unsigned alpha);
 #endif
