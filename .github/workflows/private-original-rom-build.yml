@@ -6,6 +6,7 @@ on:
       - milestone/melonds-private-boot-20261101
       - milestone/saved-mii-rooms-transfer-crown-20261101
       - milestone/real-gallery-acceptance-20261101
+      - milestone/gallery-eeprom-fixture-20261101
   workflow_dispatch:
 permissions:
   contents: read
@@ -124,10 +125,15 @@ jobs:
       - name: Create isolated 10-Mii test cartridge save for emulator only
         run: |
           cc -std=c11 -Wall -Wextra -Werror -I source \
-            tools/make_gallery_fixture.c source/save.c source/avatar.c \
+            tools/make_gallery_fixture.c source/save.c source/save_compact.c \
+            source/avatar.c source/unicode.c \
             -o "$RUNNER_TEMP/make_gallery_fixture"
           "$RUNNER_TEMP/make_gallery_fixture" mii-ds.sav
-          test "$(stat -c %s mii-ds.sav)" -eq 65536
+          test "$(stat -c %s mii-ds.sav)" -eq 8192
+          # Original 64K dual-bank encoding stays checked as a separate
+          # synthetic host path, but the emulator receives the 8K image.
+          "$RUNNER_TEMP/make_gallery_fixture" "$RUNNER_TEMP/legacy.sav" --legacy-64k
+          test "$(stat -c %s "$RUNNER_TEMP/legacy.sav")" -eq 65536
       - name: Boot original-resource ROM under melonDS 1.1 and sample the dual-screen output
         id: melon_boot
         continue-on-error: true
