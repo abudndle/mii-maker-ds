@@ -728,6 +728,7 @@ void mds_ui_home(int focus,const char *notice)
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
+    (void)page; /* Room position comes from saved Mii slot, not ten-slot grid page. */
     if(!ok||!g||selected>=MDS_SLOTS)return;
     memcpy(top,top_backgrounds[1],sizeof top_canvas);
     unsigned start=mds_room_start(selected);
