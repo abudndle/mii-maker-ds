@@ -1,6 +1,6 @@
 #ifndef MDS_ROOM_H
 #define MDS_ROOM_H
-#include "avatar.h"
+#include "save.h"
 #include <stdint.h>
 #define MDS_ROOM_SLOTS 5u
 #define MDS_ROOM_W 46u
