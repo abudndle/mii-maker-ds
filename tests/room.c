@@ -48,6 +48,19 @@ int main(void)
  assert(dst[0]==0);
  assert(mds_room_blit(&cache,19,0,dst,256,192,0,INT_MIN));
  assert(dst[0]==0);
+ /* Transparent pixels preserve the scene and neighboring actors. */
+ for(unsigned i=0;i<MDS_ROOM_SOURCE*MDS_ROOM_SOURCE;i++)rendered[i]=0;
+ rendered[0]=0x83e0u;
+ assert(mds_room_capture(&cache,19,2,&a,rendered));
+ for(unsigned i=0;i<256u*192u;i++)dst[i]=0x801fu;
+ assert(mds_room_blit(&cache,19,2,dst,256,192,20,20));
+ assert(dst[20u*256u+20u]==0x83e0u);
+ assert(dst[20u*256u+21u]==0x801fu);
+ assert(dst[19u*256u+20u]==0x801fu);
+ /* Two cached actors can be drawn without overwriting each other's pixels. */
+ assert(mds_room_blit(&cache,19,0,dst,256,192,100,20));
+ assert(dst[20u*256u+100u]==0x801fu);
+ assert(dst[20u*256u+20u]==0x83e0u);
  a.value[5]++;
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,1,&a,rendered));
