@@ -79,6 +79,8 @@ def build(archive, jobs=2, validate_only=False, image=IMAGE, no_cache=False):
         ("tests/rom_arm_sections.py", ROM),
     ]:
         run(sys.executable, *extra)
+    from private_build_provenance import write_provenance
+    write_provenance(ROM, archive, ROOT / "build/private-build-provenance.json")
     digest = hashlib.sha256(ROM.read_bytes()).hexdigest()
     print("PASS: original-resource ROM passed packaged payload and ARM sections")
     print("SHA-256:", digest)
