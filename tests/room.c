@@ -65,6 +65,11 @@ int main(void)
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,1,&a,rendered));
  assert(mds_room_matches(&cache,19,1,&a));
+ /* Selecting a different slot in the same room retains all cached Miis. */
+ mds_room_select(&cache,10);
+ assert(cache.actor[0].valid);
+ assert(cache.actor[1].valid);
+ assert(cache.actor[2].valid);
  mds_room_select(&cache,20);
  assert(cache.start==20);
  assert(!cache.actor[0].valid);
