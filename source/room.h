@@ -22,6 +22,8 @@ void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int retu
 unsigned mds_room_start(unsigned selected);
 /* Source: Select.arc.files/blyt/SelectMii, 320x240 canvas to DS 256x192. */
 int mds_room_position(unsigned local,int *x,int *y);
+/* Touch hit test for room actor sprites, frontmost actor first. */
+int mds_room_hit(const uint8_t occupied[MDS_ROOM_SLOTS],const MdsRoomWalk walk[MDS_ROOM_SLOTS],int x,int y);
 void mds_room_select(MdsRoomCache *,unsigned selected);
 int mds_room_matches(const MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *);
 int mds_room_capture(MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *,const uint16_t *rendered);
