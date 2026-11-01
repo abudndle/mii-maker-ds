@@ -28,6 +28,19 @@ void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture)
 {
  if(gesture){gesture->pressed=MDS_GALLERY_ACTION_NONE;gesture->target_slot=-1;}
 }
+/* A release edge is as important as a press edge: SELECT-up and stylus-up
+ * can share a queued VBlank event. Without this guard a stale balloon tap
+ * may edit a Mii and export its image during the same event. */
+void mds_gallery_action_press_cancel_for_physical(
+    MdsGalleryActionPress *gesture,int physical_down,int physical_up)
+{
+ if(physical_down||physical_up)mds_gallery_action_press_reset(gesture);
+}
+unsigned mds_gallery_controls_suppress_export_on_touch(
+    unsigned action,int touch_active)
+{
+ return touch_active?action&~(unsigned)MDS_GALLERY_CONTROL_EXPORT:action;
+}
 void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
                                     MdsGalleryTouchAction action)
 {

@@ -12,6 +12,11 @@ for token in ("if((down&KEY_X)&&!block_gallery_actions&&",
               "else if(touch_action==MDS_GALLERY_ACTION_COPY&&"):
     assert token in gallery, token
 assert "KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START" in gallery
-assert gallery.index("mds_gallery_action_press_reset(&gallery_action_press);") < gallery.index(
+assert "mds_gallery_controls_suppress_export_on_touch(" in gallery
+assert "gallery_action,((input.held|input.up)&KEY_TOUCH)!=0);" in gallery
+assert "mds_gallery_action_press_cancel_for_physical(" in gallery
+assert "(down&physical_gallery_keys)!=0," in gallery
+assert "(input.up&physical_gallery_keys)!=0);" in gallery
+assert gallery.index("mds_gallery_action_press_cancel_for_physical(") < gallery.index(
     "if(input.up&KEY_TOUCH)")
-print("PASS: primary gallery input wins and physical controls cancel pending touches")
+print("PASS: physical down/up cancel touch, SELECT-up cannot export during stylus gesture")

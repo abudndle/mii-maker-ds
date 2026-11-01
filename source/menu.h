@@ -32,6 +32,12 @@ MdsGalleryTouchAction mds_gallery_action_touch(int x,int y);
  * Leaving its bounds cancels; sliding back does not re-arm the action. */
 typedef struct { MdsGalleryTouchAction pressed; int target_slot; } MdsGalleryActionPress;
 void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture);
+/* A physical button's press OR release cancels a pending stylus command. */
+void mds_gallery_action_press_cancel_for_physical(
+    MdsGalleryActionPress *gesture,int physical_down,int physical_up);
+/* SELECT-up must not export an image while a touch gesture is in progress. */
+unsigned mds_gallery_controls_suppress_export_on_touch(
+    unsigned action,int touch_active);
 void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
                                     MdsGalleryTouchAction action);
 /* Bind the selected save slot at stylus-down: delayed release must not act
