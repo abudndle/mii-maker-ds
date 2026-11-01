@@ -21,6 +21,11 @@ assert(mds_gallery_box_press(0,0)==MDS_GALLERY_BOX_SELECT);
 assert(mds_gallery_box_press(99,0)==MDS_GALLERY_BOX_SELECT);
 assert(mds_gallery_box_press(0,1)==MDS_GALLERY_BOX_DRAG);
 assert(mds_gallery_box_press(99,1)==MDS_GALLERY_BOX_DRAG);
+/* Both an ongoing drag and its release event suppress physical actions. */
+assert(!mds_gallery_drag_blocks_actions(0,0));
+assert(mds_gallery_drag_blocks_actions(0,1));
+assert(mds_gallery_drag_blocks_actions(1,1));
+assert(mds_gallery_drag_blocks_actions(1,0));
 MdsGalleryDrag drag={.source=-1};unsigned from=999;
 assert(!mds_gallery_drag_begin(NULL,0,0,1));
 assert(!mds_gallery_drag_begin(&drag,0,0,0)&&drag.source==-1);
