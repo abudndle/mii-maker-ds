@@ -45,5 +45,5 @@ assert gallery.index("mds_gallery_drag_begin(&gallery_drag,page,slot,") < galler
 assert gallery.index("if(input.up&KEY_TOUCH){") < gallery.index("mds_editor_move(&editor,")
 assert gallery.index("mds_gallery_drag_end(&gallery_drag,page,") < gallery.index("mds_editor_move(&editor,")
 assert "drag_page" not in gallery
-assert "unsigned source;" in gallery
+assert "unsigned source=0;" in gallery
 print("PASS: touchscreen gestures, shoulder Mii cycling, input release and persistent Mii move/swap rollback")
