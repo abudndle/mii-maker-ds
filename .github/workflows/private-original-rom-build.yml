@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - milestone/github-real-nds-private-build-20261031
+      - milestone/melonds-private-boot-20261101
   workflow_dispatch:
 permissions:
   contents: read
@@ -115,6 +116,12 @@ jobs:
           print("ROM size:",rom.stat().st_size)
           print("ROM SHA-256:",hashlib.sha256(rom.read_bytes()).hexdigest())
           PY
+      - name: Install isolated emulator display packages
+        run: |
+          sudo apt-get install -y --no-install-recommends xvfb xauth xdotool imagemagick unzip libgl1 libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0
+      - name: Boot original-resource ROM under melonDS 1.1 and sample the dual-screen output
+        shell: bash
+        run: bash tools/run_melonds_headless.sh
       - name: Encrypt completed ROM for private-key-only retrieval
         shell: bash
         run: |
@@ -134,17 +141,25 @@ jobs:
           gpg --batch --yes --trust-model always --recipient "$fingerprint" \
             --output mii-ds.nds.gpg --encrypt mii-ds.nds
           test -s mii-ds.nds.gpg
-          echo "PASS: private ROM encrypted; only public-key-encrypted artifact will be uploaded."
+          if [ -f "$RUNNER_TEMP/melonds-boot.png" ]; then
+            gpg --batch --yes --trust-model always --recipient "$fingerprint" \
+              --output melonds-boot.png.gpg --encrypt "$RUNNER_TEMP/melonds-boot.png"
+            test -s melonds-boot.png.gpg
+          fi
+          echo "PASS: private ROM and emulator framebuffer encrypted before artifact upload."
       - name: Upload encrypted ROM (plaintext and original assets are never uploaded)
         uses: actions/upload-artifact@v4
         with:
           name: mii-maker-ds-private-encrypted
-          path: mii-ds.nds.gpg
+          path: |
+            mii-ds.nds.gpg
+            melonds-boot.png.gpg
           retention-days: 7
           if-no-files-found: error
       - name: Delete private game files from runner
         if: always()
         shell: bash
         run: |
-          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.nds.gpg
+          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.nds.gpg melonds-boot.png.gpg
+          rm -f "$RUNNER_TEMP/melonds-boot.png" "$RUNNER_TEMP/melonds-boot.log"
           rm -rf nitrofiles assets/ui
