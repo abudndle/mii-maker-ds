@@ -862,7 +862,13 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
             mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);
         status_icon(top,x+14,y+18,&g->miis[slot]);
-        if(slot==selected)label(x+15,y-9,"v");
+    }
+    /* Draw the selected-Mii marker last so overlapping adjacent previews
+     * cannot cover it when the room contains several characters. */
+    if(g->used[selected]){
+        int selected_x=0,selected_y=0;
+        if(mds_room_position(selected-start,&selected_x,&selected_y))
+            label(selected_x+15,selected_y-9,"v");
     }
     if(unfinished)for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         if(g->used[start+local]&&
