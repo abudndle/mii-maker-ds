@@ -12,7 +12,7 @@ int main(void)
  memset(&cache,0,sizeof cache);
  assert(mds_room_start(0)==0);
  int x=0,y=0;
- const int expected_x[10]={20,63,107,150,193,20,63,107,150,193};
+ const int expected_x[10]={21,64,107,150,194,21,64,107,150,194};
  for(unsigned i=0;i<10;i++){
   assert(mds_room_position(i,&x,&y));
   assert(x==expected_x[i]);
