@@ -40,6 +40,14 @@ def rejects(changed_layout, changed_measurements, fragment):
         raise AssertionError("accepted " + fragment)
 
 
+# Unmeasured duplicate CLYT names are harmless, but a measured duplicate
+# must not silently select one of two source panes.
+repeated = copy.deepcopy(layout)
+repeated["panes"].extend([{"name": "Unused", "ds_bounds": [0, 0, 10, 10]}] * 2)
+assert calibrate(repeated, measurements) == result
+ambiguous = copy.deepcopy(layout)
+ambiguous["panes"].append(copy.deepcopy(ambiguous["panes"][0]))
+rejects(ambiguous, measurements, "ambiguous")
 bad = copy.deepcopy(measurements)
 bad["points"][4]["ds_center"][0] += 15
 rejects(layout, bad, "disagree")
