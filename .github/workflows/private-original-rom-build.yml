@@ -115,35 +115,32 @@ jobs:
           print("ROM size:",rom.stat().st_size)
           print("ROM SHA-256:",hashlib.sha256(rom.read_bytes()).hexdigest())
           PY
-      - name: Encrypt ROM for optional private retrieval
+      - name: Encrypt completed ROM for private-key-only retrieval
         shell: bash
-        env:
-          ROM_PASSPHRASE: ${{ secrets.MII_ROM_PASSPHRASE }}
         run: |
           set -euo pipefail
-          if [ ! -f mii-ds.nds ]; then exit 1; fi
-          if [ -z "$ROM_PASSPHRASE" ]; then
-            echo "No ROM artifact exported; add secret MII_ROM_PASSPHRASE to enable encrypted download."
-            exit 0
-          fi
-          if [ "${#ROM_PASSPHRASE}" -lt 20 ]; then
-            echo "::error::MII_ROM_PASSPHRASE must be at least 20 characters to export an encrypted build."
+          test -s mii-ds.nds
+          # This repository contains ONLY the public key. The decryption
+          # key is delivered privately to the owner, never to GitHub Actions.
+          export GNUPGHOME="$RUNNER_TEMP/mii-artifact-gpg"
+          mkdir -m 700 "$GNUPGHOME"
+          gpg --batch --quiet --import tools/private_rom_recipient.asc
+          fingerprint="$(gpg --batch --with-colons --list-keys | awk -F: '$1=="fpr"{print $10; exit}')"
+          if [ "$fingerprint" != "31F37EC5CB7248A02306BB93A6EDA2C5FAC54A38" ]; then
+            echo "::error::Incorrect public ROM recipient key; refusing to export"
             exit 1
           fi
           umask 077
-          printf '%s' "$ROM_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
-            --passphrase-fd 0 --cipher-algo AES256 --symmetric \
-            --output mii-ds.nds.gpg mii-ds.nds
+          gpg --batch --yes --trust-model always --recipient "$fingerprint" \
+            --output mii-ds.nds.gpg --encrypt mii-ds.nds
           test -s mii-ds.nds.gpg
-          echo "ENCRYPTED_ROM=true" >> "$GITHUB_ENV"
-          echo "Encrypted ROM produced; plaintext never uploaded."
-      - name: Upload encrypted ROM only (never the original assets or plaintext ROM)
-        if: ${{ env.ENCRYPTED_ROM == 'true' }}
+          echo "PASS: private ROM encrypted; only public-key-encrypted artifact will be uploaded."
+      - name: Upload encrypted ROM (plaintext and original assets are never uploaded)
         uses: actions/upload-artifact@v4
         with:
           name: mii-maker-ds-private-encrypted
           path: mii-ds.nds.gpg
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: error
       - name: Delete private game files from runner
         if: always()
