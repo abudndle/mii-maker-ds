@@ -281,7 +281,7 @@ int main(void)
             MdsGalleryTouchAction touch_action=MDS_GALLERY_ACTION_NONE;
             if(down&KEY_TOUCH){
                 mds_gallery_action_press_begin(&gallery_action_press,
-                    gallery_drag.source<0?
+                    gallery_drag.source<0&&mds_ui_gallery_actions_visible(animation_vblanks)?
                     mds_gallery_action_touch(input.touch.px,input.touch.py):
                     MDS_GALLERY_ACTION_NONE);
                 if(gallery_action_press.pressed!=MDS_GALLERY_ACTION_NONE&&

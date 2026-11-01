@@ -78,6 +78,10 @@ void mds_ui_gallery_invalid(int direction)
 {
     mds_gallery_nav_clan_invalid(&gallery_nav_clan_state,direction);
 }
+int mds_ui_gallery_actions_visible(uint32_t now)
+{
+    return mds_gallery_balloon_clan_actions_visible(&gallery_balloon_state,now);
+}
 static uint32_t gallery_clan_painted=UINT32_MAX;
 static int gallery_clan_was_active;
 void mds_ui_gallery_clan_reset(void)
@@ -1195,11 +1199,12 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
             181,169,20,20,3,0,balloon.balloon_alpha);
     }
     /* No Favorite/Copy label on empty slots: only Create is actionable. */
-    if(g->used[selected]){
+    if(g->used[selected]&&mds_ui_gallery_actions_visible(now)){
         text_at(bottom,38,174,g->miis[selected].value[51]?"Owner":"Fav");
         text_at(bottom,124,174,"Copy");
     }
-    text_at(bottom,206,174,g->used[selected]?"Edit":"Create");
+    if(!g->used[selected]||mds_ui_gallery_actions_visible(now))
+        text_at(bottom,206,174,g->used[selected]?"Edit":"Create");
     gallery_clan_painted=now;
 }
 

@@ -11,4 +11,6 @@ void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state);
 void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now);
 int mds_gallery_balloon_clan_active(const MdsGalleryBalloonClan *state,uint32_t now);
 int mds_gallery_balloon_clan_style(const MdsGalleryBalloonClan *state,uint32_t now,MdsGalleryBalloonStyle *out);
+/* Do not dispatch a touch command while its original balloon icon is invisible. */
+int mds_gallery_balloon_clan_actions_visible(const MdsGalleryBalloonClan *state,uint32_t now);
 #endif

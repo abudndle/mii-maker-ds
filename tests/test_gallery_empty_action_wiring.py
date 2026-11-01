@@ -15,7 +15,7 @@ assert guard in gallery
 assert gallery.index("mds_gallery_action_press_release(") < gallery.index(guard)
 assert gallery.index(guard) < gallery.index(
     "if(touch_action==MDS_GALLERY_ACTION_EDIT)")
-assert 'if(g->used[selected]){\n        text_at(bottom,38,174,' in ui
+assert 'if(g->used[selected]&&mds_ui_gallery_actions_visible(now)){\n        text_at(bottom,38,174,' in ui
 assert 'text_at(bottom,124,174,"Copy");' in ui
 assert 'text_at(bottom,206,174,g->used[selected]?"Edit":"Create");' in ui
 print("PASS: empty gallery slots show Create without phantom Favorite/Copy")

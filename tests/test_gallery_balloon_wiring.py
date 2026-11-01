@@ -10,6 +10,11 @@ assert 'mds_gallery_balloon_clan_select(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_active(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_reset(&gallery_balloon_state)' in ui
 assert 'mds_gallery_balloon_clan_style(&gallery_balloon_state,now,&balloon)' in ui
+assert 'mds_gallery_balloon_clan_actions_visible(&gallery_balloon_state,now)' in ui
+assert 'if(g->used[selected]&&mds_ui_gallery_actions_visible(now))' in ui
+assert 'if(!g->used[selected]||mds_ui_gallery_actions_visible(now))' in ui
+main=(root/'source/main.c').read_text()
+assert 'gallery_drag.source<0&&mds_ui_gallery_actions_visible(animation_vblanks)?' in main
 assert 'balloon.favorite_scale_q16' in ui
 assert 'balloon.balloon_alpha*balloon.favorite_alpha' in ui
 assert 'mds_original_gallery_action_icon_alpha(bottom,256,192,' in ui
