@@ -52,4 +52,29 @@ assert(mds_gallery_next_saved(occupied,42,0)==42);
 occupied[42]=occupied[99]=0;
 assert(mds_gallery_next_saved(occupied,0,1)==0);
 assert(mds_gallery_next_saved(occupied,0,-1)==0);
-puts("PASS: original menu, gallery D-pad and cross-page stylus drag move/swap guards");}
+/* Real gallery input contract: held SELECT, not key-repeat SELECT, edits.
+ * Standalone SELECT exports only on release; SELECT+A never exports. */
+MdsGalleryControls controls={0};
+assert(mds_gallery_controls_step(NULL,1,1,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,1,1,0,0,0)==MDS_GALLERY_CONTROL_RECALL);
+assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_EXPORT);
+assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,1,1,0,1,0)==MDS_GALLERY_CONTROL_EDIT);
+assert(mds_gallery_controls_step(&controls,0,0,0,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,1,1,1,1,0)==MDS_GALLERY_CONTROL_EDIT);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,1,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,1,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+mds_gallery_controls_reset(&controls); /* leaving the gallery */
+assert(mds_gallery_controls_step(&controls,0,0,0,0,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,1,1,0,1,0)==MDS_GALLERY_CONTROL_EDIT);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+mds_gallery_controls_reset(NULL);
+puts("PASS: gallery original room navigation, drag, SELECT+A edit and release-only SELECT export");}
