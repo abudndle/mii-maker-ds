@@ -15,8 +15,8 @@ assert "mds_gallery_action_press_begin(&gallery_action_press," in gallery
 assert "mds_gallery_action_touch(input.touch.px,input.touch.py)" in gallery
 assert "gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE" in gallery
 assert "mds_gallery_action_press_hold(&gallery_action_press," in gallery
-assert "mds_gallery_action_press_release(" in gallery
-assert gallery.index("mds_gallery_action_press_release(") < gallery.index(
+assert "mds_gallery_action_press_release_for_slot(" in gallery
+assert gallery.index("mds_gallery_action_press_release_for_slot(") < gallery.index(
     "if(touch_action==MDS_GALLERY_ACTION_EDIT)"
 )
 assert "mds_gallery_action_press_reset(&gallery_action_press);" in main
