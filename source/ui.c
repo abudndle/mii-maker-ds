@@ -946,7 +946,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         }
         if(slot==selected||slot==(unsigned)gallery_drag_slot)outline(&gallery_hits[i]);
     }
-    text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii: release on a box or room arrow":"Drag Mii; tap room arrows to browse");
+    text_at(bottom,10,154,gallery_drag_slot>=0?"Release on box or room arrow to move":"Tap box to select; drag to move");
 }
 
 static const uint8_t profile_colors[12][3]={{210,30,20},{255,110,25},{255,216,32},{120,210,32},{0,120,48},{10,72,180},{60,170,222},{245,90,125},{115,40,173},{72,56,24},{224,224,224},{24,24,20}};
