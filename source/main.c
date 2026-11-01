@@ -223,6 +223,11 @@ int main(void)
                 if(next>=0){editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
             if(down&KEY_TOUCH){
+                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+                if(arrow){
+                    int next=mds_gallery_page_step(page,editor.slot,arrow);
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                }
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 mds_gallery_drag_begin(&gallery_drag,page,slot,
                                        slot>=0&&gallery.used[slot]);
