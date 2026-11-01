@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 static MdsThumbnailCache cache;
 static uint16_t head[MDS_THUMBNAIL_SOURCE_SIDE*MDS_THUMBNAIL_SOURCE_SIDE];
 static uint16_t canvas[MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT];
@@ -47,6 +48,11 @@ int main(void)
  assert(canvas[MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT-1]==0x1234); /* top-left sample is transparent */
  assert(mds_thumbnail_blit(&cache,3,4,canvas,MDS_THUMBNAIL_WIDTH,MDS_THUMBNAIL_HEIGHT,-40,-44));
  assert(canvas[1+MDS_THUMBNAIL_WIDTH]==head[45*MDS_THUMBNAIL_SOURCE_SIDE/ MDS_THUMBNAIL_HEIGHT * MDS_THUMBNAIL_SOURCE_SIDE + 41*MDS_THUMBNAIL_SOURCE_SIDE/MDS_THUMBNAIL_WIDTH]);
+ /* Extreme signed origins must not overflow and wrap into the canvas. */
+ for(unsigned i=0;i<MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT;i++)canvas[i]=0x1234;
+ assert(mds_thumbnail_blit(&cache,3,4,canvas,MDS_THUMBNAIL_WIDTH,MDS_THUMBNAIL_HEIGHT,INT_MAX,INT_MAX));
+ assert(mds_thumbnail_blit(&cache,3,4,canvas,MDS_THUMBNAIL_WIDTH,MDS_THUMBNAIL_HEIGHT,INT_MIN,INT_MIN));
+ for(unsigned i=0;i<MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT;i++)assert(canvas[i]==0x1234);
  mds_thumbnail_page(&cache,4);
  assert(!mds_thumbnail_matches(&cache,4,4,&a)); /* New page is always invalidated. */
  assert(!mds_thumbnail_matches(&cache,3,4,&a));

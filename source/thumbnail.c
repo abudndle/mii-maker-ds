@@ -32,9 +32,9 @@ int mds_thumbnail_blit(const MdsThumbnailCache *cache,unsigned page,unsigned loc
     !cache->slots[local].valid||!width||!height)return 0;
  const MdsThumbnail *thumb=&cache->slots[local];
  for(unsigned j=0;j<MDS_THUMBNAIL_HEIGHT;j++){
-  int dy=y+(int)j;if(dy<0||(unsigned)dy>=height)continue;
+  int64_t dy=(int64_t)y+j;if(dy<0||(uint64_t)dy>=height)continue;
   for(unsigned i=0;i<MDS_THUMBNAIL_WIDTH;i++){
-   int dx=x+(int)i;if(dx<0||(unsigned)dx>=width)continue;
+   int64_t dx=(int64_t)x+i;if(dx<0||(uint64_t)dx>=width)continue;
    uint16_t pixel=thumb->pixels[j*MDS_THUMBNAIL_WIDTH+i];
    if(pixel&0x8000u)dest[(size_t)dy*width+(unsigned)dx]=pixel;
   }
