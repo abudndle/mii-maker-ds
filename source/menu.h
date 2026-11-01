@@ -45,6 +45,9 @@ typedef struct { int source; } MdsGalleryDrag;
 void mds_gallery_drag_reset(MdsGalleryDrag *drag);
 int mds_gallery_drag_begin(MdsGalleryDrag *drag,unsigned page,int source,int occupied);
 int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsigned *source);
+/* Physical gallery commands are ignored throughout a stylus drag, including
+ * the release event where drag_end has already cleared the source. */
+int mds_gallery_drag_blocks_actions(int was_dragging,int dragging);
 /* Iterate the cartridge's 100-slot save gallery without file selection. */
 int mds_gallery_next_saved(const unsigned char *used,unsigned current,int direction);
 int mds_home_focus_step(int,int);
