@@ -58,11 +58,11 @@ int mds_room_blit(const MdsRoomCache *cache,unsigned selected,unsigned local,uin
     !cache->actor[local].valid)return 0;
  const MdsRoomActor *a=&cache->actor[local];
  for(unsigned j=0;j<MDS_ROOM_H;j++){
-  int dy=y+(int)j;
-  if(dy<0||(unsigned)dy>=height)continue;
+  int64_t dy=(int64_t)y+j;
+  if(dy<0||(uint64_t)dy>=height)continue;
   for(unsigned i=0;i<MDS_ROOM_W;i++){
-   int dx=x+(int)i;
-   if(dx<0||(unsigned)dx>=width)continue;
+   int64_t dx=(int64_t)x+i;
+   if(dx<0||(uint64_t)dx>=width)continue;
    uint16_t pixel=a->pixels[j*MDS_ROOM_W+i];
    if(pixel&0x8000u)dst[(size_t)dy*width+(unsigned)dx]=pixel;
   }

@@ -1,5 +1,6 @@
 #include "room.h"
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 int main(void)
@@ -33,6 +34,16 @@ int main(void)
  assert(mds_room_matches(&cache,19,0,&a));
  assert(mds_room_blit(&cache,19,0,dst,256,192,-9,0));
  assert(dst[0]==0x801f);
+ /* Extreme placement must not wrap onto the opposite edge of the room. */
+ dst[0]=0;
+ assert(mds_room_blit(&cache,19,0,dst,256,192,INT_MAX,0));
+ assert(dst[0]==0);
+ assert(mds_room_blit(&cache,19,0,dst,256,192,0,INT_MAX));
+ assert(dst[0]==0);
+ assert(mds_room_blit(&cache,19,0,dst,256,192,INT_MIN,0));
+ assert(dst[0]==0);
+ assert(mds_room_blit(&cache,19,0,dst,256,192,0,INT_MIN));
+ assert(dst[0]==0);
  a.value[5]++;
  assert(!mds_room_matches(&cache,19,0,&a));
  mds_room_select(&cache,20);
