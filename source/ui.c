@@ -1194,8 +1194,11 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         mds_original_gallery_action_icon_alpha(bottom,256,192,
             181,169,20,20,3,0,balloon.balloon_alpha);
     }
-    text_at(bottom,38,174,g->used[selected]&&g->miis[selected].value[51]?"Owner":"Fav");
-    text_at(bottom,124,174,"Copy");
+    /* No Favorite/Copy label on empty slots: only Create is actionable. */
+    if(g->used[selected]){
+        text_at(bottom,38,174,g->miis[selected].value[51]?"Owner":"Fav");
+        text_at(bottom,124,174,"Copy");
+    }
     text_at(bottom,206,174,g->used[selected]?"Edit":"Create");
     gallery_clan_painted=now;
 }
