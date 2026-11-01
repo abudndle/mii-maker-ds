@@ -19,5 +19,17 @@ int main(void){
  assert(mds_compact_encode(&a,image,sizeof image));assert(mds_compact_load(&b,image,sizeof image));assert(!strcmp(a.miis[0].name,b.miis[0].name));
  strcpy(a.miis[0].name,"12345678901");assert(!mds_compact_encode(&a,image,sizeof image));
  strcpy(a.miis[0].name,"\xc0\xaf");assert(!mds_compact_encode(&a,image,sizeof image));
+ /* A rejected save must not partially overwrite a previous valid image. */
+ mds_gallery_new(&a);
+ memset(image,0xa5,sizeof image);
+ a.used[99]=2;
+ assert(!mds_compact_encode(&a,image,sizeof image));
+ for(size_t k=0;k<sizeof image;k++)assert(image[k]==0xa5);
+ a.used[99]=0;
+ a.used[99]=1;
+ mds_new(&a.miis[99]);
+ strcpy(a.miis[99].name,"12345678901");
+ assert(!mds_compact_encode(&a,image,sizeof image));
+ for(size_t k=0;k<sizeof image;k++)assert(image[k]==0xa5);
  puts("PASS: 100 compact slots, all fields, Unicode round trip, limits, invalid UTF-8, corruption and truncation");
 }
