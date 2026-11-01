@@ -8,6 +8,7 @@
 #include "thumbnail.h"
 #include "original_gallery_art.h"
 #include "gallery_clan.h"
+#include "gallery_nav_clan.h"
 #include "room.h"
 #include "animation.h"
 #include "motion.h"
@@ -60,17 +61,32 @@ static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
 static MdsGalleryClan gallery_clan_state;
+static MdsGalleryNavClan gallery_nav_clan_state;
+void mds_ui_gallery_navigation(int direction,uint32_t now)
+{
+    mds_gallery_nav_clan_navigate(&gallery_nav_clan_state,direction,now);
+}
+void mds_ui_gallery_confirm(uint32_t now)
+{
+    mds_gallery_nav_clan_confirm(&gallery_nav_clan_state,now);
+}
+void mds_ui_gallery_invalid(int direction)
+{
+    mds_gallery_nav_clan_invalid(&gallery_nav_clan_state,direction);
+}
 static uint32_t gallery_clan_painted=UINT32_MAX;
 static int gallery_clan_was_active;
 void mds_ui_gallery_clan_reset(void)
 {
     mds_gallery_clan_reset(&gallery_clan_state);
+    mds_gallery_nav_clan_reset(&gallery_nav_clan_state);
     gallery_clan_painted=UINT32_MAX;gallery_clan_was_active=0;
 }
 int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now)
 {
     int changed=mds_gallery_clan_update(&gallery_clan_state,page,selected,now);
-    int active=mds_gallery_clan_active(&gallery_clan_state,now);
+    int active=mds_gallery_clan_active(&gallery_clan_state,now)||
+               mds_gallery_nav_clan_active(&gallery_nav_clan_state,now);
     int repaint=changed||(active&&gallery_clan_painted!=now)||
                 (gallery_clan_was_active&&!active);
     gallery_clan_was_active=active;
@@ -944,7 +960,7 @@ void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
  * The original game resource is intentionally absent from the public tree. */
 static uint16_t original_room_arrow[12*18];
 static int original_room_arrow_state;
-static void draw_original_room_arrows(void)
+static void draw_original_room_arrows(const MdsGalleryNavStyle *style)
 {
     if(original_room_arrow_state==0){
         original_room_arrow_state=-1;
@@ -962,12 +978,17 @@ static void draw_original_room_arrows(void)
     if(original_room_arrow_state!=1)return;
     /* EDITSelectBase B_ArrowL and B_ArrowR: 3DS source pane bounds
      * 320x240 -> DS 256x192, centers y=95, x=9.5/246.5. */
+    int left_dx=style?style->left_arrow_dx:0;
+    int right_dx=style?style->right_arrow_dx:0;
     for(int y=0;y<18;y++)
         for(int x=0;x<12;x++){
             uint16_t left=original_room_arrow[y*12+x];
             uint16_t right=original_room_arrow[y*12+(11-x)];
-            if(left&0x8000u)bottom[(86+y)*256+3+x]=left;
-            if(right&0x8000u)bottom[(86+y)*256+240+x]=right;
+            int lx=3+x+left_dx,rx=240+x+right_dx;
+            if(left&0x8000u&&lx>=0&&lx<256)
+                bottom[(86+y)*256+lx]=left;
+            if(right&0x8000u&&rx>=0&&rx<256)
+                bottom[(86+y)*256+rx]=right;
         }
 }
 static int gallery_drag_slot=-1;
@@ -1039,12 +1060,14 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
     MdsGalleryClanStyle clan;
+    MdsGalleryNavStyle navigation;
     uint32_t now=render_clock?render_clock():0;
     mds_gallery_clan_style(&gallery_clan_state,now,&clan);
+    mds_gallery_nav_clan_style(&gallery_nav_clan_state,now,&navigation);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
     /* Full background redraw invalidates the previous sprite backing store. */
     gallery_drag_under_valid=0;
-    draw_original_room_arrows();
+    draw_original_room_arrows(&navigation);
     /* 3DS EDITSelectBase room tabs are separate touch panes above the boxes.
      * Only the private source-converted resource is used; absent art leaves
      * the existing gallery background unchanged. */
@@ -1108,8 +1131,10 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                     gallery_drag_x<r->x+r->w&&gallery_drag_y>=r->y&&
                     gallery_drag_y<r->y+r->h;
         if(slot==selected||hovered){
-            if(!mds_original_gallery_box_border(bottom,256,192,
-                                                 r->x,r->y,r->w,r->h))
+            uint16_t tint=slot==selected&&navigation.confirm_visible?
+                          navigation.confirm_tint:0xffffu;
+            if(!mds_original_gallery_box_border_tinted(bottom,256,192,
+                                                        r->x,r->y,r->w,r->h,tint))
                 outline(&gallery_hits[i]);
         }
     }
