@@ -104,7 +104,7 @@ int main(void)
                     touchPosition t;t=input.touch;
                     response=mds_ui_confirm_touch(t.px,t.py);
                 }
-                if(response>=0&&ui_ready&&mds_ui_confirm_request_exit(0)){
+                if(response>=0&&ui_ready&&mds_ui_confirm_choose(response,animation_vblanks)){
                     confirm_exit_response=response;
                     response=-1; /* apply transaction only after DialogOut */
                 }

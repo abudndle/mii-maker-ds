@@ -1,5 +1,6 @@
 #include "confirm_motion.h"
 #include "clan_dialog.h"
+#include "confirm_choice.h"
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
@@ -26,6 +27,16 @@ int mds_confirm_motion_request_exit(MdsConfirmMotion *motion,int up)
     return 1;
 }
 
+int mds_confirm_motion_choose(MdsConfirmMotion *motion,int yes,uint32_t now)
+{
+    if(!motion||!motion->begun||motion->exit_requested||motion->choice_active)return 0;
+    motion->choice_active=1;
+    motion->choice_started=now;
+    motion->choose_yes=yes?1u:0u;
+    motion->choice_tinted=0;
+    return 1;
+}
+
 int mds_confirm_motion_exit_done(const MdsConfirmMotion *motion,uint32_t now)
 {
     return motion&&motion->begun&&motion->exiting&&
@@ -35,6 +46,11 @@ int mds_confirm_motion_exit_done(const MdsConfirmMotion *motion,uint32_t now)
 int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now)
 {
     if(!motion||!motion->begun)return 0;
+    if(motion->choice_active&&
+       (uint32_t)(now-motion->choice_started)>=MDS_CONFIRM_CHOICE_VBLANKS){
+        motion->choice_active=0;
+        (void)mds_confirm_motion_request_exit(motion,0);
+    }
     /* Preserve the last original entrance frame before beginning the
      * original DialogBase02_DialogOut/OutUp track. This avoids a jump
      * when A/B is pressed while the confirmation is still entering. */
@@ -59,7 +75,8 @@ int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now)
 
 int mds_confirm_motion_ready(const MdsConfirmMotion *motion,uint32_t now)
 {
-    return motion&&motion->begun&&!motion->exit_requested&&
+    return motion&&motion->begun&&!motion->choice_active&&
+           !motion->exit_requested&&
            (uint32_t)(now-motion->started)>=MDS_CLAN_DIALOG_VBLANKS;
 }
 

@@ -1,0 +1,38 @@
+name: Original 3DS confirmation button source feedback (synthetic only)
+on:
+  push:
+    paths:
+      - 'source/confirm_choice.*'
+      - 'source/confirm_motion.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_choice*.py'
+      - '.github/workflows/original-confirm-choice-tests.yml'
+  pull_request:
+    paths:
+      - 'source/confirm_choice.*'
+      - 'source/confirm_motion.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_choice*.py'
+      - '.github/workflows/original-confirm-choice-tests.yml'
+permissions:
+  contents: read
+jobs:
+  confirm-choice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host C source feedback and phase test
+        run: python3 tests/test_confirm_choice.py
+      - name: Source input/animation linkage
+        run: python3 tests/test_confirm_choice_wiring.py
+      - name: Retain original 3DS DialogBase02 entry and exit regressions
+        run: |
+          python3 tests/test_confirm_motion.py
+          python3 tests/test_confirm_exit_motion.py
+          python3 tests/test_confirm_motion_wiring.py
+          python3 tests/test_confirm_exit_wiring.py

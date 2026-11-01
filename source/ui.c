@@ -19,6 +19,7 @@
 #include "clan_overlay.h"
 #include "clan_dialog.h"
 #include "confirm_motion.h"
+#include "confirm_choice.h"
 #include "clan_overlay.h"
 #include "clan_scene.h"
 #include "image.h"
@@ -1270,6 +1271,18 @@ int mds_ui_confirm_request_exit(int up)
 {
     return mds_confirm_motion_request_exit(&confirm_motion,up);
 }
+int mds_ui_confirm_choose(int yes,uint32_t now)
+{
+    return mds_confirm_motion_choose(&confirm_motion,yes,now);
+}
+static int confirm_choice_feedback(uint32_t now)
+{
+    if(!confirm_motion.choice_active||confirm_motion.choice_tinted||
+       (uint32_t)(now-confirm_motion.choice_started)<2u)return 0;
+    mds_confirm_choice_tint(confirm_window,(int)confirm_motion.choose_yes);
+    confirm_motion.choice_tinted=1;
+    return 1;
+}
 int mds_ui_confirm_exit_done(uint32_t now)
 {
     return mds_confirm_motion_exit_done(&confirm_motion,now);
@@ -1280,7 +1293,9 @@ int mds_ui_confirm_touch_ready(uint32_t now)
 }
 int mds_ui_confirm_animation_tick(uint32_t now)
 {
-    if(!ok||!mds_confirm_motion_tick(&confirm_motion,now))return 0;
+    if(!ok)return 0;
+    int tinted=confirm_choice_feedback(now);
+    if(!mds_confirm_motion_tick(&confirm_motion,now)&&!tinted)return 0;
     mds_confirm_motion_composite(bottom,confirm_backdrop,confirm_window,
                                 mds_confirm_motion_offset(&confirm_motion,now));
     return 1;
@@ -1301,6 +1316,8 @@ void mds_ui_confirm(const char *message)
     memcpy(confirm_window,confirm_backdrop,sizeof confirm_window);
     bitmap("nitro:/ui/confirm.rgb555",bottom);
     center_bottom(128,27,message);
+    if(confirm_motion.choice_tinted)
+        mds_confirm_choice_tint(confirm_window,(int)confirm_motion.choose_yes);
     bottom=screen;
     mds_confirm_motion_composite(bottom,confirm_backdrop,confirm_window,
                                 mds_confirm_motion_offset(&confirm_motion,now));

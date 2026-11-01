@@ -397,3 +397,49 @@ python3 tools/build_private_docker.py MiiMaker_DS_Resources.zip --jobs 4
 This accelerates developer iteration without skipping the actual ROM
 compilation, embedded-asset audits or hardware/emulator checks. The
 cache cannot be treated as proof of finished gameplay or model fidelity.
+
+
+## Milestone 74: source-derived original two-button decision feedback
+
+The privately recovered original Dialog.arc clips were inspected as actual
+BCLAN CLMC pane keyframes (not visual references or invented easing):
+
+- `DialogBase02_Select.bclan` (6 source frames), SHA-256
+  `793204765b6ac12bc8806ae35476181a9d1650af84fbae1c2111c52754c71dc4`.
+- `DialogBase02_Decide.bclan` (6 source frames), SHA-256
+  `418e005293446832adbd708369a69a24bfed2f33374d14bfcd65f7624cbd398b`.
+
+The source `P_BaseL_00` and `P_BaseR_00` CLMC R/G/B
+channels shift from (100,190,149) to (50,163,112) at source
+frame 1 in the Select clip; Decide retains the selected base RGB.
+The DS code now applies these exact source relative color ratios to
+the existing converted confirmation bitmap inside the **actual separate**
+touchscreen button pane bounds (28,71,200,32) and (28,111,200,32).
+The source label and button texture art is retained: no replacement
+gradient/button rectangle is generated.
+
+Both physical and stylus confirmation requests now play the
+original source six-frame Select/Decide feedback before the earlier
+original DialogBase02_DialogOut and saved Mii transaction. Keys and
+touch remain locked once a choice has been made. The original entry
+finishes before exit if a choice is made early.
+
+The source RGB is applied as a relative RGB555 tint to the already
+composited DS button region, rather than a full independent 3DS
+CLMC material/subpane renderer. The original text/shadow CLMC
+channels, nine-slice button materials and final 3DS animation frame
+clock are still incomplete and **this is not a claim of pixel-identical
+3DS confirmation artwork**.
+
+Run the independent synthetic host/source regressions:
+
+```sh
+python3 tests/test_confirm_choice.py
+python3 tests/test_confirm_choice_wiring.py
+```
+
+Check private source provenance without publishing the source BCLAN:
+
+```sh
+python3 tools/extract_confirm_choice_clan.py /private/Dialog/anim
+```
