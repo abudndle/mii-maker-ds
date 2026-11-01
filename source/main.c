@@ -225,15 +225,22 @@ int main(void)
                     /* Shoulder buttons browse destination rooms while the
                      * selected Mii remains attached to the stylus. */
                     int next=mds_gallery_page_step(page,gallery_drag.source,direction);
-                    if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                    if(next>=0){page=(unsigned)next/10;mds_ui_gallery_navigation(direction,animation_vblanks);drawn_screen=-1;}
+                    else mds_ui_gallery_invalid(direction);
                 }else{
                     int next=mds_gallery_page_step(page,editor.slot,direction);
-                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_ui_gallery_navigation(direction,animation_vblanks);mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                    else mds_ui_gallery_invalid(direction);
                 }
             }
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+                int edge_invalid=input.touch.py>=59&&input.touch.py<131&&
+                    ((page==0&&input.touch.px<19)||
+                     (page==9&&input.touch.px>=237&&input.touch.px<256));
+                if(gallery_drag.source<0&&edge_invalid)
+                    mds_ui_gallery_invalid(page==0?-1:1);
                 /* A bare arrow tap changes rooms; held drags page when they
                  * reach an arrow without moving the fixed Mii boxes. */
                 int room=mds_gallery_room_touch(input.touch.px,input.touch.py);
@@ -246,13 +253,14 @@ int main(void)
                     drawn_screen=-1;
                 }else if(gallery_drag.source<0&&arrow){
                     int next=mds_gallery_page_step(page,editor.slot,arrow);
-                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_ui_gallery_navigation(arrow,animation_vblanks);mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
                 }else if(gallery_drag.source<0&&slot>=0&&gallery.used[slot]){
                     /* A tap selects immediately; if the stylus moves before
                      * release, the same gesture becomes a drag operation. */
                     editor.slot=(unsigned)slot;
                     mds_editor_request(&editor,MDS_EDIT_RELOAD);
                     mds_gallery_drag_begin(&gallery_drag,page,slot,1);
+                    mds_ui_gallery_confirm(animation_vblanks);
                     drawn_screen=-1;
                 }
             }
@@ -263,7 +271,7 @@ int main(void)
                 int arrow=mds_gallery_room_arrow(live_touch_x,live_touch_y,page);
                 if(arrow&&arrow!=gallery_drag_arrow_latch){
                     int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
-                    if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;drawn_screen=-1;}
+                    if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;mds_ui_gallery_navigation(arrow,animation_vblanks);drawn_screen=-1;}
                 }
                 gallery_drag_arrow_latch=arrow;
             }
@@ -275,7 +283,7 @@ int main(void)
                      * than leaving a ghost Mii permanently attached. */
                     if(gallery_drag_arrow_latch!=arrow){
                         int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
-                        if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                        if(next>=0){page=(unsigned)next/10;mds_ui_gallery_navigation(arrow,animation_vblanks);drawn_screen=-1;}
                     }
                     mds_gallery_drag_reset(&gallery_drag);
                     drawn_screen=-1;
@@ -290,8 +298,10 @@ int main(void)
                     if(destination>=0){
                         editor.slot=source;
                         mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                        if(mds_editor_move(&editor,(unsigned)destination,persist,NULL))
+                        if(mds_editor_move(&editor,(unsigned)destination,persist,NULL)){
                             page=editor.slot/10;
+                            mds_ui_gallery_confirm(animation_vblanks);
+                        }
                         drawn_screen=-1;
                     }
                 }

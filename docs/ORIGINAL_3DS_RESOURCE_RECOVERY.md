@@ -173,3 +173,48 @@ Remaining work: original GUI pane transforms beyond the targeted
 P_Mii_00 scale and P_Room_00 color channels, alpha/visibility events,
 BCLAN easing for other control hierarchies, stock timing, audio cues,
 and actual pixel-by-pixel melonDS screenshots.
+
+
+## Milestone 69: original room arrows and Mii confirmation
+
+The user's private original Select.arc BCLAN files were inspected and their
+numeric keyframes validated. Only these numeric curves and SHA-256 identifiers
+are committed; no original game binaries are included.
+
+| Original 3DS animation | Verified source keys | SHA-256 |
+| --- | --- | --- |
+| EDITSelectBase_ScrollL (11 frames) | P_ArrowL/R CLPA X: 0 to -3/+3; left shadow CLVC: 200 to 0 | c388baec78e64693fe4db2eb416aacf51d93f2683fff70db427e55c92d06942a |
+| EDITSelectBase_ScrollR (11 frames) | Reverse CLPA X: -3/+3 to 0; shadow CLVC: 0 to 200 | e2380c0de88b7762a2dd9691c8382a7cd96108f800edfc7a83b68faaa09a4cfe |
+| SelectMii_Decide (6 frames) | P_Mii_00 CLMC RGB constant 251/199/186 | be2f78f4a54d19d5a6f9fe4cbbbd430d7e44c94526475b8d1abbb71b63eede28 |
+| SelectMii_UnDecide (6 frames) | P_Mii_00 CLMC RGB 251/199/186 to 216/233/214 | 6e8079065bf0afc8735684cd8cb6a01221f59054c5bfb5d171763468d5c3347c |
+| EDITSelectBase_Invalid (11 frames) | P_ArrowL/R horizontal offsets are constant zero; no source bounce | 882e083b1a8dbc33a208a15a335367bcf2796ce13e782b0a00cae5d83052d0bb |
+
+The DS port now evaluates the source arrow CLPA curves at the exact
+320-to-256 pixel ratio of 4/5 using fixed-point arithmetic. The original
+converted BtnArrow art follows those offsets; original Mii selection
+borders receive source CLMC confirmation color feedback. Physical L/R
+and the touchscreen arrows now share the original first/last-room
+boundary behavior instead of physical input wrapping around.
+
+The arrow shadow CLVC value is decoded and host-tested but its complete
+original graphics layering remains unverified and **is not yet drawn**.
+Likewise, the original Invalid clip has no changing arrow-translation
+keyframes, so no unsupported bounce is invented.
+
+The existing main loop reuses source-keyed VBlank redraw scheduling;
+new navigation and confirmation effects are only active over frames
+with verified changing keys. Input while dragging preserves the source
+Mii and stationary destination boxes.
+
+To verify source files privately, run:
+python3 tools/extract_gallery_nav_clan.py /private/Select/anim
+
+Run asset-free unit tests:
+python3 tests/test_gallery_nav_clan.py
+python3 tests/test_gallery_nav_wiring.py
+python3 tests/test_original_gallery_art.py
+
+Full 3DS animation/event parity, other arrow shadow layers, original
+audio, exact 3DS frame timing, and real private-ROM melonDS visual testing
+remain future milestones. The current two-VBlank source-frame cadence
+is provisional.

@@ -28,7 +28,7 @@ checks={
     "tap selects without requiring a drop move": "Tap box to select; drag the Mii" in (root/"source/ui.c").read_text(),
     "drag renders separate cached Mii sprite, not a moving box": "gallery_drag_snapshot.pixels" in (root/"source/ui.c").read_text() and
                                    "if(slot==selected||hovered)" in (root/"source/ui.c").read_text() and
-                                   "mds_original_gallery_box_border(bottom,256,192" in (root/"source/ui.c").read_text(),
+                                   "mds_original_gallery_box_border_tinted(bottom,256,192" in (root/"source/ui.c").read_text(),
     "drag thumbnail persists across rooms": "gallery_drag_snapshot=gallery_thumbnails.slots[local];" in (root/"source/ui.c").read_text(),
     "room tab touch uses recovered original pane": "mds_gallery_room_touch(input.touch.px,input.touch.py)" in gallery,
     "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "arrow!=gallery_drag_arrow_latch" in gallery,

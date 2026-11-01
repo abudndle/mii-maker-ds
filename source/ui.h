@@ -39,6 +39,11 @@ void mds_ui_gallery_drag_follow(int x,int y);
 /* Original 3DS CLAN feedback: call each VBlank; redraw only for active frames. */
 void mds_ui_gallery_clan_reset(void);
 int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now);
+/* Actual original EDITSelectBase ScrollL/ScrollR and SelectMii Decide
+ * channel feedback; UI resource bytes are supplied only in private NitroFS. */
+void mds_ui_gallery_navigation(int direction,uint32_t now);
+void mds_ui_gallery_confirm(uint32_t now);
+void mds_ui_gallery_invalid(int direction);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
