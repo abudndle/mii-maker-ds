@@ -4,12 +4,15 @@
 No Nintendo resource bytes are stored in this repository.
 """
 import argparse
+import sys
 import zipfile
 from pathlib import Path
 
 from rom_nitrofs_assets import check
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from private_balloon_art import derived_icons
 MAX_ASSET_BYTES = 32 * 1024 * 1024
 MAX_TOTAL_BYTES = 128 * 1024 * 1024
 
@@ -46,6 +49,9 @@ def read_assets(asset_zip=None, asset_dir=None):
                 if entry.file_size <= 0 or entry.file_size > MAX_ASSET_BYTES:
                     raise ValueError(f"{name}: unreasonable resource size")
                 originals[relative] = archive.read(entry)
+            # The four original Select.arc icons are derived from the same
+            # private ZIP, so full ROM parity still rejects every extra byte.
+            originals.update(derived_icons(archive))
     else:
         folder = Path(asset_dir or ROOT / "nitrofiles")
         originals = {}
