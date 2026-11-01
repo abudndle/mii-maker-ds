@@ -71,6 +71,36 @@ int main(void)
     mds_gallery_controls_consume_touch(&controls,1);
     assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
     mds_gallery_controls_consume_touch(NULL,1);
+    /* SELECT+Y copy must not cause a second image export on release. */
+    mds_gallery_controls_reset(&controls);
+    mds_gallery_controls_step(&controls,0,0,1,1,0);
+    assert(mds_gallery_controls_consume_physical(&controls,
+           MDS_GALLERY_CONTROL_NONE,1)==MDS_GALLERY_CONTROL_NONE);
+    assert(controls.select_used==1);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==
+           MDS_GALLERY_CONTROL_NONE);
+    /* SELECT-up and a room/copy key-down in one VBlank cannot export. */
+    mds_gallery_controls_reset(&controls);
+    mds_gallery_controls_step(&controls,0,0,1,1,0);
+    unsigned chord=mds_gallery_controls_step(&controls,0,0,0,0,1);
+    assert(chord==MDS_GALLERY_CONTROL_EXPORT);
+    assert(mds_gallery_controls_consume_physical(&controls,chord,1)==
+           MDS_GALLERY_CONTROL_NONE);
+    /* A physical key held before SELECT-down also consumes export. */
+    mds_gallery_controls_reset(&controls);
+    mds_gallery_controls_step(&controls,0,0,1,1,0);
+    mds_gallery_controls_consume_physical(&controls,0,1);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==
+           MDS_GALLERY_CONTROL_NONE);
+    /* No competing key: SELECT alone still exports. */
+    mds_gallery_controls_reset(&controls);
+    mds_gallery_controls_step(&controls,0,0,1,1,0);
+    assert(mds_gallery_controls_consume_physical(&controls,0,0)==0);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==
+           MDS_GALLERY_CONTROL_EXPORT);
+    assert(mds_gallery_controls_consume_physical(NULL,
+           MDS_GALLERY_CONTROL_RECALL|MDS_GALLERY_CONTROL_EXPORT,1)==
+           MDS_GALLERY_CONTROL_RECALL);
     puts("PASS: physical release cancels balloon presses and touch consumes SELECT export");
     return 0;
 }
