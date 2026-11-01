@@ -56,6 +56,10 @@ int mds_room_blit(const MdsRoomCache *cache,unsigned selected,unsigned local,uin
  if(!dst||!width||!height||!cache||selected>=MDS_SLOTS||
     local>=MDS_ROOM_SLOTS||cache->start!=mds_room_start(selected)||
     !cache->actor[local].valid)return 0;
+ /* Skip actors fully outside the destination without scanning their pixels. */
+ if((int64_t)x+(int64_t)MDS_ROOM_W<=0||
+    (int64_t)y+(int64_t)MDS_ROOM_H<=0||
+    (int64_t)x>=(int64_t)width||(int64_t)y>=(int64_t)height)return 1;
  const MdsRoomActor *a=&cache->actor[local];
  for(unsigned j=0;j<MDS_ROOM_H;j++){
   int64_t dy=(int64_t)y+j;
