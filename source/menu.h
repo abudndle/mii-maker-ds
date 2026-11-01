@@ -17,6 +17,10 @@ void mds_gallery_controls_reset(MdsGalleryControls *controls);
 /* Any stylus interaction while SELECT is active consumes standalone export,
  * including box selection, room navigation and drags (not only balloon taps). */
 void mds_gallery_controls_consume_touch(MdsGalleryControls *controls,int touch_active);
+/* Other physical gallery keys used during a SELECT chord consume its image
+ * export, including a key edge simultaneous with SELECT release. */
+unsigned mds_gallery_controls_consume_physical(MdsGalleryControls *controls,
+    unsigned action,int other_key_active);
 unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up);
 int mds_home_touch(int,int);
