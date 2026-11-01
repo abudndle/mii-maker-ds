@@ -46,8 +46,8 @@ checks={
     "drag blocks physical gallery mutations even on release":
         "int was_gallery_dragging=gallery_drag.source>=0;" in gallery and
         "mds_gallery_drag_blocks_actions(" in gallery and
-        "if((down&KEY_X)&&!block_gallery_actions)" in gallery and
-        "if((down&KEY_Y)&&!block_gallery_actions)" in gallery,
+        "if((down&KEY_X)&&!block_gallery_actions&&" in gallery and
+        "if((down&KEY_Y)&&!block_gallery_actions&&" in gallery,
     "drag prevents stale SELECT export and edit chord":
         "gallery_action=MDS_GALLERY_CONTROL_NONE;" in gallery and
         "mds_gallery_controls_reset(&gallery_controls);" in gallery,
