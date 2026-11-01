@@ -1,6 +1,6 @@
 import ctypes as C,sys,pathlib,json,time,argparse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--controller',action='store_true');parser.add_argument('--save-status',choices=['blank','unknown','damaged']);args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--controller',action='store_true');parser.add_argument('--lid',action='store_true');parser.add_argument('--save-status',choices=['blank','unknown','damaged']);args=parser.parse_args()
 OUTPUT=ROOT/'validation';OUTPUT.mkdir(exist_ok=True)
 from PIL import Image
 core=C.CDLL(str(pathlib.Path(args.core).resolve()))
@@ -45,7 +45,7 @@ def inp(port,device,index,key):
  return 0
 pathlib.Path(args.save_dir).mkdir(exist_ok=True)
 if args.save_status:
- if args.restart or args.controller:parser.error('--save-status cannot be combined with --restart or --controller')
+ if args.restart or args.controller or args.lid:parser.error('--save-status cannot be combined with --restart, --controller or --lid')
  save_folder=pathlib.Path(args.save_dir)
  if any(save_folder.iterdir()):parser.error('--save-status requires an empty save directory; existing saves are never replaced')
  seed=bytearray([255 if args.save_status=='blank' else 0x5a])*8192
@@ -93,6 +93,46 @@ def finish():
  if sram and sram_size:sram_file.write_bytes(C.string_at(core.retro_get_memory_data(0),sram_size))
  core.retro_unload_game();core.retro_deinit()
 run(300)
+if args.lid:
+ def sleep_cycle(name):
+  global pressed,pointer
+  original_avatar=avatar();original_scene=scene();original_gallery=mem('gallery',12716)
+  pending=mem('editor',272)[264:268]
+  pressed={14};run(60) # libretro L3 holds the physical lid closed.
+  assert int.from_bytes(mem('lifecycle',12)[4:8],'little')==1, 'App did not suspend'
+  clock=mem('animation_vblanks');run(30);assert mem('animation_vblanks')==clock
+  pressed={14,8};run(10)
+  pressed={8};run(60) # Open with A still held: it must not act on wake.
+  assert scene()==original_scene and avatar()==original_avatar and mem('gallery',12716)==original_gallery
+  assert mem('editor',272)[264:268]==pending
+  assert int.from_bytes(mem('lifecycle',12)[8:12],'little')==1
+  pressed=set();pointer=None;run(40)
+  assert mem('lifecycle',12)==bytes(12), 'Wake input gate did not release'
+  capture('melonds-lid-'+name)
+ if args.restart:
+  key(8,300);key(8,180)
+  assert avatar()[:32].split(b'\0')[0]==b'Mi' and value(51)==1
+  print('PASS: lid-test cartridge save survives cold restart',flush=True)
+ else:
+  key(5);key(8,180);key(8,180);assert scene()==1
+  sleep_cycle('editor')
+  key(7);assert value(2)==1, 'Fresh input did not work after wake'
+  key(0);assert int.from_bytes(mem('editor',272)[264:268],'little')!=0
+  sleep_cycle('confirmation');key(0)
+  key(2);key(8);key(9);assert int.from_bytes(mem('profile'),'little')==1
+  text=mem('profile',52)[20:52];sleep_cycle('keyboard');assert mem('profile',52)[20:52]==text
+  key(3);assert avatar()[:32].split(b'\0')[0]==b'Mi'
+  key(0);assert scene()==1
+  tap(15,158,180)
+  pointer=(100,60);run(12)
+  assert int.from_bytes(mem('slider_field'),'little',signed=True)>=0
+  sleep_cycle('slider');assert int.from_bytes(mem('slider_field'),'little',signed=True)==-1
+  key(3,300);key(0);assert scene()==0
+  sleep_cycle('home');key(4);key(8,180);assert scene()==2, 'View did not open after fresh input'
+  sleep_cycle('gallery');key(0);key(2);assert scene()==8
+  sleep_cycle('save-status')
+  print('PASS: emulated lid suspend, paused clocks, held-button gating, draft/modal/keyboard preservation, released slider, gallery and save-status resume',flush=True)
+ finish();raise SystemExit(0)
 if args.save_status:
  blocked=args.save_status!='blank'
  assert scene()==(8 if blocked else 0)

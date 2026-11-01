@@ -6,6 +6,7 @@
 #include "camera_ds.h"
 #include "menu.h"
 #include "qr_scan.h"
+#include "lifecycle.h"
 static MdsGallery gallery;
 static MdsEditor editor;
 static int save_ready;
@@ -18,10 +19,20 @@ typedef struct {int down,repeat,held;touchPosition touch;} MdsInput;
 static volatile MdsInput input_queue[32];
 static volatile unsigned input_read,input_write;
 static volatile int live_held,live_touch_x;
+static volatile MdsLifecycle lifecycle;
+static void app_system_value(u32 value,void *data)
+{
+ /* Defer lid sleep to the main loop so camera DMA and save writes finish
+  * safely. Keep the SDK handlers for SD events and every other system event. */
+ if(value==PM_REQ_SLEEP)mds_lifecycle_request(&lifecycle);
+ else systemValueHandler(value,data);
+}
 static void animation_vblank(void)
 {
- animation_vblanks++;scanKeys();
+ scanKeys();
  live_held=keysHeld();touchPosition current;touchRead(&current);live_touch_x=current.px;
+ if(!mds_lifecycle_poll(&lifecycle,(live_held&KEY_LID)!=0,(unsigned)(live_held&~KEY_LID)))return;
+ animation_vblanks++;
  MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=keysHeld()};
  if(!(event.down||event.repeat))return;
  touchRead(&event.touch);
@@ -35,11 +46,11 @@ static MdsInput next_input(void)
  leaveCriticalSection(state);return event;
 }
 static uint32_t render_time(void){return animation_vblanks;}
-static int input_waiting(void){return input_read!=input_write;}
+static int input_waiting(void){return lifecycle.requested||input_read!=input_write;}
 static int persist(MdsGallery *g,void *ctx){(void)ctx;return save_ready&&mds_cart_flush(g);}
 int main(void)
 {
-    powerOn(POWER_ALL_2D);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
+    powerOn(POWER_ALL_2D);fifoSetValue32Handler(FIFO_SYSTEM,app_system_value,NULL);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1,return_home=0;
     unsigned page=0,drawn_page=99;
@@ -52,6 +63,20 @@ int main(void)
     if(ui_ready&&!save_ready)screen=MDS_SCREEN_SAVE_STATUS;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
+        if(lifecycle.requested){
+            mds_lifecycle_suspend(&lifecycle);
+            int resume_camera=camera_open;
+            if(camera_open){mds_camera_suspend();camera_open=0;}
+            mds_ui_slider_release();slider_preview_pending=1;
+            mds_ui_scene_transition_cancel();
+            int state=enterCriticalSection();input_read=input_write;leaveCriticalSection(state);
+            if(live_held&KEY_LID)systemSleep();
+            while(live_held&KEY_LID)swiWaitForVBlank();
+            state=enterCriticalSection();input_read=input_write;mds_lifecycle_resume(&lifecycle);leaveCriticalSection(state);
+            if(resume_camera){camera_open=mds_camera_resume();editor.status=mds_camera_status();}
+            drawn_screen=-1;
+            continue;
+        }
         MdsInput input=next_input();int k=input.repeat,down=input.down;
         if(camera_open){
             if(down&KEY_B){mds_camera_close();camera_open=0;mds_ui_restore_top();drawn_screen=-1;}
