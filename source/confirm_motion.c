@@ -18,9 +18,33 @@ void mds_confirm_motion_begin(MdsConfirmMotion *motion,uint32_t now)
     motion->completed=0;
 }
 
+int mds_confirm_motion_request_exit(MdsConfirmMotion *motion,int up)
+{
+    if(!motion||!motion->begun||motion->exit_requested)return 0;
+    motion->exit_requested=1;
+    motion->exit_up=up?1u:0u;
+    return 1;
+}
+
+int mds_confirm_motion_exit_done(const MdsConfirmMotion *motion,uint32_t now)
+{
+    return motion&&motion->begun&&motion->exiting&&
+           (uint32_t)(now-motion->started)>=MDS_CLAN_DIALOG_VBLANKS;
+}
+
 int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now)
 {
     if(!motion||!motion->begun)return 0;
+    /* Preserve the last original entrance frame before beginning the
+     * original DialogBase02_DialogOut/OutUp track. This avoids a jump
+     * when A/B is pressed while the confirmation is still entering. */
+    if(motion->exit_requested&&!motion->exiting&&
+       (uint32_t)(now-motion->started)>=MDS_CLAN_DIALOG_VBLANKS){
+        motion->exiting=1;
+        motion->started=now;
+        motion->last_elapsed=UINT32_MAX;
+        motion->completed=0;
+    }
     uint32_t elapsed=(uint32_t)(now-motion->started);
     if(elapsed>=MDS_CLAN_DIALOG_VBLANKS){
         if(motion->completed)return 0;
@@ -35,14 +59,19 @@ int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now)
 
 int mds_confirm_motion_ready(const MdsConfirmMotion *motion,uint32_t now)
 {
-    return motion&&motion->begun&&
+    return motion&&motion->begun&&!motion->exit_requested&&
            (uint32_t)(now-motion->started)>=MDS_CLAN_DIALOG_VBLANKS;
 }
 
 int mds_confirm_motion_offset(const MdsConfirmMotion *motion,uint32_t now)
 {
     if(!motion||!motion->begun)return 0;
-    if(mds_confirm_motion_ready(motion,now))return 0;
+    if(motion->exiting){
+        if(mds_confirm_motion_exit_done(motion,now))
+            return motion->exit_up?MDS_CONFIRM_HEIGHT:-MDS_CONFIRM_HEIGHT;
+        return mds_clan_dialog_exit_y(now,motion->started,(int)motion->exit_up);
+    }
+    if((uint32_t)(now-motion->started)>=MDS_CLAN_DIALOG_VBLANKS)return 0;
     /* Source DialogBase02_DialogIn W_Dialog CLPA Y, scaled 240->192.
      * This existing curve also serves the original user-profile dialog. */
     return mds_clan_dialog_y(now,motion->started);
