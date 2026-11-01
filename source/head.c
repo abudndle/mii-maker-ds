@@ -94,6 +94,15 @@ static void decal(const MdsCflArchive*a,unsigned sec,unsigned id,float cx,float 
   mask[y*MS+x]=rgba(rgb[0],rgb[1],rgb[2],oa);
  }
 }
+/* Keep projected model vertices bounded before int conversion and raster edges.
+ * The 128px preview cannot display coordinates beyond this guard band. */
+static int screen_coordinate(int64_t numerator,int64_t denominator)
+{
+ int64_t v=numerator/denominator;
+ if(v>1024)return 1024;
+ if(v< -1024)return -1024;
+ return (int)v;
+}
 static int edge(Vertex a,Vertex b,int x,int y){return (b.x-a.x)*(y-a.y)-(b.y-a.y)*(x-a.x);}
 /* Affine attributes use 16 fractional bits. Divide at triangle setup, then
  * step across pixels with additions; DS ARM9 has no instruction-level divide. */
@@ -187,7 +196,7 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
    mds_view_rotate(&p[0],&p[2],view_angle);
    mds_view_rotate(&n[0],&n[2],view_angle);
   }
-  verts[i]=(Vertex){(int)(((int64_t)64*16777216+(int64_t)p[0]*projection)/16777216),(int)((offset_y-(int64_t)p[1]*projection)/16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(n[2]*20+n[1]*10)/256};
+  verts[i]=(Vertex){screen_coordinate((int64_t)64*16777216+(int64_t)p[0]*projection,16777216),screen_coordinate(offset_y-(int64_t)p[1]*projection,16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(n[2]*20+n[1]*10)/256};
  }
  unsigned count=g.indices?g.index_count:g.count;
  for(unsigned i=0;i+2<count;i+=3){if(!(i%48)&&cancelled())return 0;unsigned ia=g.indices?g.indices[i]:i,ib=g.indices?g.indices[i+1]:i+1,ic=g.indices?g.indices[i+2]:i+2;triangle(verts[ia],verts[ib],verts[ic],color,masked,tp,out);}
@@ -266,7 +275,7 @@ int mds_mii_render_view(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes
     unsigned material=p[normal_offset+3],bone=p[normal_offset+4];
     if(material==1)color=mds_pants_color(m);
     else if(bone==6||bone==9)color=skins[m->value[1]];
-    tri[j]=(Vertex){(int)(((int64_t)64*549755813888+x*projection)/549755813888),(int)(((int64_t)offset*8388608-y*projection)/549755813888),(int)(z/65536),0,0,clamp(225+(int)(int8_t)p[normal_offset+2]*20/127+(int)(int8_t)p[normal_offset+1]*10/127,255)};
+    tri[j]=(Vertex){screen_coordinate((int64_t)64*549755813888+x*projection,549755813888LL),screen_coordinate((int64_t)offset*8388608-y*projection,549755813888LL),(int)(z/65536),0,0,clamp(225+(int)(int8_t)p[normal_offset+2]*20/127+(int)(int8_t)p[normal_offset+1]*10/127,255)};
    }
    triangle(tri[0],tri[1],tri[2],color,0,NULL,out);
   }
