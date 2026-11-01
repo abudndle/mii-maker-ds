@@ -218,10 +218,17 @@ int main(void)
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
             /* Physical L/R and touchscreen arrows both navigate rooms.
              * Never change rooms while a Mii drag is in progress. */
-            if((down&(KEY_L|KEY_R))&&gallery_drag.source<0){
+            if(down&(KEY_L|KEY_R)){
                 int direction=(down&KEY_L)?-1:1;
-                int next=mds_gallery_page_step(page,editor.slot,direction);
-                if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                if(gallery_drag.source>=0){
+                    /* Shoulder buttons browse destination rooms while the
+                     * selected Mii remains attached to the stylus. */
+                    int next=mds_gallery_page_step(page,gallery_drag.source,direction);
+                    if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                }else{
+                    int next=mds_gallery_page_step(page,editor.slot,direction);
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                }
             }
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
