@@ -33,6 +33,8 @@ jobs:
         run: python3 tests/test_private_zip_restore.py
       - name: Verify NitroFS UI and sprite runtime preflight
         run: python3 -m unittest discover -s tests -p test_runtime_asset_parity.py
+      - name: Verify fictional SDK compile inputs and private Docker workflow
+        run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
       - name: Verify private local ZIP-to-ROM build orchestration
