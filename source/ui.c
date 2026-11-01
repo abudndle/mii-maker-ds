@@ -780,6 +780,16 @@ void mds_ui_home(int focus,const char *notice)
         }
     if(notice&&notice[0])label(8,156,notice);
 }
+static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
+static unsigned walk_room_start=UINT32_MAX;
+static unsigned walk_ticks;
+static unsigned walk_home_until;
+void mds_ui_room_return_home(void)
+{
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
+        mds_room_walk_tick(&room_walk[local],local,0,1);
+    walk_home_until=walk_ticks+24u;
+}
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     (void)page; /* Room position comes from saved Mii slot, not ten-slot grid page. */
@@ -853,17 +863,15 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     }
     /* Walking offsets are per room slot, not per selection. Keep motion
      * deterministic across redraws and avoid shifting cached appearance. */
-    static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
-    static unsigned walk_room_start=UINT32_MAX;
-    static unsigned walk_ticks;
     if(walk_room_start!=start){
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
         walk_ticks=0;
+        walk_home_until=0;
     }
     walk_ticks++;
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
-        if(g->used[start+local])mds_room_walk_tick(&room_walk[local],local,walk_ticks,0);
+        if(g->used[start+local])mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_ticks<walk_home_until);
     /* Composite in fixed original SelectMii pane order. Rendering priority
      * may rotate, but draw order must not: overlapping heads and selection
      * markers otherwise flicker as the preview cursor advances. */
