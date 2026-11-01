@@ -807,7 +807,16 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
      * 3D previews per actor so changing selection never replaces another Mii. */
     int unfinished=0;
     int rendered_one_actor=0;
-    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
+    /* Rotate the first-render candidate across repaints so a repeatedly
+     * interrupted preview cannot starve later Miis in the same room. */
+    static unsigned preview_cursor;
+    static unsigned preview_room_start=UINT32_MAX;
+    if(preview_room_start!=start){
+        preview_room_start=start;
+        preview_cursor=0;
+    }
+    for(unsigned order=0;order<MDS_ROOM_SLOTS;order++){
+        unsigned local=(preview_cursor+order)%MDS_ROOM_SLOTS;
         unsigned slot=start+local;
         int x=0,y=0;
         if(!mds_room_position(local,&x,&y))continue;
@@ -825,6 +834,7 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
                 unsigned before=render_cancelled_count;
                 int ready=preview(&g->miis[slot],2);
                 rendered_one_actor=1; /* One costly 3D render per repaint. */
+                preview_cursor=(local+1u)%MDS_ROOM_SLOTS;
                 if(ready){
                     mds_room_capture(&gallery_room,selected,local,
                                      &g->miis[slot],head_pixels);
