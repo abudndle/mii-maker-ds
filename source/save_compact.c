@@ -10,6 +10,17 @@ static unsigned width(unsigned n){unsigned w=0;do{w++;n>>=1;}while(n);return w;}
 int mds_compact_encode(const MdsGallery*g,uint8_t*out,size_t n)
 {
  if(!g||!out||n!=MDS_COMPACT_SIZE)return 0;
+ /* Validate every slot before writing any bytes to the destination. */
+ unsigned checked_personal=0;
+ for(unsigned i=0;i<MDS_SLOTS;i++){
+  if(g->used[i]>1)return 0;
+  if(!g->used[i])continue;
+  const MdsAvatar*a=&g->miis[i];
+  uint8_t name[20],creator[20];
+  if(!mds_valid(a)||!mds_name_to_utf16(name,a->name)||!mds_name_to_utf16(creator,a->creator))return 0;
+  checked_personal+=a->value[51];
+  if(checked_personal>1)return 0;
+ }
  memset(out,0xff,n);memset(out,0,BODY);memcpy(out,"MDSC",4);put32(out+4,2);put32(out+8,g->generation+1);put32(out+12,BODY);memcpy(out+16,g->settings,8);
  unsigned personal=0;
  for(unsigned i=0;i<MDS_SLOTS;i++){
