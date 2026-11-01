@@ -264,7 +264,14 @@ int main(void)
                     else mds_ui_gallery_invalid(direction);
                 }
             }
-            if(down&KEY_TOUCH){
+            /* Action-strip taps are distinct from selecting or dragging a
+             * Mii box. Never activate them during an ongoing drag. */
+            MdsGalleryTouchAction touch_action=MDS_GALLERY_ACTION_NONE;
+            if((down&KEY_TOUCH)&&gallery_drag.source<0)
+                touch_action=mds_gallery_action_touch(input.touch.px,input.touch.py);
+            if(touch_action==MDS_GALLERY_ACTION_EDIT)
+                gallery_action|=MDS_GALLERY_CONTROL_EDIT;
+            if((down&KEY_TOUCH)&&touch_action==MDS_GALLERY_ACTION_NONE){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 MdsGalleryBoxAction box_action=mds_gallery_box_press(
                     slot,slot>=0&&gallery.used[slot]);
@@ -372,7 +379,16 @@ int main(void)
                     drawn_screen=-1;
                 }else mds_editor_request(&editor,MDS_EDIT_DELETE);
             }
+            if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)){
+                if(mds_editor_toggle_favorite(&editor,persist,NULL))
+                    mds_ui_gallery_confirm(animation_vblanks);
+                drawn_screen=-1;
+            }
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
+            else if(touch_action==MDS_GALLERY_ACTION_COPY){
+                if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;
+                drawn_screen=-1;
+            }
             if(gallery_action&MDS_GALLERY_CONTROL_EXPORT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
