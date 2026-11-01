@@ -16,6 +16,13 @@ unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up);
 int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
+/* All ten boxes are selectable; only occupied boxes can begin a drag. */
+typedef enum {
+ MDS_GALLERY_BOX_NONE=0,
+ MDS_GALLERY_BOX_SELECT=1,
+ MDS_GALLERY_BOX_DRAG=2
+} MdsGalleryBoxAction;
+MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied);
 /* Room tabs from original EDITSelectBase, independent of Mii destination boxes. */
 int mds_gallery_room_touch(int x,int y);
 /* Touchscreen room navigation: -1 left, +1 right, 0 elsewhere. */
