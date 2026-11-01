@@ -129,9 +129,12 @@ jobs:
           "$RUNNER_TEMP/make_gallery_fixture" mii-ds.sav
           test "$(stat -c %s mii-ds.sav)" -eq 65536
       - name: Boot original-resource ROM under melonDS 1.1 and sample the dual-screen output
+        id: melon_boot
+        continue-on-error: true
         shell: bash
         run: bash tools/run_melonds_headless.sh
-      - name: Encrypt completed ROM for private-key-only retrieval
+      - name: Encrypt completed ROM and diagnostic frame captures for owner-only retrieval
+        if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -161,7 +164,8 @@ jobs:
             test -s melonds-gallery-ten.png.gpg
           fi
           echo "PASS: private ROM and emulator framebuffer encrypted before artifact upload."
-      - name: Upload encrypted ROM (plaintext and original assets are never uploaded)
+      - name: Upload encrypted ROM and diagnostic screenshots (owner private key required)
+        if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
         with:
           name: mii-maker-ds-private-encrypted
@@ -171,6 +175,12 @@ jobs:
             melonds-gallery-ten.png.gpg
           retention-days: 7
           if-no-files-found: error
+      - name: Reject unverified emulator gameplay after retaining encrypted diagnostics
+        if: ${{ always() && steps.melon_boot.outcome == 'failure' }}
+        shell: bash
+        run: |
+          echo "::error::Actual melonDS multi-Mii gallery validation failed; review the encrypted diagnostics."
+          exit 1
       - name: Delete private game files from runner
         if: always()
         shell: bash
