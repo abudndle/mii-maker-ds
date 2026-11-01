@@ -51,6 +51,26 @@ int main(void)
     assert(mds_gallery_controls_suppress_export_on_touch(
            MDS_GALLERY_CONTROL_RECALL|MDS_GALLERY_CONTROL_EXPORT,1)==
            MDS_GALLERY_CONTROL_RECALL);
-    puts("PASS: physical release cancels stale balloon press and stylus suppresses export");
+    /* A SELECT-held touch on a box or room tab must consume image export,
+     * even if the stylus is lifted before SELECT is released. */
+    MdsGalleryControls controls;
+    mds_gallery_controls_reset(&controls);
+    assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+    mds_gallery_controls_consume_touch(&controls,1);
+    mds_gallery_controls_consume_touch(&controls,0);
+    assert(controls.select_used==1);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+    /* No touch: standalone SELECT still exports. */
+    mds_gallery_controls_reset(&controls);
+    assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
+    mds_gallery_controls_consume_touch(&controls,0);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_EXPORT);
+    /* Same-frame SELECT-down + stylus-down must also consume export. */
+    mds_gallery_controls_reset(&controls);
+    mds_gallery_controls_step(&controls,0,0,1,1,0);
+    mds_gallery_controls_consume_touch(&controls,1);
+    assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
+    mds_gallery_controls_consume_touch(NULL,1);
+    puts("PASS: physical release cancels balloon presses and touch consumes SELECT export");
     return 0;
 }
