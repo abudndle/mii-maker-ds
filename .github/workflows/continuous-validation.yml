@@ -35,7 +35,8 @@ jobs:
             tests/test_gallery_balloon_wiring.py \
             tests/test_gallery_drag.py \
             tests/test_first_boot_flow.py \
-            tests/test_gallery_exit_wiring.py; do
+            tests/test_gallery_exit_wiring.py \
+            tests/test_gallery_empty_action_wiring.py; do
             python3 "$test_file"
           done
       - name: Check for prohibited committed ROMs and archives

@@ -345,6 +345,12 @@ int main(void)
             if(input.up&KEY_TOUCH)
                 touch_action=mds_gallery_action_press_release(
                     &gallery_action_press,input.touch.px,input.touch.py);
+            /* Empty gallery slots can be selected for Create, but cannot
+             * be favorited or copied. Do not dispatch invisible actions. */
+            if(!gallery.used[editor.slot]&&
+               (touch_action==MDS_GALLERY_ACTION_FAVORITE||
+                touch_action==MDS_GALLERY_ACTION_COPY))
+                touch_action=MDS_GALLERY_ACTION_NONE;
             if(input.up&KEY_TOUCH){
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
