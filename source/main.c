@@ -250,22 +250,21 @@ int main(void)
             if(input.up&KEY_TOUCH){
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
-                int destination=mds_gallery_drag_end(&gallery_drag,page,
-                    arrow? -1 : mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
-                /* Hovering the room icons never changes the room. Releasing
-                 * on one commits to the adjacent room's matching slot; a
-                 * normal box release commits to that exact destination. */
-                if(destination<0&&source<MDS_SLOTS&&arrow){
-                    int next=mds_gallery_page_step(source/10,source,arrow);
-                    if(next>=0)destination=next;
-                }
-                if(destination>=0){
-                    editor.slot=source;
-                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                    if(mds_editor_move(&editor,(unsigned)destination,persist,NULL)){
-                        page=editor.slot/10;
+                if(gallery_drag.source>=0&&arrow){
+                    /* Arrow tap pages the destination room but keeps the
+                     * grabbed Mii active. A later box tap/drop commits it. */
+                    int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
+                    if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                }else if(gallery_drag.source>=0){
+                    int destination=mds_gallery_drag_end(&gallery_drag,page,
+                        mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                    if(destination>=0){
+                        editor.slot=source;
+                        mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                        if(mds_editor_move(&editor,(unsigned)destination,persist,NULL))
+                            page=editor.slot/10;
+                        drawn_screen=-1;
                     }
-                    drawn_screen=-1;
                 }
             }
             /* A recalls Miis; hold SELECT+A for legacy create/edit/copy
