@@ -815,8 +815,11 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         preview_room_start=start;
         preview_cursor=0;
     }
+    /* Snapshot the starting slot: preview_cursor changes after a render,
+     * but the current repaint must still visit each room slot exactly once. */
+    const unsigned scan_start=preview_cursor;
     for(unsigned order=0;order<MDS_ROOM_SLOTS;order++){
-        unsigned local=(preview_cursor+order)%MDS_ROOM_SLOTS;
+        unsigned local=(scan_start+order)%MDS_ROOM_SLOTS;
         unsigned slot=start+local;
         int x=0,y=0;
         if(!mds_room_position(local,&x,&y))continue;
