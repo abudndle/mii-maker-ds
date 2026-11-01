@@ -103,6 +103,14 @@ static int screen_coordinate(int64_t numerator,int64_t denominator)
  if(v< -1024)return -1024;
  return (int)v;
 }
+/* Bound normal-derived light before narrowing; raster shading clamps to RGB range. */
+static int mesh_light(int32_t ny,int32_t nz)
+{
+ int64_t light=225+((int64_t)nz*20+(int64_t)ny*10)/256;
+ if(light>255)return 255;
+ if(light<0)return 0;
+ return (int)light;
+}
 static int edge(Vertex a,Vertex b,int x,int y){return (b.x-a.x)*(y-a.y)-(b.y-a.y)*(x-a.x);}
 /* Affine attributes use 16 fractional bits. Divide at triangle setup, then
  * step across pixels with additions; DS ARM9 has no instruction-level divide. */
@@ -204,7 +212,7 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
    mds_view_rotate(&p[0],&p[2],view_angle);
    mds_view_rotate(&n[0],&n[2],view_angle);
   }
-  verts[i]=(Vertex){screen_coordinate((int64_t)64*16777216+(int64_t)p[0]*projection,16777216),screen_coordinate(offset_y-(int64_t)p[1]*projection,16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(int)(((int64_t)n[2]*20+(int64_t)n[1]*10)/256)};
+  verts[i]=(Vertex){screen_coordinate((int64_t)64*16777216+(int64_t)p[0]*projection,16777216),screen_coordinate(offset_y-(int64_t)p[1]*projection,16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,mesh_light(n[1],n[2])};
  }
  unsigned count=g.indices?g.index_count:g.count;
  for(unsigned i=0;i+2<count;i+=3){if(!(i%48)&&cancelled())return 0;unsigned ia=g.indices?g.indices[i]:i,ib=g.indices?g.indices[i+1]:i+1,ic=g.indices?g.indices[i+2]:i+2;triangle(verts[ia],verts[ib],verts[ic],color,masked,tp,out);}
