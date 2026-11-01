@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
         commands.append(tuple(map(str, command)))
 
     with patch.object(runner, "run", side_effect=capture):
-        runner.build(archive, validate_only=True)
+        runner.build(archive, validate_only=True, no_cache=True)
     assert len(commands) == 3
     assert commands[0][1:] == (
         "tests/rom_motion_packs.py", "--source-only", "--asset-zip", str(archive)
@@ -55,7 +55,7 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     with patch.object(runner, "run", side_effect=capture), \
          patch.object(runner, "validate", side_effect=validate), \
          patch.object(runner, "ROM", fake_rom):
-        runner.build(archive, jobs=3)
+        runner.build(archive, jobs=3, no_cache=True)
     assert validation_calls == [None, ROOT]
     assert commands[0][1:3] == ("tests/rom_motion_packs.py", "--source-only")
     assert (sys.executable, "tools/verify_private_clan.py", str(archive)) in commands
@@ -89,7 +89,7 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     with patch.object(runner, "run", side_effect=reject_bad_clan), \
          patch.object(runner, "validate", wraps=runner.validate) as verifier:
         try:
-            runner.build(archive, jobs=3)
+            runner.build(archive, jobs=3, no_cache=True)
             raise AssertionError("mismatched CLAN tables did not prevent build")
         except subprocess.CalledProcessError:
             pass
@@ -103,7 +103,7 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
     failure_commands.clear()
     with patch.object(runner, "run", side_effect=reject_bad_resource):
         try:
-            runner.build(archive, jobs=3)
+            runner.build(archive, jobs=3, no_cache=True)
             raise AssertionError("missing UI sprite did not prevent build")
         except subprocess.CalledProcessError:
             pass
