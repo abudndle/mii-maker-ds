@@ -45,7 +45,9 @@ int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsi
     drag->source=-1;
     if(!source||page>=10||start<0||start>=100||
        destination<0||destination>=100||
-       (unsigned)destination/10!=page||destination==start)return -1;
+       destination==start)return -1;
+    /* The source belongs to the room where the gesture began; the
+     * destination may be on another room after an on-screen page change. */
     *source=(unsigned)start;
     return destination;
 }

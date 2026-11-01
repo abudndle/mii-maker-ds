@@ -7,7 +7,7 @@ int mds_gallery_touch(int,int,unsigned);
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 /* Move to the next ten-slot page without losing the cursor position. */
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction);
-/* Drag gesture is kept in global 0..99 slot space across page changes. */
+/* Drag gesture retains its source in global 0..99 slot space across rooms. */
 typedef struct { int source; } MdsGalleryDrag;
 void mds_gallery_drag_reset(MdsGalleryDrag *drag);
 int mds_gallery_drag_begin(MdsGalleryDrag *drag,unsigned page,int source,int occupied);
