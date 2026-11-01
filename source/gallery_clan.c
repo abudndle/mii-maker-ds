@@ -76,7 +76,7 @@ int mds_gallery_clan_style(const MdsGalleryClan *state,uint32_t now,
      * data must never create a giant or negative sprite. */
     if(sx>=65536&&sx<=78644)out->scale_x_q16=(uint32_t)sx;
     if(sy>=65536&&sy<=78644)out->scale_y_q16=(uint32_t)sy;
-    if(state->page_changed&&elapsed<2u){
+    if(state->page_changed&&elapsed<=2u){
         int32_t room_frame=(int32_t)(elapsed*SOURCE_FRAME_Q16_PER_VBLANK);
         out->selected_room_tint=tint(gallery_room_select_red,
             KEY_COUNT(gallery_room_select_red),gallery_room_select_green,
