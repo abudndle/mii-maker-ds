@@ -16,6 +16,16 @@ unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up);
 int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
+/* Temporary accessible touch actions below the original ten-box grid.
+ * The authentic SelectBalloonButton art and layout still require the private
+ * source pane transform; these bounds must never overlap a box or arrow. */
+typedef enum {
+ MDS_GALLERY_ACTION_NONE=0,
+ MDS_GALLERY_ACTION_FAVORITE=1,
+ MDS_GALLERY_ACTION_COPY=2,
+ MDS_GALLERY_ACTION_EDIT=3
+} MdsGalleryTouchAction;
+MdsGalleryTouchAction mds_gallery_action_touch(int x,int y);
 /* All ten boxes are selectable; only occupied boxes can begin a drag. */
 typedef enum {
  MDS_GALLERY_BOX_NONE=0,

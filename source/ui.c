@@ -1162,6 +1162,12 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
             gallery_drag_draw_at(gallery_drag_x,gallery_drag_y);
     }
     text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
+    /* Accessibility labels for the functional touch strip. These are not
+     * substitute Nintendo icons: authentic SelectBalloonButton art and pane
+     * transforms remain gated on the user's private source resources. */
+    text_at(bottom,12,174,"Favorite");
+    text_at(bottom,109,174,"Copy");
+    text_at(bottom,193,174,"Edit");
     gallery_clan_painted=now;
 }
 

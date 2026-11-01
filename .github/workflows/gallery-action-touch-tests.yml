@@ -1,0 +1,39 @@
+name: Gallery touch actions (asset-free)
+
+on:
+  pull_request:
+    paths:
+      - 'source/main.c'
+      - 'source/menu.*'
+      - 'source/ui.c'
+      - 'source/editor.c'
+      - 'tests/gallery_action_touch.c'
+      - 'tests/test_gallery_action_wiring.py'
+      - '.github/workflows/gallery-action-touch-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/main.c'
+      - 'source/menu.*'
+      - 'source/ui.c'
+      - 'source/editor.c'
+      - 'tests/gallery_action_touch.c'
+      - 'tests/test_gallery_action_wiring.py'
+      - '.github/workflows/gallery-action-touch-tests.yml'
+
+jobs:
+  gallery-touch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host C hitboxes and original pane isolation
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -Isource \
+            tests/gallery_action_touch.c source/menu.c -o /tmp/gallery-action-touch
+          /tmp/gallery-action-touch
+      - name: Source wiring and existing gallery regressions
+        run: |
+          python3 tests/test_gallery_action_wiring.py
+          python3 tests/test_gallery_favorite_wiring.py
+          python3 tests/test_gallery_controls_wiring.py
+          python3 tests/test_gallery_drag.py
