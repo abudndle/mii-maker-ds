@@ -128,11 +128,21 @@ jobs:
             -o "$RUNNER_TEMP/make_gallery_fixture"
           "$RUNNER_TEMP/make_gallery_fixture" mii-ds.sav
           test "$(stat -c %s mii-ds.sav)" -eq 65536
+          python3 tools/inspect_synthetic_save.py mii-ds.sav
       - name: Boot original-resource ROM under melonDS 1.1 and sample the dual-screen output
         id: melon_boot
         continue-on-error: true
         shell: bash
         run: bash tools/run_melonds_headless.sh
+      - name: Diagnose synthetic cartridge save after emulator test
+        if: always()
+        shell: bash
+        run: |
+          if [ -f mii-ds.sav ]; then
+            python3 tools/inspect_synthetic_save.py mii-ds.sav || true
+          fi
+          find "$PWD" "$RUNNER_TEMP/melonds-home" -maxdepth 4 -type f -name '*.sav' \
+            -printf '%f %s bytes\n' 2>/dev/null | sort -u || true
       - name: Encrypt completed ROM and diagnostic frame captures for owner-only retrieval
         if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
         shell: bash
