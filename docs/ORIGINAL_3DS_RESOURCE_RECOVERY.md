@@ -324,3 +324,47 @@ python3 tools/extract_confirm_dialog_clan.py /private/Dialog/anim
 python3 tests/test_confirm_motion.py
 python3 tests/test_confirm_motion_wiring.py
 ```
+
+
+## Milestone 72: original two-button confirmation exits and safe transactions
+
+The privately extracted source from the supplied Mii Maker 3DS RomFS contains:
+- `DialogBase02_DialogOut.bclan`, SHA-256
+  `0f30409d9787168465e712ad125b89973e5a8d8b2bdaf5c4684f15d1d275f503`.
+- `DialogBase02_DialogOutUp.bclan`, SHA-256
+  `69a4081d4b0fb39e7796924768fd5e2dad2b5a292afa7ab1e895a797620bb325`.
+
+Both are byte-for-byte identical to their respective `DialogBase00`
+source clips. The generated, publicly safe Q16 source keys already in
+`source/clan_dialog_generated.h` therefore apply without reinterpreting
+the private BCLAN data: `DialogOut` moves the pane from 0 to -240 source
+pixels and `DialogOutUp` from 0 to +240 by source frame 17.
+
+A confirmation selection is now queued instead of immediately destroying
+its dialog. The original entry finishes before the selected original
+exit clip begins, with no discontinuity if physical A/B is pressed early.
+The main input loop rejects additional interactions during closing;
+the edit/copy/delete/discard transaction is applied **once the exit is
+finished**, so no held button or touch can accidentally act on the
+next screen. The existing underlay/compositor reveals the cached original
+gallery behind the outgoing pane; the next real screen is then repainted.
+If UI initialization fails, the old immediate confirmation path still
+works instead of hanging a transaction.
+
+This milestone does not embed or publish original Nintendo resource
+bytes. Current `nitro:/ui/confirm.rgb555` artwork is retained; original
+dialog material layering, press-state animation, audio and final
+hardware frame timing remain incomplete. Two DS VBlanks per 3DS frame
+is still a provisional timing assumption.
+
+Synthetic, original-resource-free host regressions:
+
+```sh
+python3 tests/test_confirm_exit_motion.py
+python3 tests/test_confirm_exit_wiring.py
+python3 tests/test_confirm_motion.py
+python3 tests/test_confirm_motion_wiring.py
+```
+
+Actual hardware/DSi camera and a fresh melonDS ROM screenshot have not
+been verified by this source-only milestone.

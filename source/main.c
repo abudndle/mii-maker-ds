@@ -62,6 +62,7 @@ int main(void)
     int gender_return_screen=MDS_SCREEN_HOME;
     int saved_selected=-1,qr_return_screen=MDS_SCREEN_HOME;
     int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
+    int confirm_exit_response=-1;
     unsigned page=0,drawn_page=99;
     MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
     int gallery_drag_arrow_latch=0;
@@ -90,10 +91,23 @@ int main(void)
             }
         }else if(editor.pending){
             int response=-1;
-            if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
-            else if((down&KEY_TOUCH)&&mds_ui_confirm_touch_ready(animation_vblanks)){
-                touchPosition t;t=input.touch;
-                response=mds_ui_confirm_touch(t.px,t.py);
+            if(confirm_exit_response>=0){
+                /* Ignore all other input while the original exit clip plays;
+                 * keep the pending transaction alive until the dialog leaves. */
+                if(mds_ui_confirm_exit_done(animation_vblanks)){
+                    response=confirm_exit_response;
+                    confirm_exit_response=-1;
+                }
+            }else{
+                if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
+                else if((down&KEY_TOUCH)&&mds_ui_confirm_touch_ready(animation_vblanks)){
+                    touchPosition t;t=input.touch;
+                    response=mds_ui_confirm_touch(t.px,t.py);
+                }
+                if(response>=0&&ui_ready&&mds_ui_confirm_request_exit(0)){
+                    confirm_exit_response=response;
+                    response=-1; /* apply transaction only after DialogOut */
+                }
             }
             if(response>=0){
                 int copy_prompt=editor.pending==MDS_EDIT_COPY_RECEIVED;
@@ -107,6 +121,8 @@ int main(void)
                 }else if(response&&confirmed&&pending_editor_return)
                     screen=editor_return_screen;
                 pending_editor_return=0;
+                mds_ui_confirm_reset();
+                drawn_screen=-1; /* repaint the real post-dialog UI */
             }
         }else if(screen==MDS_SCREEN_HOME){
             int previous_focus=focus;

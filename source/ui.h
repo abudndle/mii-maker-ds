@@ -52,6 +52,9 @@ void mds_ui_confirm(const char *);
 /* 3DS DialogBase02 original 21-frame W_Dialog entrance; input remains
  * anchored to its static original CLYT positions while moving visually. */
 void mds_ui_confirm_reset(void);
+/* Source DialogBase02_DialogOut or DialogOutUp, input locked on exit. */
+int mds_ui_confirm_request_exit(int up);
+int mds_ui_confirm_exit_done(uint32_t now);
 int mds_ui_confirm_touch_ready(uint32_t now);
 int mds_ui_confirm_animation_tick(uint32_t now);
 int mds_ui_confirm_touch(int,int);

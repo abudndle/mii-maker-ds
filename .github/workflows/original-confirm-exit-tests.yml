@@ -1,0 +1,36 @@
+name: Original 3DS confirmation exit (synthetic assets only)
+on:
+  push:
+    paths:
+      - 'source/confirm_motion.*'
+      - 'source/clan_dialog.*'
+      - 'source/clan_curve.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_exit*.py'
+      - '.github/workflows/original-confirm-exit-tests.yml'
+  pull_request:
+    paths:
+      - 'source/confirm_motion.*'
+      - 'source/clan_dialog.*'
+      - 'source/clan_curve.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_exit*.py'
+      - '.github/workflows/original-confirm-exit-tests.yml'
+jobs:
+  confirm-exit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: C host regression for exact source motion and cached original screen
+        run: python3 tests/test_confirm_exit_motion.py
+      - name: Source integration and input-transaction safety
+        run: python3 tests/test_confirm_exit_wiring.py
+      - name: Retain original entrance motion regression
+        run: python3 tests/test_confirm_motion.py
+      - name: Retain original entrance wiring regression
+        run: python3 tests/test_confirm_motion_wiring.py

@@ -1266,6 +1266,14 @@ void mds_ui_confirm_reset(void)
 {
     mds_confirm_motion_reset(&confirm_motion);
 }
+int mds_ui_confirm_request_exit(int up)
+{
+    return mds_confirm_motion_request_exit(&confirm_motion,up);
+}
+int mds_ui_confirm_exit_done(uint32_t now)
+{
+    return mds_confirm_motion_exit_done(&confirm_motion,now);
+}
 int mds_ui_confirm_touch_ready(uint32_t now)
 {
     return mds_confirm_motion_ready(&confirm_motion,now);
