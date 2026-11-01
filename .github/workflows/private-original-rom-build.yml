@@ -118,7 +118,7 @@ jobs:
           PY
       - name: Install isolated emulator display packages
         run: |
-          sudo apt-get install -y --no-install-recommends xvfb xauth xdotool imagemagick unzip libgl1 libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0
+          sudo apt-get install -y --no-install-recommends xvfb xauth xdotool imagemagick unzip libgl1 libegl1 libglx0 libopengl0 libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0
       - name: Boot original-resource ROM under melonDS 1.1 and sample the dual-screen output
         shell: bash
         run: bash tools/run_melonds_headless.sh
