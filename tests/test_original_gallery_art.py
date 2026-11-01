@@ -41,6 +41,16 @@ int main(int argc,char **argv)
         assert(canvas[169*256+40]==0x8222);
         assert(canvas[169*256+98]==0x8333);
         assert(canvas[169*256+181]==0x8444);
+        /* Original CLVC alpha must blend RGB555, not replace it. */
+        canvas[175*256+14]=0x8000;
+        assert(mds_original_gallery_action_icon_alpha(canvas,256,192,
+                14,175,20,10,1,0,128));
+        assert(canvas[175*256+14]==0x8089);
+        assert(mds_original_gallery_action_icon_alpha(canvas,256,192,
+                14,175,20,10,1,0,0));
+        assert(canvas[175*256+14]==0x8089);
+        assert(!mds_original_gallery_action_icon_alpha(canvas,256,192,
+                14,175,20,10,9,0,255));
         assert(canvas[2*256+9]==0x8033); /* selected-tab source pixel */
         assert(canvas[49*256+21]==0x8022); /* box border overlays fill */
         assert(canvas[49*256+22]==0x8022);

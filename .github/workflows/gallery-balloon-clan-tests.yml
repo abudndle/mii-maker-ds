@@ -1,0 +1,42 @@
+name: Original balloon CLAN playback (synthetic assets only)
+on:
+  pull_request:
+    paths:
+      - 'source/gallery_balloon_clan.*'
+      - 'source/ui.c'
+      - 'source/original_gallery_art.*'
+      - 'tests/gallery_balloon_clan.c'
+      - 'tests/test_gallery_balloon_wiring.py'
+      - 'tests/test_original_gallery_art.py'
+      - 'tests/test_gallery_action_wiring.py'
+      - '.github/workflows/gallery-balloon-clan-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/gallery_balloon_clan.*'
+      - 'source/ui.c'
+      - 'source/original_gallery_art.*'
+      - 'tests/gallery_balloon_clan.c'
+      - 'tests/test_gallery_balloon_wiring.py'
+      - 'tests/test_original_gallery_art.py'
+      - 'tests/test_gallery_action_wiring.py'
+      - '.github/workflows/gallery-balloon-clan-tests.yml'
+permissions:
+  contents: read
+jobs:
+  balloon-clan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run source CLAN timing regression
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isource \
+            tests/gallery_balloon_clan.c source/gallery_balloon_clan.c \
+            source/clan_curve.c -o /tmp/gallery-balloon-clan
+          /tmp/gallery-balloon-clan
+      - name: Verify original icon alpha and stable gallery controls
+        run: |
+          python3 tests/test_original_gallery_art.py
+          python3 tests/test_gallery_balloon_wiring.py
+          python3 tests/test_gallery_action_wiring.py
+          python3 tests/test_gallery_clan_wiring.py
