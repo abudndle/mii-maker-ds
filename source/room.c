@@ -1,0 +1,55 @@
+#include "room.h"
+#include <stddef.h>
+#include <string.h>
+unsigned mds_room_start(unsigned selected)
+{
+ return selected<MDS_SLOTS?(selected/MDS_ROOM_SLOTS)*MDS_ROOM_SLOTS:0;
+}
+void mds_room_select(MdsRoomCache *cache,unsigned selected)
+{
+ if(!cache||selected>=MDS_SLOTS)return;
+ unsigned start=mds_room_start(selected);
+ if(cache->start!=start){
+  cache->start=start;
+  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++)cache->actor[i].valid=0;
+ }
+}
+int mds_room_matches(const MdsRoomCache *cache,unsigned selected,unsigned local,const MdsAvatar *a)
+{
+ return cache&&a&&selected<MDS_SLOTS&&local<MDS_ROOM_SLOTS&&
+   cache->start==mds_room_start(selected)&&cache->actor[local].valid&&
+   memcmp(cache->actor[local].appearance,a->value,MDS_FIELDS)==0;
+}
+int mds_room_capture(MdsRoomCache *cache,unsigned selected,unsigned local,const MdsAvatar *a,const uint16_t *rendered)
+{
+ if(!cache||!a||!rendered||local>=MDS_ROOM_SLOTS||
+    selected>=MDS_SLOTS||cache->start!=mds_room_start(selected))return 0;
+ MdsRoomActor *actor=&cache->actor[local];
+ actor->valid=0;
+ for(unsigned y=0;y<MDS_ROOM_H;y++)
+  for(unsigned x=0;x<MDS_ROOM_W;x++)
+   actor->pixels[y*MDS_ROOM_W+x]=rendered[
+       (y*MDS_ROOM_SOURCE/MDS_ROOM_H)*MDS_ROOM_SOURCE+
+       (x*MDS_ROOM_SOURCE/MDS_ROOM_W)];
+ memcpy(actor->appearance,a->value,MDS_FIELDS);
+ actor->valid=1;
+ return 1;
+}
+int mds_room_blit(const MdsRoomCache *cache,unsigned selected,unsigned local,uint16_t *dst,unsigned width,unsigned height,int x,int y)
+{
+ if(!dst||!width||!height||!cache||selected>=MDS_SLOTS||
+    local>=MDS_ROOM_SLOTS||cache->start!=mds_room_start(selected)||
+    !cache->actor[local].valid)return 0;
+ const MdsRoomActor *a=&cache->actor[local];
+ for(unsigned j=0;j<MDS_ROOM_H;j++){
+  int dy=y+(int)j;
+  if(dy<0||(unsigned)dy>=height)continue;
+  for(unsigned i=0;i<MDS_ROOM_W;i++){
+   int dx=x+(int)i;
+   if(dx<0||(unsigned)dx>=width)continue;
+   uint16_t pixel=a->pixels[j*MDS_ROOM_W+i];
+   if(pixel&0x8000u)dst[(size_t)dy*width+(unsigned)dx]=pixel;
+  }
+ }
+ return 1;
+}
