@@ -126,10 +126,20 @@ static void load_animations(void)
   fclose(f);
  }
 }
+/* A room actor preview is a rendered pose, not only an appearance snapshot.
+ * Changing the selected source motion must refresh each independently cached Mii. */
+static void gallery_invalidate_motion_previews(void)
+{
+ for(unsigned i=0;i<MDS_ROOM_SLOTS;i++){
+  gallery_room.actor[i].valid=0;
+  gallery_room_attempts[i]=0;
+ }
+ gallery_retry_pending=1;
+}
 void mds_ui_motion_scene(int gallery)
 {
  unsigned scene=gallery!=0;
- if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;gallery_selected_clip=-1;animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;}
+ if(scene!=motion_scene){motion_scene=scene;motion_started=animation_clock;gallery_selected_clip=-1;animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;gallery_invalidate_motion_previews();}
 }
 int mds_ui_motion_step(int direction)
 {
@@ -138,6 +148,7 @@ int mds_ui_motion_step(int direction)
  if(next<0||next==gallery_selected_clip)return 0;
  gallery_selected_clip=next;motion_started=animation_clock;
  animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;
+ gallery_invalidate_motion_previews();
  return 1;
 }
 int mds_ui_motion_auto(void)
@@ -145,6 +156,7 @@ int mds_ui_motion_auto(void)
  if(!motion_scene||gallery_selected_clip<0)return 0;
  gallery_selected_clip=-1;motion_started=animation_clock;
  animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;
+ gallery_invalidate_motion_previews();
  return 1;
 }
 int mds_ui_animation_tick(uint32_t ticks)
