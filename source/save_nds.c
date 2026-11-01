@@ -18,18 +18,24 @@ int mds_cart_open(MdsGallery *g)
        gamecard; use the bootloader header copy for the launched application. */
     if(memcmp(__NDSHeader->gameCode,"MDSD",4))return 0;
     sysSetCardOwner(BUS_OWNER_ARM9);
-    if(!mds_chip_present()||!mds_chip_read(0,image,sizeof image))return 0;
-    if(!mds_gallery_load(g,image,sizeof image)){
-        if(mds_compact_load(g,image,MDS_COMPACT_SIZE)){compact=1;ready=1;return 1;}
-        int blank_ff=1,blank_00=1;
-        for(unsigned i=0;i<sizeof image;i++){
-            if(image[i]!=255)blank_ff=0;
-            if(image[i]!=0)blank_00=0;
-        }
-        if(!blank_ff&&!blank_00)return 0;
-        mds_gallery_new(g);compact=1;
+    /* An existing valid cartridge save is readable without ever issuing
+       WREN. melonDS and some flashcarts may not report WEL immediately,
+       which previously hid all saved Miis before any snapshot read. */
+    if(!mds_chip_read(0,image,sizeof image))return 0;
+    if(mds_gallery_load(g,image,sizeof image)){ready=1;return 1;}
+    if(mds_compact_load(g,image,MDS_COMPACT_SIZE)){
+        compact=1;ready=1;return 1;
     }
-    ready=1;
+    /* With no valid snapshot, verify a writable EEPROM exists BEFORE
+       creating a new gallery. Do not reinitialize unknown save contents. */
+    if(!mds_chip_present())return 0;
+    int blank_ff=1,blank_00=1;
+    for(unsigned i=0;i<sizeof image;i++){
+        if(image[i]!=255)blank_ff=0;
+        if(image[i]!=0)blank_00=0;
+    }
+    if(!blank_ff&&!blank_00)return 0;
+    mds_gallery_new(g);compact=1;ready=1;
     return 1;
 }
 int mds_cart_flush(MdsGallery *g)
