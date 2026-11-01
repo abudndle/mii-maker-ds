@@ -112,6 +112,23 @@ int main(void)
  /* Large unsigned cursors must wrap deterministically without overflow. */
  assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX)==7);
  assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX-1u)==7);
+ /* Walking stays inside a small bounded area and resets on demand. */
+ MdsRoomWalk walks[MDS_ROOM_SLOTS]={0};
+ for(unsigned tick=0;tick<768;tick++){
+  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
+   mds_room_walk_tick(&walks[slot],slot,tick,0);
+   assert(walks[slot].dx>=-8&&walks[slot].dx<=8);
+   assert(walks[slot].dy>=-8&&walks[slot].dy<=8);
+  }
+ }
+ assert(walks[0].phase!=walks[1].phase);
+ for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
+  mds_room_walk_tick(&walks[slot],slot,768,1);
+  assert(walks[slot].dx==0&&walks[slot].dy==0&&walks[slot].phase==0);
+ }
+ mds_room_walk_tick(NULL,0,0,0);
+ mds_room_walk_tick(&walks[0],MDS_ROOM_SLOTS,0,0);
+ assert(walks[0].dx==0&&walks[0].dy==0);
  puts("PASS: source-derived ten-Mii room positions, independent cached model images, invalidation and clipping");
  return 0;
 }
