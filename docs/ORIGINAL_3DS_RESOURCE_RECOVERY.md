@@ -368,3 +368,32 @@ python3 tests/test_confirm_motion_wiring.py
 
 Actual hardware/DSi camera and a fresh melonDS ROM screenshot have not
 been verified by this source-only milestone.
+
+## Milestone 73: faster private original-resource build loop
+
+`tools/build_private.py` and `tools/build_private_docker.py` now
+reuse a fully validated private resource ZIP **only if** the exact ZIP content
+and all `source/`, `tools/`, and `tests/` validator inputs are unchanged.
+A 20 MB archive and the same 41 original UI CLAN tables therefore need
+only a quick content-hash check on the next local build rather than a full
+motion and runtime-asset revalidation after unrelated edits.
+
+The first run still performs ALL original ZIP CRC, motion catalogs, 41
+source-keyframe and runtime UI validations. The cache stamp is stored
+under ignored `build/private-validation-cache.json`, contains SHA-256
+digests only, and **never** uploads original Nintendo artwork, scripts
+or private files to GitHub. A missing, damaged or stale cache forces
+complete revalidation. Any changed source or validator invalidates it;
+failed validators never write a successful stamp.
+
+Force revalidation at any time with `--no-cache`:
+
+```sh
+python3 tools/build_private.py MiiMaker_DS_Resources.zip --validate-only
+python3 tools/build_private.py MiiMaker_DS_Resources.zip --no-cache --validate-only
+python3 tools/build_private_docker.py MiiMaker_DS_Resources.zip --jobs 4
+```
+
+This accelerates developer iteration without skipping the actual ROM
+compilation, embedded-asset audits or hardware/emulator checks. The
+cache cannot be treated as proof of finished gameplay or model fidelity.
