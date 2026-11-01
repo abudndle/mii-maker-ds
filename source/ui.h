@@ -49,6 +49,11 @@ void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
 void mds_ui_accessories(void);
 void mds_ui_confirm(const char *);
+/* 3DS DialogBase02 original 21-frame W_Dialog entrance; input remains
+ * anchored to its static original CLYT positions while moving visually. */
+void mds_ui_confirm_reset(void);
+int mds_ui_confirm_touch_ready(uint32_t now);
+int mds_ui_confirm_animation_tick(uint32_t now);
 int mds_ui_confirm_touch(int,int);
 void mds_ui_editor_selection_update(uint32_t now,const MdsAvatar *,int field,int editing);
 int mds_ui_editor_selection_tick(uint32_t now);
