@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test in menu gallery_exit gallery_action_target gallery_action_priority; do
+          for test in menu gallery_exit gallery_action_target gallery_action_priority gallery_action_release_edge; do
             cc -std=c11 -Wall -Wextra -Werror -Isource \
               "tests/${test}.c" source/menu.c -o "/tmp/mds-${test}"
             "/tmp/mds-${test}"

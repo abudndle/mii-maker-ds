@@ -255,6 +255,10 @@ int main(void)
                 (down&KEY_A)!=0,(input.held&KEY_A)!=0,
                 (down&KEY_SELECT)!=0,(input.held&KEY_SELECT)!=0,
                 (input.up&KEY_SELECT)!=0);
+            /* SELECT release and stylus release may arrive in one queued
+             * VBlank. Do not export during an ongoing touch transaction. */
+            gallery_action=mds_gallery_controls_suppress_export_on_touch(
+                gallery_action,((input.held|input.up)&KEY_TOUCH)!=0);
             /* Room slots are selected and dragged with the touchscreen;
              * the D-pad must not move a box-selection cursor. */
             if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
@@ -292,9 +296,13 @@ int main(void)
             }
             /* Physical commands cancel an armed touch action so the same
              * gesture cannot copy, edit or favorite a Mii twice. */
-            if(down&(KEY_A|KEY_B|KEY_X|KEY_Y|KEY_SELECT|KEY_L|KEY_R|
-                     KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START))
-                mds_gallery_action_press_reset(&gallery_action_press);
+            const int physical_gallery_keys=
+                KEY_A|KEY_B|KEY_X|KEY_Y|KEY_SELECT|KEY_L|KEY_R|
+                KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START;
+            mds_gallery_action_press_cancel_for_physical(
+                &gallery_action_press,
+                (down&physical_gallery_keys)!=0,
+                (input.up&physical_gallery_keys)!=0);
             if((down&KEY_TOUCH)&&
                gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
