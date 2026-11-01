@@ -952,6 +952,9 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         if(g->used[gallery_drag_slot]&&mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
             mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23);
     }
+    text_at(bottom,103,10,"ROOM");
+    text_at(bottom,4,10,"<");
+    text_at(bottom,244,10,">");
     text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
 }
 
