@@ -23,7 +23,9 @@ assert "if(!mds_editor_locked(&gallery.miis[editor.slot]))" in gallery
 assert "MDS_EDIT_COPY_RECEIVED" in gallery
 assert "if(e->pending||mds_editor_dirty(e))" in editor
 assert "e->draft=e->baseline;" in editor
-assert 'text_at(bottom,12,174,"Favorite");' in ui
-assert 'text_at(bottom,109,174,"Copy");' in ui
-assert 'text_at(bottom,193,174,"Edit");' in ui
+assert "mds_original_gallery_action_icon(bottom,256,192,14,169,20,20,1," in ui
+assert "mds_original_gallery_action_icon(bottom,256,192,98,169,20,20,2,0);" in ui
+assert "mds_original_gallery_action_icon(bottom,256,192,181,169,20,20,3,0);" in ui
+assert 'text_at(bottom,124,174,"Copy");' in ui
+assert 'text_at(bottom,206,174,g->used[selected]?"Edit":"Create");' in ui
 print("PASS: touch Favorite/Copy/Edit reuse existing permission and save flows")
