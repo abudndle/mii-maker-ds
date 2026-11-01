@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <limits.h>
 static MdsThumbnailCache cache;
 static uint16_t head[MDS_THUMBNAIL_SOURCE_SIDE*MDS_THUMBNAIL_SOURCE_SIDE];
 static uint16_t canvas[MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT];
@@ -53,6 +54,10 @@ int main(void)
  assert(mds_thumbnail_blit(&cache,3,4,canvas,MDS_THUMBNAIL_WIDTH,MDS_THUMBNAIL_HEIGHT,INT_MAX,INT_MAX));
  assert(mds_thumbnail_blit(&cache,3,4,canvas,MDS_THUMBNAIL_WIDTH,MDS_THUMBNAIL_HEIGHT,INT_MIN,INT_MIN));
  for(unsigned i=0;i<MDS_THUMBNAIL_WIDTH*MDS_THUMBNAIL_HEIGHT;i++)assert(canvas[i]==0x1234);
+ mds_thumbnail_page(&cache,10);
+ assert(mds_thumbnail_matches(&cache,3,4,&a)); /* Invalid page cannot discard valid cached portraits. */
+ mds_thumbnail_page(&cache,UINT_MAX);
+ assert(mds_thumbnail_matches(&cache,3,4,&a));
  mds_thumbnail_page(&cache,4);
  assert(!mds_thumbnail_matches(&cache,4,4,&a)); /* New page is always invalidated. */
  assert(!mds_thumbnail_matches(&cache,3,4,&a));
