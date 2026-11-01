@@ -59,6 +59,7 @@ static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
 static MdsRoomCache gallery_room;
 static unsigned gallery_room_attempts[MDS_ROOM_SLOTS];
+static unsigned gallery_motion_generation;
 static uint8_t gallery_room_occupied[MDS_ROOM_SLOTS];
 static unsigned gallery_room_last_start=UINT32_MAX;
 static int gallery_retry_pending;
@@ -135,6 +136,12 @@ static void gallery_advance_actor_pose(void)
 {
  static unsigned next_actor;
  static unsigned last_room_start=UINT32_MAX;
+ static unsigned last_generation=UINT32_MAX;
+ if(last_generation!=gallery_motion_generation){
+  last_generation=gallery_motion_generation;
+  last_room_start=UINT32_MAX;
+  next_actor=0;
+ }
  if(!motion_scene){
   /* Leaving the gallery ends this animation session. A later visit must
    * restart the actor cycle even if it opens the same saved-Mii room. */
@@ -176,6 +183,8 @@ static void gallery_advance_actor_pose(void)
 }
 static void gallery_invalidate_motion_previews(void)
 {
+ /* Clip and scene changes begin a new pose cycle for all visible Miis. */
+ gallery_motion_generation++;
  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++){
   gallery_room.actor[i].valid=0;
   gallery_room_attempts[i]=0;
