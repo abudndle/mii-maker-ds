@@ -26,15 +26,20 @@ Windows examples use a local file such as
 spaces. The Python script handles Docker mount arguments without invoking a
 shell. `--dry-run` previews those arguments, but it **does not validate or build**.
 
-- The source directory is mounted at `/work`; the private ZIP is mounted
-  **read-only** at `/private/resources.zip`. The container uses `--network none`,
-  `--cap-drop ALL` and `no-new-privileges`; nothing uploads assets to GitHub.
+- The source directory is mounted at `/work` for the compiler. Python
+  performs all original-resource validation, restoration and ROM verification
+  on the host, since the official slim image does not include Python.
+  The private ZIP is **never mounted inside Docker**. The compiler container
+  uses `--network none`, `--cap-drop ALL` and `no-new-privileges`;
+  nothing uploads assets to GitHub.
 - The project performs ZIP validation, original 53-clip motion checks, the
   327-clip GUI CLAN check (41 committed tracks), and all UI-art coverage checks
   **before extracting originals or compiling**.
-- The private build then restores resources locally, compiles using BlocksDS,
-  fixes DS/DSi ROM regions, and validates embedded assets, body models,
-  ARM9/ARM7 sections and original motion clips.
+- The private build restores resources on the host, compiles ARM9/ARM7
+  with BlocksDS inside Docker, then fixes DS/DSi ROM regions and validates
+  embedded assets, body models, executable sections and original motion clips
+  on the host. If a host C compiler is unavailable, the optional native
+  rendering test is reported as skipped (ROM section/resource checks still run).
 - A successful real build writes `mii-ds.nds` into your local checkout.
   Do **not** publish that file: it contains privately supplied Nintendo data.
 - Runtime fidelity and full feature parity still require testing in melonDS
