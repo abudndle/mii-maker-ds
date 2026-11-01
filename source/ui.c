@@ -128,6 +128,17 @@ static void load_animations(void)
 }
 /* A room actor preview is a rendered pose, not only an appearance snapshot.
  * Changing the selected source motion must refresh each independently cached Mii. */
+/* Refresh one actor per animation step: DS software rasterization can only
+ * afford one full model render per gallery repaint. Keep other actors visible. */
+static void gallery_advance_actor_pose(void)
+{
+ static unsigned next_actor;
+ if(!motion_scene)return;
+ unsigned local=next_actor++%MDS_ROOM_SLOTS;
+ gallery_room.actor[local].valid=0;
+ gallery_room_attempts[local]=0;
+ gallery_retry_pending=1;
+}
 static void gallery_invalidate_motion_previews(void)
 {
  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++){
@@ -193,7 +204,9 @@ int mds_ui_animation_tick(uint32_t ticks)
    if(mds_animation_pose(&animations[1],ticks,&sampled))female_key=sampled;
   }
   int changed=key!=animation_index||female_key!=animation_female_index;
-  animation_index=key;animation_female_index=female_key;return changed;
+  animation_index=key;animation_female_index=female_key;
+  if(changed)gallery_advance_actor_pose();
+  return changed;
  }
  /* Legacy ANI1 fallback can use different pose timing on each gender.
   * Invalidate the preview when either sampled timeline advances. */
@@ -202,6 +215,7 @@ int mds_ui_animation_tick(uint32_t ticks)
  if(mds_animation_pose(&animations[1],ticks,&frame))female_index=frame;
  int changed=male_index!=animation_index||female_index!=animation_female_index;
  animation_index=male_index;animation_female_index=female_index;
+ if(changed)gallery_advance_actor_pose();
  return changed;
 }
 static void load_head_resource(void)
