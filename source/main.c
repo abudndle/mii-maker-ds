@@ -303,6 +303,10 @@ int main(void)
                 &gallery_action_press,
                 (down&physical_gallery_keys)!=0,
                 (input.up&physical_gallery_keys)!=0);
+            /* A button held before stylus-down has no new key edge.
+             * Never dispatch a balloon tap while another control is held. */
+            mds_gallery_action_press_cancel_for_held(
+                &gallery_action_press,(input.held&physical_gallery_keys)!=0);
             if((down&KEY_TOUCH)&&
                gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);

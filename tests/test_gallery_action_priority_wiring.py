@@ -17,6 +17,10 @@ assert "gallery_action,((input.held|input.up)&KEY_TOUCH)!=0);" in gallery
 assert "mds_gallery_action_press_cancel_for_physical(" in gallery
 assert "(down&physical_gallery_keys)!=0," in gallery
 assert "(input.up&physical_gallery_keys)!=0);" in gallery
+assert "mds_gallery_action_press_cancel_for_held(" in gallery
+assert "&gallery_action_press,(input.held&physical_gallery_keys)!=0);" in gallery
+assert gallery.index("mds_gallery_action_press_cancel_for_held(") < gallery.index(
+    "if(input.up&KEY_TOUCH)")
 assert gallery.index("mds_gallery_action_press_cancel_for_physical(") < gallery.index(
     "if(input.up&KEY_TOUCH)")
 print("PASS: physical down/up cancel touch, SELECT-up cannot export during stylus gesture")
