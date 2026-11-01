@@ -109,6 +109,9 @@ int main(void)
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==7);
  /* The cursor can wrap even if it is larger than the room size. */
  assert(mds_room_next_refresh(&cache,occupied,attempts,1007)==7);
+ /* Large unsigned cursors must wrap deterministically without overflow. */
+ assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX)==7);
+ assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX-1u)==7);
  puts("PASS: source-derived ten-Mii room positions, independent cached model images, invalidation and clipping");
  return 0;
 }
