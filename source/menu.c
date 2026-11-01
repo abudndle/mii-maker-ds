@@ -12,11 +12,18 @@ int mds_gallery_touch(int x,int y,unsigned page)
     for(unsigned i=0;i<sizeof gallery_hits/sizeof gallery_hits[0];i++)if(inside(&gallery_hits[i],x,y))return (int)(page*10)+gallery_hits[i].action;
     return -1;
 }
+int mds_gallery_room_touch(int x,int y)
+{
+    for(unsigned i=0;i<sizeof gallery_room_hits/sizeof gallery_room_hits[0];i++)
+        if(inside(&gallery_room_hits[i],x,y))return (int)i;
+    return -1;
+}
 int mds_gallery_room_arrow(int x,int y,unsigned page)
 {
-    if(page>=10||y<44||y>=144)return 0;
-    if(x>=0&&x<20)return page>0?-1:0;
-    if(x>=236&&x<256)return page<9?1:0;
+    /* B_ArrowL/B_ArrowR from EDITSelectBase.bclyt, scaled to DS. */
+    if(page>=10||y<59||y>=131)return 0;
+    if(x>=0&&x<19)return page>0?-1:0;
+    if(x>=237&&x<256)return page<9?1:0;
     return 0;
 }
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
