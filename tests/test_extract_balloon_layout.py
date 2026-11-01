@@ -64,6 +64,34 @@ favorite = next(p for p in base["panes"] if p["name"] == "B_Favorite")
 assert favorite["parent"] == "Root" and favorite["ancestors"] == ["Root"]
 assert favorite["ds_bounds"] == [168.0, 72.0, 16.0, 16.0], favorite
 assert favorite["visible"] is True and favorite["alpha"] == 255
+# CLYT traversal determines the painter's order. Group and boundary panes
+# occupy the hierarchy but must not consume a drawable layer.
+assert [p["pane_order"] for p in base["panes"]] == list(range(6))
+assert [p["paint_order"] for p in base["panes"]] == [None, None, 0, 1, 2, 3]
+assert [p["depth"] for p in base["panes"]] == [0, 1, 1, 1, 1, 1]
+# A nested group cannot reorder overlapping source icons. After the nested
+# subtree ends, subsequent siblings must paint over earlier children.
+nested_parts = [
+    section(b"lyt1", b"\0"*4 + struct.pack("<ff", 320, 240)),
+    pane("Root"), section(b"pas1"),
+    pane("B_Favorite", tag=b"bnd1"),
+    pane("Group"), section(b"pas1"),
+    pane("I_Favorite", tag=b"pic1"),
+    section(b"pae1"),
+    pane("I_MyMii", tag=b"pic1"),
+    pane("I_MiiCopy", tag=b"pic1"),
+    pane("I_MiiOpen", tag=b"pic1"),
+    section(b"pae1"),
+]
+nested_content = b"".join(nested_parts)
+nested_header = bytearray(20)
+nested_header[:4] = b"CLYT"
+struct.pack_into("<HHIIH", nested_header, 4, 0xfeff, 20, 0,
+                 20 + len(nested_content), len(nested_parts))
+nested = extract(bytes(nested_header) + nested_content)["panes"]
+assert [p["paint_order"] for p in nested] == [None, None, None, 0, 1, 2, 3]
+assert next(p for p in nested if p["name"] == "I_Favorite")["depth"] == 2
+assert next(p for p in nested if p["name"] == "I_MyMii")["depth"] == 1
 rotated = extract(fixture(parent_rotation=90, parent_scale=2))
 favorite_rot = next(p for p in rotated["panes"] if p["name"] == "B_Favorite")
 assert favorite_rot["ds_bounds"] == [144.0, 32.0, 32.0, 32.0], favorite_rot
@@ -125,4 +153,4 @@ with tempfile.TemporaryDirectory() as temp:
     assert transformed["runtime_anchor_verified"] is False
     assert transformed["external_scene_affine_ds"] == [0, -1, 256, 1, 0, 0]
     assert next(p for p in transformed["panes"] if p["name"] == "B_Favorite")["ds_bounds"] == [168.0, 168.0, 16.0, 16.0]
-print("PASS: synthetic CLYT pane hierarchy, scene affine, nested rotation/scale, visibility, DS bounds and fail-closed parsing")
+print("PASS: synthetic CLYT paint order, pane hierarchy, scene affine, rotation/scale, visibility, DS bounds and fail-closed parsing")

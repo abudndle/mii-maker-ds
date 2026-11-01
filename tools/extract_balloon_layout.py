@@ -102,7 +102,11 @@ def extract(payload, offset=(0, 0), scene_affine=None):
     if any(not math.isfinite(v) or not 1 <= v <= 4096 for v in canvas):
         raise ValueError("invalid source canvas")
     identity = (1., 0., 0., 0., 1., 0.)
+    # CLYT sections are in source traversal order. Preserve pane and drawable
+    # ordering independently: grouping/bounding panes do not paint pixels, but
+    # their children must retain their original relative z-order.
     stack, last, panes = [], None, []
+    paint_order = 0
     for section in sections:
         tag = section[:4]
         if tag == b"pas1":
@@ -139,7 +143,10 @@ def extract(payload, offset=(0, 0), scene_affine=None):
             parent = stack[-1] if stack else None
             matrix = _compose(parent["matrix"] if parent else identity,
                               _matrix(x, y, sx, sy, rotation))
+            drawable = tag in (b"pic1", b"txt1", b"wnd1")
             entry = {"name": name, "kind": tag.decode("ascii"),
+                     "pane_order": len(panes), "depth": len(stack),
+                     "paint_order": paint_order if drawable else None,
                      "parent": parent["name"] if parent else None,
                      "ancestors": parent["ancestors"] + [parent["name"]] if parent else [],
                      "visible": bool(section[8] & 1) and (parent["visible"] if parent else True),
@@ -148,6 +155,8 @@ def extract(payload, offset=(0, 0), scene_affine=None):
                      "origin": origin, "local": [x, y, rotation, sx, sy, w, h],
                      "matrix": list(matrix), "ds_bounds": _rect(matrix, origin, w, h, canvas, offset, scene_affine)}
             panes.append(entry)
+            if drawable:
+                paint_order += 1
             last = entry
     if stack:
         raise ValueError("unclosed CLYT hierarchy")
