@@ -920,7 +920,8 @@ void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
  text_at(bottom,5,154,"A: QR   Y: Copy   X: File import");
 }
 static int gallery_drag_slot=-1;
-void mds_ui_gallery_drag(int slot){gallery_drag_slot=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;}
+static int gallery_drag_x=-1,gallery_drag_y=-1;
+void mds_ui_gallery_drag(int slot,int x,int y){gallery_drag_slot=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;gallery_drag_x=x;gallery_drag_y=y;}
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     if(!ok)return;
@@ -944,9 +945,14 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                 mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
-        if(slot==selected||slot==(unsigned)gallery_drag_slot)outline(&gallery_hits[i]);
+        if(slot==selected)outline(&gallery_hits[i]);
     }
-    text_at(bottom,10,154,gallery_drag_slot>=0?"Release on box or room arrow to move":"Tap box to select; drag to move");
+    if(gallery_drag_slot>=0&&gallery_drag_slot/10==page&&gallery_drag_x>=0&&gallery_drag_y>=0){
+        unsigned local=(unsigned)gallery_drag_slot%10;
+        if(g->used[gallery_drag_slot]&&mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
+            mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23);
+    }
+    text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
 }
 
 static const uint8_t profile_colors[12][3]={{210,30,20},{255,110,25},{255,216,32},{120,210,32},{0,120,48},{10,72,180},{60,170,222},{245,90,125},{115,40,173},{72,56,24},{224,224,224},{24,24,20}};
