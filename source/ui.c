@@ -777,8 +777,16 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     unsigned start=mds_room_start(selected);
     /* Only occupied slots may block animation refresh. Empty slots have no
      * preview to render and must not starve animated characters. */
-    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
-        gallery_room_occupied[local]=(uint8_t)(start+local<MDS_SLOTS&&g->used[start+local]);
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
+        uint8_t occupied=(uint8_t)(start+local<MDS_SLOTS&&g->used[start+local]);
+        /* Removing a Mii must clear its old sprite immediately; reusing that
+         * slot should start a fresh render instead of retaining a stale pose. */
+        if(gallery_room_last_start==start&&gallery_room_occupied[local]!=occupied){
+            gallery_room.actor[local].valid=0;
+            gallery_room_attempts[local]=0;
+        }
+        gallery_room_occupied[local]=occupied;
+    }
     mds_room_select(&gallery_room,selected);
     if(start!=gallery_room_last_start){
         gallery_room_last_start=start;
