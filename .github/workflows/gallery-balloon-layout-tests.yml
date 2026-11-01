@@ -3,13 +3,17 @@ on:
   pull_request:
     paths:
       - 'tools/extract_balloon_layout.py'
+      - 'tools/calibrate_balloon_scene.py'
       - 'tests/test_extract_balloon_layout.py'
+      - 'tests/test_calibrate_balloon_scene.py'
       - '.github/workflows/gallery-balloon-layout-tests.yml'
   push:
     branches: [main]
     paths:
       - 'tools/extract_balloon_layout.py'
+      - 'tools/calibrate_balloon_scene.py'
       - 'tests/test_extract_balloon_layout.py'
+      - 'tests/test_calibrate_balloon_scene.py'
       - '.github/workflows/gallery-balloon-layout-tests.yml'
   workflow_dispatch:
 permissions:
@@ -21,3 +25,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test original CLYT hierarchy extraction without proprietary assets
         run: python3 tests/test_extract_balloon_layout.py
+      - name: Fit and reject synthetic runtime scene anchors
+        run: python3 tests/test_calibrate_balloon_scene.py
