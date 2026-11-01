@@ -26,7 +26,11 @@ checks={
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
     "gallery keeps original artwork without placeholder labels": "text_at(bottom,103,10,\"ROOM\")" not in (root/"source/ui.c").read_text(),
     "tap selects without requiring a drop move": "Tap box to select; drag the Mii" in (root/"source/ui.c").read_text(),
-    "drag renders Mii sprite instead of moving box": "mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23)" in (root/"source/ui.c").read_text() and "if(slot==selected)outline(&gallery_hits[i]);" in (root/"source/ui.c").read_text(),
+    "drag renders separate cached Mii sprite, not a moving box": "gallery_drag_snapshot.pixels" in (root/"source/ui.c").read_text() and
+                                   "if(slot==selected)outline(&gallery_hits[i]);" in (root/"source/ui.c").read_text(),
+    "drag thumbnail persists across rooms": "gallery_drag_snapshot=gallery_thumbnails.slots[local];" in (root/"source/ui.c").read_text(),
+    "room tab touch uses recovered original pane": "mds_gallery_room_touch(input.touch.px,input.touch.py)" in gallery,
+    "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "arrow!=gallery_drag_arrow_latch" in gallery,
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
