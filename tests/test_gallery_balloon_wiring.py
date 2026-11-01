@@ -25,5 +25,11 @@ assert 'if(x>=90&&x<166)return MDS_GALLERY_ACTION_COPY;' in menu
 assert 'if(x>=172)return MDS_GALLERY_ACTION_EDIT;' in menu
 assert 'static const MdsClanKey balloon_alpha[]' in source
 assert 'static const MdsClanKey favorite_scale[]' in source
+assert 'static const MdsClanKey fade_out[]' in source
+assert 'MDS_BALLOON_UNSELECT' in source
+assert 'MDS_BALLOON_UNDECIDE' in source
+assert 'MDS_BALLOON_DECIDE' in source
+assert 'static const MdsClanKey favorite_alpha[]' not in source
+assert 'return style.balloon_alpha>0u;' in source
 assert not list((root/"source").glob("*.bclan"))
 print("PASS: source balloon CLAN playback, alpha blending and stable touch bounds")
