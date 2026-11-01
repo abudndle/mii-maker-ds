@@ -23,6 +23,7 @@ jobs:
       - name: Compile and link ARM9/ARM7 using official BlocksDS container
         run: |
           docker run --rm --network none --cap-drop ALL \
+            --user "$(id -u):$(id -g)" \
             --security-opt no-new-privileges \
             -v "$PWD:/work" -w /work --entrypoint make \
             skylyrac/blocksds:slim-latest SDK_STAGE=1 -j2 mii-ds.nds
