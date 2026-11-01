@@ -43,6 +43,14 @@ checks={
     "stylus movement does not require key-repeat events": "mds_ui_gallery_drag_follow(live_touch_x,live_touch_y)" in main,
     "reject empty source": "slot,slot>=0&&gallery.used[slot]" in gallery and
                            "if(box_action==MDS_GALLERY_BOX_DRAG)" in gallery,
+    "drag blocks physical gallery mutations even on release":
+        "int was_gallery_dragging=gallery_drag.source>=0;" in gallery and
+        "mds_gallery_drag_blocks_actions(" in gallery and
+        "if((down&KEY_X)&&!block_gallery_actions)" in gallery and
+        "if((down&KEY_Y)&&!block_gallery_actions)" in gallery,
+    "drag prevents stale SELECT export and edit chord":
+        "gallery_action=MDS_GALLERY_CONTROL_NONE;" in gallery and
+        "mds_gallery_controls_reset(&gallery_controls);" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "reject invisible destination room before saving":
         "(unsigned)destination/10!=page" in (root/"source/menu.c").read_text(),
