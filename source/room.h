@@ -2,9 +2,9 @@
 #define MDS_ROOM_MODULE_H
 #include "save.h"
 #include <stdint.h>
-#define MDS_ROOM_SLOTS 5u
-#define MDS_ROOM_W 46u
-#define MDS_ROOM_H 84u
+#define MDS_ROOM_SLOTS 10u
+#define MDS_ROOM_W 42u
+#define MDS_ROOM_H 46u
 #define MDS_ROOM_SOURCE 128u
 typedef struct {
  uint8_t appearance[MDS_FIELDS];
@@ -15,8 +15,10 @@ typedef struct {
  unsigned start;
  MdsRoomActor actor[MDS_ROOM_SLOTS];
 } MdsRoomCache;
-/* Five saved Miis occupy one scene; changing selection halves switches room. */
+/* Ten source-layout Mii positions form each 3DS SelectMii room. */
 unsigned mds_room_start(unsigned selected);
+/* Source: Select.arc.files/blyt/SelectMii, 320x240 canvas to DS 256x192. */
+int mds_room_position(unsigned local,int *x,int *y);
 void mds_room_select(MdsRoomCache *,unsigned selected);
 int mds_room_matches(const MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *);
 int mds_room_capture(MdsRoomCache *,unsigned selected,unsigned local,const MdsAvatar *,const uint16_t *rendered);
