@@ -1,0 +1,46 @@
+name: Original 3DS room navigation CLAN (synthetic assets only)
+
+on:
+  push:
+    paths:
+      - 'source/gallery_nav_clan*'
+      - 'source/gallery_clan*'
+      - 'source/original_gallery_art.*'
+      - 'source/main.c'
+      - 'source/menu.c'
+      - 'source/ui.*'
+      - 'tests/test_gallery_nav_clan.py'
+      - 'tests/test_gallery_nav_wiring.py'
+      - 'tests/test_original_gallery_art.py'
+      - 'tools/extract_gallery_nav_clan.py'
+      - '.github/workflows/gallery-navigation-tests.yml'
+  pull_request:
+    paths:
+      - 'source/gallery_nav_clan*'
+      - 'source/gallery_clan*'
+      - 'source/original_gallery_art.*'
+      - 'source/main.c'
+      - 'source/menu.c'
+      - 'source/ui.*'
+      - 'tests/test_gallery_nav_clan.py'
+      - 'tests/test_gallery_nav_wiring.py'
+      - 'tests/test_original_gallery_art.py'
+      - 'tools/extract_gallery_nav_clan.py'
+      - '.github/workflows/gallery-navigation-tests.yml'
+
+jobs:
+  source-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host C original 3DS scroll and confirm keyframes
+        run: python3 tests/test_gallery_nav_clan.py
+      - name: Source wiring and first/last room safety
+        run: python3 tests/test_gallery_nav_wiring.py
+      - name: Synthetic original artwork and CLMC tint
+        run: python3 tests/test_original_gallery_art.py
+      - name: Source metadata extraction syntax
+        run: python3 -m py_compile tools/extract_gallery_nav_clan.py
