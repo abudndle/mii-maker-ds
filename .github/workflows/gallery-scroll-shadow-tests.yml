@@ -1,0 +1,35 @@
+name: Original 3DS gallery scroll shadow (synthetic assets only)
+on:
+  push:
+    paths:
+      - 'source/original_gallery_art.*'
+      - 'source/ui.c'
+      - 'tests/test_original_scroll_shadow.py'
+      - 'tests/test_original_scroll_shadow_wiring.py'
+      - 'docs/ORIGINAL_3DS_RESOURCE_RECOVERY.md'
+      - '.github/workflows/gallery-scroll-shadow-tests.yml'
+  pull_request:
+    paths:
+      - 'source/original_gallery_art.*'
+      - 'source/ui.c'
+      - 'tests/test_original_scroll_shadow.py'
+      - 'tests/test_original_scroll_shadow_wiring.py'
+      - 'docs/ORIGINAL_3DS_RESOURCE_RECOVERY.md'
+      - '.github/workflows/gallery-scroll-shadow-tests.yml'
+
+jobs:
+  original-scroll-shadow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host compile and test original scroll-shadow source mask
+        run: python3 tests/test_original_scroll_shadow.py
+      - name: Check source CLVC keyframe and screen wiring
+        run: python3 tests/test_original_scroll_shadow_wiring.py
+      - name: Preserve original UI gallery host regressions
+        run: python3 tests/test_original_gallery_art.py
+      - name: Verify original source navigation CLAN playback
+        run: python3 tests/test_gallery_nav_clan.py
