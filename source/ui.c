@@ -801,6 +801,13 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         int x=0,y=0;
         if(!mds_room_position(local,&x,&y))continue;
         if(slot>=MDS_SLOTS||!g->used[slot])continue;
+        /* An edited Mii can retain the same occupied slot. Its old cached
+         * appearance must not consume the retry budget for the new face. */
+        if(gallery_room.actor[local].valid&&
+           !mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
+            gallery_room.actor[local].valid=0;
+            gallery_room_attempts[local]=0;
+        }
         if(!mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
             unfinished=1;
             if(!rendered_one_actor&&gallery_room_attempts[local]<3u){
