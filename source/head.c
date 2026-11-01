@@ -204,7 +204,7 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
    mds_view_rotate(&p[0],&p[2],view_angle);
    mds_view_rotate(&n[0],&n[2],view_angle);
   }
-  verts[i]=(Vertex){screen_coordinate((int64_t)64*16777216+(int64_t)p[0]*projection,16777216),screen_coordinate(offset_y-(int64_t)p[1]*projection,16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(n[2]*20+n[1]*10)/256};
+  verts[i]=(Vertex){screen_coordinate((int64_t)64*16777216+(int64_t)p[0]*projection,16777216),screen_coordinate(offset_y-(int64_t)p[1]*projection,16777216),p[2]/2,uv?signed16(uv):0,uv?signed16(uv+2):0,225+(int)(((int64_t)n[2]*20+(int64_t)n[1]*10)/256)};
  }
  unsigned count=g.indices?g.index_count:g.count;
  for(unsigned i=0;i+2<count;i+=3){if(!(i%48)&&cancelled())return 0;unsigned ia=g.indices?g.indices[i]:i,ib=g.indices?g.indices[i+1]:i+1,ic=g.indices?g.indices[i+2]:i+2;triangle(verts[ia],verts[ib],verts[ic],color,masked,tp,out);}
