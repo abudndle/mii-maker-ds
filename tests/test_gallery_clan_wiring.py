@@ -11,9 +11,9 @@ engine=(root/'source/gallery_clan.c').read_text()
 gallery=ui[ui.index('void mds_ui_gallery(const'):]
 checks={
     "source selects correct 3DS clips":
-        'SelectMii_Select:' in curves and
-        'EDITSelectBase_Select:' not in curves or
-        'gallery_slot_select_scale_x' in curves,
+        'MDS_SOURCE_SELECTMII_SELECT_FRAMES 6u' in curves and
+        'MDS_SOURCE_EDITSELECTBASE_SELECT_FRAMES 2u' in curves and
+        'MDS_SOURCE_EDITSELECTBASE_UNSELECT_FRAMES 2u' in curves,
     "source animation data is compact numeric metadata":
         'gallery_room_select_red' in curves and
         'gallery_room_unselect_red' in curves and
