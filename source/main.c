@@ -217,8 +217,8 @@ int main(void)
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
-            /* Physical L/R and touchscreen arrows both navigate rooms.
-             * Never change rooms while a Mii drag is in progress. */
+            /* Physical L/R and original touchscreen arrows can page through
+             * destination rooms while a grabbed Mii stays attached. */
             if(down&(KEY_L|KEY_R)){
                 int direction=(down&KEY_L)?-1:1;
                 if(gallery_drag.source>=0){
@@ -234,8 +234,8 @@ int main(void)
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
-                /* A bare arrow tap changes rooms; an active drag never pages
-                 * until release, so the displayed room stays stable. */
+                /* A bare arrow tap changes rooms; held drags page when they
+                 * reach an arrow without moving the fixed Mii boxes. */
                 int room=mds_gallery_room_touch(input.touch.px,input.touch.py);
                 /* Room tabs, arrow controls, and Mii boxes are separate
                  * original 3DS panes. A room-tab tap never starts a drag. */
@@ -271,12 +271,14 @@ int main(void)
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 if(gallery_drag.source>=0&&arrow){
-                    /* Do not double-page on release after crossing an arrow
-                     * while held. Source remains grabbed until a box drop. */
+                    /* A stylus release on an arrow cancels the drag rather
+                     * than leaving a ghost Mii permanently attached. */
                     if(gallery_drag_arrow_latch!=arrow){
                         int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                         if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
                     }
+                    mds_gallery_drag_reset(&gallery_drag);
+                    drawn_screen=-1;
                     gallery_drag_arrow_latch=0;
                 }else if(gallery_drag.source>=0){
                     gallery_drag_arrow_latch=0;
