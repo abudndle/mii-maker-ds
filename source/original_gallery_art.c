@@ -86,10 +86,16 @@ int mds_original_gallery_box_base(uint16_t *canvas,int width,int height,
     return original_sprite_blit(&room_box_base,canvas,width,height,x,y,w,h,0xffffu);
 }
 
+int mds_original_gallery_box_border_tinted(uint16_t *canvas,int width,int height,
+                                           int x,int y,int w,int h,uint16_t tint)
+{
+    return original_sprite_blit(&room_box_line,canvas,width,height,x,y,w,h,tint);
+}
 int mds_original_gallery_box_border(uint16_t *canvas,int width,int height,
                                     int x,int y,int w,int h)
 {
-    return original_sprite_blit(&room_box_line,canvas,width,height,x,y,w,h,0xffffu);
+    return mds_original_gallery_box_border_tinted(canvas,width,height,
+                                                  x,y,w,h,0xffffu);
 }
 
 int mds_original_gallery_room_tab_tinted(uint16_t *canvas,int width,int height,
