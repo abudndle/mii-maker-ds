@@ -433,10 +433,8 @@ int main(void)
                 else screen=editor_return_screen;
             }
         }
-        if(screen!=MDS_SCREEN_GALLERY){
-            mds_gallery_drag_reset(&gallery_drag);
-            mds_gallery_controls_reset(&gallery_controls);
-        }
+        if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);
+        if(screen!=MDS_SCREEN_GALLERY)mds_gallery_controls_reset(&gallery_controls);
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
