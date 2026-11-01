@@ -150,6 +150,9 @@ static void gallery_advance_actor_pose(void)
   /* A removed Mii can still have a cached actor until the next repaint.
    * Never spend the limited animation render budget on an empty slot. */
   if(!gallery_room_occupied[local]||!gallery_room.actor[local].valid)continue;
+  /* A failed model decode must not permanently hold the round-robin cursor
+   * on this actor when other valid Miis can still animate. */
+  if(gallery_room_attempts[local]>=3u)continue;
   /* Do not evict a successfully rendered actor while another occupied slot
    * still needs its initial preview. Otherwise high-FPS clips can keep the
    * first actor perpetually refreshing while later Miis remain invisible. */
