@@ -24,7 +24,7 @@ Requirements retained: original 3DS look and feature choices, DS/DS Lite operati
 | Copy/sharing/favorite settings | Standard file/QR imports preserve policy; copy-disabled received Miis remain read-only; Personal/Favorite icons and status persist; copy and QR permission checks | Future wireless-policy enforcement, full original identity retention in the compact gallery |
 | Standard Mii files | CFSD/FFSD import browser, strict CRC/UTF-16/date/range checks and transactional persistence | Complete raw hardware-identity retention in the private gallery; wider format conversions |
 | Sound/effects | Original sound archive and effects retained | Conversion, playback and event timing |
-| System behavior | Basic runtime; DSi camera gate; cartridge-save status/retry UI with read/write/readback errors and draft protection | Full lid/suspend/resume, exit and remaining device-specific error handling |
+| System behavior | Lid suspend/resume preserves drafts/dialogs and pauses animation; wake input waits for release; camera capture stops and restores sensor/frozen state; cartridge-save status/retry UI | Physical DS/DSi sleep/camera validation, exit and remaining device-specific error handling |
 
 No network backend is presented as connected or supported. The private demake record format is not Nintendo Mii format. A resource extraction, compiled driver or reference-code location is not itself proof of completed feature compatibility.
 

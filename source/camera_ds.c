@@ -6,6 +6,8 @@ static uint16_t frame[256*192] __attribute__((aligned(32)));
 static uint16_t display[256*192];
 static int active,inflight,frames,have_frame,frozen,switch_requested;
 static CameraDevice selected;
+static int suspended,resume_frozen,resume_frame;
+static CameraDevice resume_selected;
 static const char *status="Camera closed";
 int mds_camera_open(void)
 {
@@ -20,9 +22,29 @@ int mds_camera_open(void)
 }
 void mds_camera_close(void)
 {
+    suspended=0;
     if(!active)return;
     cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;cameraDeinit();
     active=0;inflight=0;have_frame=0;status="Camera closed";
+}
+void mds_camera_suspend(void)
+{
+    if(!active)return;
+    resume_selected=selected;resume_frozen=frozen;resume_frame=have_frame;
+    mds_camera_close();suspended=1;
+}
+int mds_camera_resume(void)
+{
+    if(!suspended)return active;
+    suspended=0;
+    if(!mds_camera_open())return 0;
+    if(selected!=resume_selected){
+        if(!cameraSelect(resume_selected)){mds_camera_close();status="Camera resume failed";return 0;}
+        selected=resume_selected;
+    }
+    frozen=resume_frozen;have_frame=resume_frame;
+    status=frozen?"Preview frozen. A resume":"A freeze / X switch / B back";
+    return 1;
 }
 int mds_camera_update(void)
 {
