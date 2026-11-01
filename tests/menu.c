@@ -14,6 +14,13 @@ assert(mds_gallery_page_step(0,0,-1)==-1);
 assert(mds_gallery_page_step(7,99,1)==80);
 assert(mds_gallery_page_step(10,0,1)==-1);
 assert(mds_gallery_page_step(3,35,0)==-1);
+/* Empty boxes are selectable, but cannot begin a stylus drag. */
+assert(mds_gallery_box_press(-1,1)==MDS_GALLERY_BOX_NONE);
+assert(mds_gallery_box_press(100,1)==MDS_GALLERY_BOX_NONE);
+assert(mds_gallery_box_press(0,0)==MDS_GALLERY_BOX_SELECT);
+assert(mds_gallery_box_press(99,0)==MDS_GALLERY_BOX_SELECT);
+assert(mds_gallery_box_press(0,1)==MDS_GALLERY_BOX_DRAG);
+assert(mds_gallery_box_press(99,1)==MDS_GALLERY_BOX_DRAG);
 MdsGalleryDrag drag={.source=-1};unsigned from=999;
 assert(!mds_gallery_drag_begin(NULL,0,0,1));
 assert(!mds_gallery_drag_begin(&drag,0,0,0)&&drag.source==-1);

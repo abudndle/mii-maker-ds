@@ -12,6 +12,11 @@ int mds_gallery_touch(int x,int y,unsigned page)
     for(unsigned i=0;i<sizeof gallery_hits/sizeof gallery_hits[0];i++)if(inside(&gallery_hits[i],x,y))return (int)(page*10)+gallery_hits[i].action;
     return -1;
 }
+MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied)
+{
+ if(slot<0||slot>=100)return MDS_GALLERY_BOX_NONE;
+ return occupied?MDS_GALLERY_BOX_DRAG:MDS_GALLERY_BOX_SELECT;
+}
 int mds_gallery_room_touch(int x,int y)
 {
     for(unsigned i=0;i<sizeof gallery_room_hits/sizeof gallery_room_hits[0];i++)
