@@ -255,6 +255,14 @@ int main(void)
                 (down&KEY_A)!=0,(input.held&KEY_A)!=0,
                 (down&KEY_SELECT)!=0,(input.held&KEY_SELECT)!=0,
                 (input.up&KEY_SELECT)!=0);
+            /* A SELECT chord with copy, room navigation or motion keys must
+             * not later export the selected Mii. Also guard SELECT-up and
+             * another key edge captured in the same VBlank. */
+            const int other_gallery_keys=KEY_A|KEY_B|KEY_X|KEY_Y|
+                KEY_L|KEY_R|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START;
+            gallery_action=mds_gallery_controls_consume_physical(
+                &gallery_controls,gallery_action,
+                ((input.down|input.held|input.up)&other_gallery_keys)!=0);
             /* SELECT held across any touchscreen gesture (boxes, room tabs,
              * arrows or action strip) is consumed, even if the stylus is
              * released before SELECT. Otherwise SELECT-up could export the
