@@ -18,6 +18,7 @@
 #include "clan_adjust.h"
 #include "clan_overlay.h"
 #include "clan_dialog.h"
+#include "confirm_motion.h"
 #include "clan_overlay.h"
 #include "clan_scene.h"
 #include "image.h"
@@ -1255,7 +1256,48 @@ void mds_ui_gender(int create,int choice)
  }
 }
 void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
-void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
+/* Keep the real gallery framebuffer visible behind the source-derived
+ * DialogBase02 W_Dialog CLPA Y entrance. A confirmation should not
+ * rerasterize up to ten 3D Mii thumbnails on every 60 Hz animation tick. */
+static u16 confirm_backdrop[256*192];
+static u16 confirm_window[256*192];
+static MdsConfirmMotion confirm_motion;
+void mds_ui_confirm_reset(void)
+{
+    mds_confirm_motion_reset(&confirm_motion);
+}
+int mds_ui_confirm_touch_ready(uint32_t now)
+{
+    return mds_confirm_motion_ready(&confirm_motion,now);
+}
+int mds_ui_confirm_animation_tick(uint32_t now)
+{
+    if(!ok||!mds_confirm_motion_tick(&confirm_motion,now))return 0;
+    mds_confirm_motion_composite(bottom,confirm_backdrop,confirm_window,
+                                mds_confirm_motion_offset(&confirm_motion,now));
+    return 1;
+}
+void mds_ui_confirm(const char *message)
+{
+    if(!ok)return;
+    uint32_t now=render_clock?render_clock():0;
+    if(!confirm_motion.begun){
+        memcpy(confirm_backdrop,bottom,sizeof confirm_backdrop);
+        mds_confirm_motion_begin(&confirm_motion,now);
+    }
+    /* Build the original confirmation face in a separate canvas. The
+     * source moving pane is composed on top of the stationary gallery
+     * without destroying the original graphics underneath. */
+    u16 *screen=bottom;
+    bottom=confirm_window;
+    memcpy(confirm_window,confirm_backdrop,sizeof confirm_window);
+    bitmap("nitro:/ui/confirm.rgb555",bottom);
+    center_bottom(128,27,message);
+    bottom=screen;
+    mds_confirm_motion_composite(bottom,confirm_backdrop,confirm_window,
+                                mds_confirm_motion_offset(&confirm_motion,now));
+    (void)mds_confirm_motion_tick(&confirm_motion,now);
+}
 int mds_ui_confirm_touch(int x,int y){const char *h=mds_profile_hit(7,x,y);if(!strcmp(h,"B_BtnCommon_00"))return 1;if(!strcmp(h,"B_BtnCommon_01"))return 0;return -1;}
 
 void mds_ui_import_open(MdsImport*b)
