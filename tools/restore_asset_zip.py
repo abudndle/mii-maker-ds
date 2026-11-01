@@ -4,6 +4,7 @@ import argparse
 import shutil
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile, BadZipFile
+from private_balloon_art import derived_icons
 
 REQUIRED = [
     "nitrofiles/models/MaleBody.msp", "nitrofiles/models/FemaleBody.msp",
@@ -39,6 +40,9 @@ def validate(archive, destination=None):
             invalid = z.testzip()
             if invalid:
                 raise ValueError("ZIP CRC mismatch: " + invalid)
+            # The user's archive includes the original Select.arc RGB555
+            # textures, but not their DS sprite headers. Derive locally.
+            icons = derived_icons(z)
             if destination:
                 root = Path(destination).absolute()
                 if root.is_symlink():
@@ -60,6 +64,17 @@ def validate(archive, destination=None):
                         raise ValueError("Unsafe resource destination link: " + str(out))
                     with z.open(entry) as inp, out.open("wb") as dest:
                         shutil.copyfileobj(inp, dest)
+                for relative, data in icons.items():
+                    path = root / "nitrofiles" / relative
+                    for parent in (path.parent, *path.parents):
+                        if parent == root.parent:
+                            break
+                        if parent.is_symlink():
+                            raise ValueError("Unsafe derived sprite directory: " + str(parent))
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    if path.is_symlink():
+                        raise ValueError("Unsafe derived sprite target: " + str(path))
+                    path.write_bytes(data)
             print(f"PASS: {len(items)} files, {len(REQUIRED)} required resource paths")
             return 0
     except (OSError, BadZipFile, ValueError) as error:
