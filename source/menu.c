@@ -119,6 +119,16 @@ int mds_gallery_drag_blocks_actions(int was_dragging,int dragging)
 {
     return was_dragging!=0||dragging!=0;
 }
+/* B/Back is a cancellation boundary: no pending drag, stylus button or
+ * SELECT chord may be replayed after the gallery has been left. */
+void mds_gallery_cancel_for_exit(MdsGalleryDrag *drag,
+    MdsGalleryControls *controls,MdsGalleryActionPress *press,int *arrow_latch)
+{
+    mds_gallery_drag_reset(drag);
+    mds_gallery_controls_reset(controls);
+    mds_gallery_action_press_reset(press);
+    if(arrow_latch)*arrow_latch=0;
+}
 int mds_gallery_next_saved(const unsigned char *used,unsigned current,int direction)
 {
     if(!used||current>=100)return -1;
