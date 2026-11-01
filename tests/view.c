@@ -30,5 +30,12 @@ int main(void)
  x=524288;z=-524288;
  mds_view_rotate(&x,&z,3);
  assert(absolute(x)<100&&absolute(z+741455)<100);
+ /* Saturate extreme model coordinates rather than wrapping. */
+ x=INT32_MAX;z=INT32_MAX;
+ mds_view_rotate(&x,&z,3);
+ assert(x==INT32_MAX&&z==0);
+ x=INT32_MIN;z=INT32_MIN;
+ mds_view_rotate(&x,&z,3);
+ assert(x==INT32_MIN&&z==0);
  puts("PASS: original Mii L/R preview camera steps, wrapping, 90-degree poses, wide coordinates");
 }
