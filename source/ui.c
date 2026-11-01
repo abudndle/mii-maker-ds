@@ -1080,8 +1080,10 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                      * The BOX itself and its touch hitbox stay fixed. */
                     unsigned w=(MDS_THUMBNAIL_WIDTH*clan.scale_x_q16+32768u)/65536u;
                     unsigned h=(MDS_THUMBNAIL_HEIGHT*clan.scale_y_q16+32768u)/65536u;
-                    if(w<1u)w=1u;if(h<1u)h=1u;
-                    if(w>64u)w=64u;if(h>64u)h=64u;
+                    if(w<1u)w=1u;
+                    if(h<1u)h=1u;
+                    if(w>64u)w=64u;
+                    if(h>64u)h=64u;
                     int left=r->x+((int)MDS_THUMBNAIL_WIDTH-(int)w)/2;
                     int top_y=r->y-2+((int)MDS_THUMBNAIL_HEIGHT-(int)h)/2;
                     for(unsigned y=0;y<h;y++){
