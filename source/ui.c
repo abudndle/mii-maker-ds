@@ -134,10 +134,18 @@ static void gallery_advance_actor_pose(void)
 {
  static unsigned next_actor;
  if(!motion_scene)return;
- unsigned local=next_actor++%MDS_ROOM_SLOTS;
- gallery_room.actor[local].valid=0;
- gallery_room_attempts[local]=0;
- gallery_retry_pending=1;
+ /* A pose update must not repeatedly discard a preview still awaiting its
+  * first render. Prefer a valid actor, so the one-render-per-repaint budget
+  * eventually fills every room slot even when animation advances quickly. */
+ for(unsigned n=0;n<MDS_ROOM_SLOTS;n++){
+  unsigned local=(next_actor+n)%MDS_ROOM_SLOTS;
+  if(!gallery_room.actor[local].valid)continue;
+  gallery_room.actor[local].valid=0;
+  gallery_room_attempts[local]=0;
+  next_actor=(local+1u)%MDS_ROOM_SLOTS;
+  gallery_retry_pending=1;
+  return;
+ }
 }
 static void gallery_invalidate_motion_previews(void)
 {
