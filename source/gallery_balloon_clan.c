@@ -57,3 +57,12 @@ int mds_gallery_balloon_clan_style(const MdsGalleryBalloonClan *state,
     out->touch_offset_y_q16=mds_clan_curve_eval(touch_y,N(touch_y),frame)-Q(37);
     return 1;
 }
+
+int mds_gallery_balloon_clan_actions_visible(const MdsGalleryBalloonClan *state,uint32_t now)
+{
+    MdsGalleryBalloonStyle style;
+    mds_gallery_balloon_clan_style(state,now,&style);
+    /* The Select clip begins with fully transparent parent and Favorite art.
+     * Hitboxes stay fixed, but invisible controls must not accept presses. */
+    return style.balloon_alpha>0u&&style.favorite_alpha>0u;
+}
