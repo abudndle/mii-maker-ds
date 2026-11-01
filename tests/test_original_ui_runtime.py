@@ -11,8 +11,10 @@ checks={
  "one-time asset read": "if(original_room_arrow_state==0){" in ui,
  "missing private asset is safe": "original_room_arrow_state=-1;" in ui and
                                "if(original_room_arrow_state!=1)return;" in ui,
- "original left/right source coordinate rendering": "(86+y)*256+3+x" in ui and
-                                                    "(86+y)*256+240+x" in ui,
+ "original left/right source coordinate rendering": "3+x+left_dx" in ui and
+                                                    "240+x+right_dx" in ui and
+                                                    "(86+y)*256+lx" in ui and
+                                                    "(86+y)*256+rx" in ui,
  "left-right arrow mirrored": "original_room_arrow[y*12+(11-x)]" in ui,
  "source selection background retained": 'bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);' in ui,
  "runtime used in gallery": "    draw_original_room_arrows(&navigation);" in ui,
