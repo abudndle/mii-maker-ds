@@ -737,12 +737,13 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         gallery_room_last_start=start;
         memset(gallery_room_attempts,0,sizeof gallery_room_attempts);
     }
-    /* Draw all five Miis from the same saved room. Retain separate cached
+    /* Draw all ten Miis using the original SelectMii layout. Retain separate cached
      * 3D previews per actor so changing selection never replaces another Mii. */
     int unfinished=0;
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
         unsigned slot=start+local;
-        int x=5+(int)local*50,y=42+(int)(local%2)*7;
+        int x=0,y=0;
+        if(!mds_room_position(local,&x,&y))continue;
         if(slot>=MDS_SLOTS||!g->used[slot])continue;
         if(!mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
             unfinished=1;
@@ -759,16 +760,14 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         }
         if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
             mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);
-        status_icon(top,x+14,y+65,&g->miis[slot]);
-        char name[9];snprintf(name,sizeof name,"%.7s",g->miis[slot].name);
-        label(x,y+88,name);
-        if(slot==selected)label(x+14,28,"v");
+        status_icon(top,x+14,y+18,&g->miis[slot]);
+        if(slot==selected)label(x+15,y-9,"v");
     }
     if(unfinished)for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         if(g->used[start+local]&&
            !mds_room_matches(&gallery_room,selected,local,&g->miis[start+local])&&
            gallery_room_attempts[local]<3u)gallery_retry_pending=1;
-    char title[42];snprintf(title,sizeof title,"Room %u / 20",start/5+1);
+    char title[42];snprintf(title,sizeof title,"Room %u / 10",start/10+1);
     label(8,3,title);
     if(motion_scene&&motions[0].file){
         const char *clip_name=gallery_selected_clip<0?"Auto":
@@ -777,7 +776,7 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         snprintf(clip_label,sizeof clip_label,"Motion: %s",clip_name);
         label(8,150,clip_label);
         label(8,163,"UP/DOWN: Clip   START: Auto");
-    }else label(8,165,"Five saved Miis per room");
+    }else label(8,165,"Ten saved Miis per room");
     if(notice&&notice[0]&&strcmp(notice,"Ready"))
         label(8,179,display_status(notice));
 }
