@@ -30,18 +30,18 @@ int main(void)
  assert(cache.start==10);
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,0,&a,rendered));
- assert(mds_room_matches(&cache,9,0,&a));
+ assert(mds_room_matches(&cache,19,0,&a));
  assert(mds_room_blit(&cache,19,0,dst,256,192,-9,0));
  assert(dst[0]==0x801f);
  a.value[5]++;
- assert(!mds_room_matches(&cache,9,0,&a));
+ assert(!mds_room_matches(&cache,19,0,&a));
  mds_room_select(&cache,20);
- assert(cache.start==20;
+ assert(cache.start==20);
  assert(!cache.actor[0].valid);
  assert(!mds_room_capture(&cache,20,10,&a,rendered));
  assert(!mds_room_blit(&cache,20,10,dst,256,192,0,0));
  assert(!mds_room_capture(NULL,20,0,&a,rendered));
  assert(!mds_room_blit(NULL,20,0,dst,256,192,0,0));
- puts("PASS: five-Mii room positions, independent cached model images, invalidation and clipping");
+ puts("PASS: source-derived ten-Mii room positions, independent cached model images, invalidation and clipping");
  return 0;
 }
