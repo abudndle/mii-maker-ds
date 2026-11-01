@@ -216,27 +216,45 @@ int main(void)
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
-            /* Shoulder buttons cycle between Miis, not between rooms.
-             * Room navigation belongs to the touchscreen L/R arrows. */
-            if(down&(KEY_L|KEY_R)){
-                int next=mds_gallery_slot_step(page,editor.slot,down&KEY_L?-1:1);
-                if(next>=0){editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+            /* Physical L/R and touchscreen arrows both navigate rooms.
+             * Never change rooms while a Mii drag is in progress. */
+            if((down&(KEY_L|KEY_R))&&gallery_drag.source<0){
+                int direction=(down&KEY_L)?-1:1;
+                int next=mds_gallery_page_step(page,editor.slot,direction);
+                if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
-                mds_gallery_drag_begin(&gallery_drag,page,slot,
-                                       slot>=0&&gallery.used[slot]);
-                if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+                /* A bare arrow tap changes rooms; an active drag never pages
+                 * until release, so the displayed room stays stable. */
+                if(gallery_drag.source<0&&arrow){
+                    int next=mds_gallery_page_step(page,editor.slot,arrow);
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                }else if(gallery_drag.source<0){
+                    mds_gallery_drag_begin(&gallery_drag,page,slot,
+                                           slot>=0&&gallery.used[slot]);
+                    if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                }
             }
             if(input.up&KEY_TOUCH){
-                unsigned source;
+                unsigned source=0;
+                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 int destination=mds_gallery_drag_end(&gallery_drag,page,
-                    mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                    arrow? -1 : mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                /* Hovering the room icons never changes the room. Releasing
+                 * on one commits to the adjacent room's matching slot; a
+                 * normal box release commits to that exact destination. */
+                if(destination<0&&source<MDS_SLOTS&&arrow){
+                    int next=mds_gallery_page_step(source/10,source,arrow);
+                    if(next>=0)destination=next;
+                }
                 if(destination>=0){
                     editor.slot=source;
                     mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                    if(mds_editor_move(&editor,(unsigned)destination,persist,NULL))
+                    if(mds_editor_move(&editor,(unsigned)destination,persist,NULL)){
                         page=editor.slot/10;
+                    }
                     drawn_screen=-1;
                 }
             }

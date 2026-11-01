@@ -14,7 +14,7 @@ checks={
  "L rotates left in editor": "if(down&KEY_L){if(mds_ui_view_step(-1))" in editor,
  "R rotates right in editor": "if(down&KEY_R){if(mds_ui_view_step(1))" in editor,
  "L/R no longer switch editor slots": "MDS_EDIT_PREV" not in editor and "MDS_EDIT_NEXT" not in editor,
- "gallery shoulder buttons cycle room Miis": "mds_gallery_slot_step(page,editor.slot,down&KEY_L?-1:1)" in gallery,
+ "gallery shoulder buttons navigate rooms": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
  "editor yaw reset when leaving": "mds_ui_view_scene(screen==MDS_SCREEN_EDITOR" in main,
  "camera yaw included in cache key": "preview_view[mode]!=requested_view" in preview,
  "cancelled preview rejects stale yaw": "preview_view[mode]==requested_view" in preview,
