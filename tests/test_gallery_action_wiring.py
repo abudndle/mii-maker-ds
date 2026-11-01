@@ -23,9 +23,9 @@ assert "mds_gallery_action_press_reset(&gallery_action_press);" in main
 assert "gallery_controls.select_used=1;" in gallery
 assert "if(touch_action==MDS_GALLERY_ACTION_EDIT)" in gallery
 assert "gallery_action|=MDS_GALLERY_CONTROL_EDIT;" in gallery
-assert "if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X))" in gallery
+assert "if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)&&" in gallery
 assert gallery.count("mds_editor_toggle_favorite(&editor,persist,NULL)") == 2
-assert "else if(touch_action==MDS_GALLERY_ACTION_COPY)" in gallery
+assert "else if(touch_action==MDS_GALLERY_ACTION_COPY&&" in gallery
 assert gallery.count("mds_editor_copy(&editor,persist,NULL)") == 2
 assert "if(!mds_editor_locked(&gallery.miis[editor.slot]))" in gallery
 assert "MDS_EDIT_COPY_RECEIVED" in gallery
