@@ -32,6 +32,7 @@ int mds_ui_view_step(int direction);
 /* Gallery: cycle original clips; START restores six-idle automatic playback. */
 int mds_ui_motion_step(int direction);
 int mds_ui_motion_auto(void);
+void mds_ui_room_return_home(void);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
