@@ -13,9 +13,16 @@ typedef struct {
     uint32_t last_elapsed;
     unsigned begun;
     unsigned completed;
+    unsigned exit_requested;
+    unsigned exiting;
+    unsigned exit_up;
 } MdsConfirmMotion;
 void mds_confirm_motion_reset(MdsConfirmMotion *motion);
 void mds_confirm_motion_begin(MdsConfirmMotion *motion,uint32_t now);
+/* A decision queues a source-derived exit, even if the entry is playing.
+ * The exit begins only after the original entrance has settled. */
+int mds_confirm_motion_request_exit(MdsConfirmMotion *motion,int up);
+int mds_confirm_motion_exit_done(const MdsConfirmMotion *motion,uint32_t now);
 int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now);
 int mds_confirm_motion_ready(const MdsConfirmMotion *motion,uint32_t now);
 int mds_confirm_motion_offset(const MdsConfirmMotion *motion,uint32_t now);
