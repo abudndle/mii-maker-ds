@@ -1,0 +1,32 @@
+name: Original 3DS BCLIM converter (synthetic assets only)
+
+on:
+  push:
+    paths:
+      - 'tools/convert_original_bclim.py'
+      - 'tests/test_original_bclim.py'
+      - 'tests/test_original_ui_runtime.py'
+      - 'source/ui.c'
+      - '.github/workflows/original-bclim-tests.yml'
+  pull_request:
+    paths:
+      - 'tools/convert_original_bclim.py'
+      - 'tests/test_original_bclim.py'
+      - 'tests/test_original_ui_runtime.py'
+      - 'source/ui.c'
+      - '.github/workflows/original-bclim-tests.yml'
+
+jobs:
+  original-textures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run synthetic BCLIM format/tiling tests
+        run: python3 tests/test_original_bclim.py
+      - name: Verify original room-arrow runtime integration
+        run: python3 tests/test_original_ui_runtime.py
+      - name: Syntax check converter
+        run: python3 -m py_compile tools/convert_original_bclim.py

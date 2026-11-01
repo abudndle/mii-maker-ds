@@ -18,3 +18,12 @@ __pycache__/
 .venv/
 .env
 .env.*
+*.cci
+*.ncch
+*.romfs
+*.bclim
+*.bclyt
+*.bclan
+*.bcres
+*.bcsar
+*.arc
