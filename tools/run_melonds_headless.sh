@@ -16,6 +16,7 @@ chmod +x "$appimage"
 export MELONDS_APP="$appimage"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_IMAGE="$RUNNER_TEMP/melonds-boot.png"
+export MELONDS_GALLERY_IMAGE="$RUNNER_TEMP/melonds-gallery-ten.png"
 export MELONDS_LOG="$RUNNER_TEMP/melonds-boot.log"
 export HOME="$RUNNER_TEMP/melonds-home"
 mkdir -p "$HOME"
@@ -49,9 +50,26 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   fi
   import -window "$win" -depth 8 "$MELONDS_IMAGE"
   test -s "$MELONDS_IMAGE"
+  if [ -s "$PWD/mii-ds.sav" ]; then
+    # Isolated synthetic save is prepared by CI, not any user save.
+    # Home View Mii Characters is centered at X=112, lower panel Y≈235.
+    xdotool mousemove --window "$win" 120 232
+    xdotool click --window "$win" 1
+    sleep 16
+    if ! kill -0 "$emu_pid" 2>/dev/null; then
+      echo "FAIL: melonDS exited during saved-Mii gallery navigation"
+      exit 1
+    fi
+    import -window "$win" -depth 8 "$MELONDS_GALLERY_IMAGE"
+    test -s "$MELONDS_GALLERY_IMAGE"
+    echo "PASS: emulator gallery interaction screenshot captured"
+  fi
   echo "PASS: melonDS remained running and a framebuffer was captured"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_IMAGE" --report "$RUNNER_TEMP/melonds-boot-metadata.json"
+if [ -s "${MELONDS_GALLERY_IMAGE:-}" ]; then
+  python3 tools/melonds_screen_probe.py "$MELONDS_GALLERY_IMAGE" --report "$RUNNER_TEMP/melonds-gallery-metadata.json"
+fi
 # Suppress potentially sensitive file paths in emulator logs.
 if grep -Eiq 'segmentation fault|fatal error|failed to open rom|failed to load rom' "$MELONDS_LOG"; then
   echo 'FAIL: melonDS emitted a fatal/ROM load error'
