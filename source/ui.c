@@ -140,6 +140,13 @@ static void gallery_advance_actor_pose(void)
  for(unsigned n=0;n<MDS_ROOM_SLOTS;n++){
   unsigned local=(next_actor+n)%MDS_ROOM_SLOTS;
   if(!gallery_room.actor[local].valid)continue;
+  /* Do not evict a successfully rendered actor while another occupied slot
+   * still needs its initial preview. Otherwise high-FPS clips can keep the
+   * first actor perpetually refreshing while later Miis remain invisible. */
+  int pending=0;
+  for(unsigned j=0;j<MDS_ROOM_SLOTS;j++)
+   if(!gallery_room.actor[j].valid&&gallery_room_attempts[j]<3u){pending=1;break;}
+  if(pending)return;
   gallery_room.actor[local].valid=0;
   gallery_room_attempts[local]=0;
   next_actor=(local+1u)%MDS_ROOM_SLOTS;
