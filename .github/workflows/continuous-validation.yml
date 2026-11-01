@@ -1,0 +1,50 @@
+name: Continuous DS Port Validation
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main, 'dev', 'develop', 'development', 'feature/**', 'milestone/**', 'm81/**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: continuous-ds-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  host-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python syntax checks
+        run: python3 -m compileall -q tools tests
+      - name: Run asset-free M81 regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The repository also contains interactive emulator probes and private
+          # integration tests that cannot be run as plain python scripts.
+          for test_file in \
+            tests/test_calibrate_balloon_scene.py \
+            tests/test_extract_balloon_layout.py \
+            tests/test_gallery_action_wiring.py \
+            tests/test_gallery_balloon_wiring.py \
+            tests/test_gallery_drag.py \
+            tests/test_first_boot_flow.py \
+            tests/test_gallery_exit_wiring.py; do
+            python3 "$test_file"
+          done
+      - name: Check for prohibited committed ROMs and archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Ei '\.(nds|cci|cia|3ds|ncch|3dsx|zip|7z|rar)$'; then
+            echo "Potential private binary/archive committed; review required"
+            exit 1
+          fi
+  # Proprietary resource retrieval stays in a separate trusted private workflow.
+  # Never pass MII_ASSETS_URL to pull_request jobs or upload ROMs as artifacts.
