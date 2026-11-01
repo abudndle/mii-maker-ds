@@ -1045,11 +1045,12 @@ void mds_ui_backup(const char *notice)
 {
  load_widgets();mds_ui_restore_top();
  label(8,20,"Gallery backup");
- label(8,48,"Copy all saved Miis to the SD card.");
+ label(8,48,"Back up or restore your saved Miis.");
  label(8,72,"Existing backups are kept.");
- label(8,96,"The cartridge save is unchanged.");
+ label(8,96,"Restore needs preview and confirmation.");
  if(notice&&notice[0])label(8,144,notice);
- bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,"Back up saved gallery?");
+ bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,14,"Back up saved gallery?");
+ button(28,40,200,27,"X: Browse / Restore backups");
  button(28,71,200,32,"A: Create backup");button(28,111,200,32,"B: Back");
  center_bottom(128,154,"MiiMaker/Backups");
 }
@@ -1062,6 +1063,43 @@ const char *mds_ui_backup_gallery(const MdsGallery *gallery)
  if(mkdir(directory,0777)&&errno!=EEXIST)return "Could not create backup folder.";
  snprintf(directory,sizeof directory,"%s/MiiMaker/Backups",drive);
  return mds_backup_message(mds_backup_export(gallery,directory,path,sizeof path));
+}
+int mds_ui_backup_open(MdsBackupBrowser *browser)
+{
+ memset(browser,0,sizeof *browser);
+ if(!fatInitDefault()){browser->status="SD card is unavailable.";return 0;}
+ char path[96];snprintf(path,sizeof path,"%s/MiiMaker/Backups",isDSiMode()?"sd:":"fat:");
+ return mds_backup_scan(browser,path);
+}
+void mds_ui_backup_browser(const MdsBackupBrowser *browser)
+{
+ load_widgets();mds_ui_restore_top();
+ label(8,20,"Restore a gallery backup");label(8,50,browser->status);
+ label(8,80,"D-pad selects / L-R pages / A previews");
+ label(8,102,"The whole saved gallery is replaced.");
+ label(8,124,"Confirmation and safety backup required.");
+ bitmap("nitro:/ui/import-bottom.rgb555",bottom);
+ center_bottom(96,7,"Gallery backups");button(184,3,64,22,"Rescan");
+ unsigned first=browser->selected/5*5;
+ for(unsigned i=0;i<5&&first+i<browser->count;i++){
+  char name[32];snprintf(name,sizeof name,"Gallery%04u.mdsc",(unsigned)browser->ids[first+i]);
+  button(16,32+(int)i*23,224,21,name);
+  if(first+i==browser->selected){MdsMenuHit hit={16,32+(int)i*23,224,21,0};outline(&hit);}
+ }
+ char count[40];snprintf(count,sizeof count,"%u / %u (highest number first)",browser->count?browser->selected+1:0,browser->count);
+ center_bottom(128,149,count);button(8,168,112,21,"Back");button(132,168,116,21,"Preview");
+}
+void mds_ui_restore_confirm(const MdsRestore *restore)
+{
+ load_widgets();mds_ui_restore_top();unsigned count=0,favorites=0,personal=0;
+ for(unsigned i=0;i<MDS_SLOTS;i++)if(restore->gallery.used[i]){
+  count++;favorites+=restore->gallery.miis[i].value[46]!=0;personal+=restore->gallery.miis[i].value[51]!=0;
+ }
+ const char *name=strrchr(restore->path,'/');name=name?name+1:restore->path;
+ label(8,20,name);char summary[64];snprintf(summary,sizeof summary,"%u saved Miis / %u favorites / %u Personal",count,favorites,personal);
+ label(8,50,summary);label(8,78,"This replaces every saved slot.");
+ label(8,100,"A verified backup of the current gallery");label(8,118,"will be kept before the cartridge write.");
+ mds_ui_confirm("Replace entire gallery?");
 }
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
 int mds_ui_confirm_touch(int x,int y){const char *h=mds_profile_hit(7,x,y);if(!strcmp(h,"B_BtnCommon_00"))return 1;if(!strcmp(h,"B_BtnCommon_01"))return 0;return -1;}

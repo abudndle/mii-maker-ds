@@ -11,6 +11,8 @@ static MdsGallery gallery;
 static MdsEditor editor;
 static int save_ready;
 static const char *backup_notice="";
+static MdsBackupBrowser backup_browser;
+static MdsRestore backup_restore;
 static MdsProfile profile;
 static MdsImport importer;
 static int qr_select_image;
@@ -107,6 +109,14 @@ int main(void)
                 pending_editor_return=0;
             }
         }else if(screen==MDS_SCREEN_BACKUP){
+            int browse=(down&KEY_X)!=0;
+            if(down&KEY_TOUCH){int x=input.touch.px,y=input.touch.py;if(x>=28&&x<228&&y>=40&&y<67)browse=1;}
+            if(browse){
+                if(!save_ready)backup_notice="Read a valid cartridge save first.";
+                else if(mds_editor_dirty(&editor))backup_notice="Save your draft before restore.";
+                else{mds_ui_backup_open(&backup_browser);screen=MDS_SCREEN_BACKUP_BROWSE;}
+                drawn_screen=-1;continue;
+            }
             int response=-1;
             if(down&KEY_B)response=0;else if(down&KEY_A)response=1;
             else if(down&KEY_TOUCH)response=mds_ui_confirm_touch(input.touch.px,input.touch.py);
@@ -115,6 +125,45 @@ int main(void)
                 if(!save_ready)backup_notice="Read a valid cartridge save first.";
                 else if(mds_editor_dirty(&editor))backup_notice="Save your draft before backup.";
                 else backup_notice=mds_ui_backup_gallery(&gallery);
+                drawn_screen=-1;
+            }
+        }else if(screen==MDS_SCREEN_BACKUP_BROWSE){
+            int action=0;
+            if(k&KEY_UP){mds_backup_step(&backup_browser,-1);drawn_screen=-1;}
+            if(k&KEY_DOWN){mds_backup_step(&backup_browser,1);drawn_screen=-1;}
+            if(down&(KEY_L|KEY_R)){mds_backup_step(&backup_browser,down&KEY_L?-5:5);drawn_screen=-1;}
+            if(down&KEY_B)action=1;
+            if(down&KEY_A)action=2;
+            if(down&KEY_X)action=3;
+            if(down&KEY_TOUCH){
+                int x=input.touch.px,y=input.touch.py;
+                if(y>=168)action=x<126?1:2;
+                else if(x>=184&&y<26)action=3;
+                else if(x>=16&&x<240&&y>=32&&y<147){unsigned selected=backup_browser.selected/5*5+(unsigned)(y-32)/23;if(selected<backup_browser.count)backup_browser.selected=selected;}
+                drawn_screen=-1;
+            }
+            if(action==1)screen=MDS_SCREEN_BACKUP;
+            if(action==3){mds_ui_backup_open(&backup_browser);drawn_screen=-1;}
+            if(action==2){
+                char path[128];
+                if(!mds_backup_path(&backup_browser,path,sizeof path))backup_browser.status="Choose a gallery backup first.";
+                else{
+                    MdsRestoreResult result=mds_restore_prepare(&backup_restore,path);
+                    if(result==MDS_RESTORE_OK)screen=MDS_SCREEN_BACKUP_CONFIRM;
+                    else backup_browser.status=mds_restore_message(result);
+                }
+                drawn_screen=-1;
+            }
+        }else if(screen==MDS_SCREEN_BACKUP_CONFIRM){
+            int accept=-1;
+            if(down&KEY_B)accept=0;else if(down&KEY_A)accept=1;
+            else if(down&KEY_TOUCH)accept=mds_ui_confirm_touch(input.touch.px,input.touch.py);
+            if(accept>=0){
+                MdsRestoreResult result;
+                if(accept&&(!save_ready||mds_editor_dirty(&editor)))result=MDS_RESTORE_BLOCKED;
+                else result=mds_restore_apply(&backup_restore,&editor,accept,backup_browser.directory,persist,NULL);
+                if(result==MDS_RESTORE_OK){backup_notice=mds_restore_message(result);page=editor.slot/10;screen=MDS_SCREEN_BACKUP;}
+                else{backup_browser.status=mds_restore_message(result);screen=MDS_SCREEN_BACKUP_BROWSE;}
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_HOME){
@@ -422,6 +471,8 @@ int main(void)
                      mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_BACKUP)mds_ui_backup(backup_notice);
+            else if(screen==MDS_SCREEN_BACKUP_BROWSE)mds_ui_backup_browser(&backup_browser);
+            else if(screen==MDS_SCREEN_BACKUP_CONFIRM)mds_ui_restore_confirm(&backup_restore);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_SAVED)mds_ui_saved(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected));
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);

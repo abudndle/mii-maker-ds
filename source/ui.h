@@ -3,6 +3,8 @@
 #include "avatar.h"
 #include "save.h"
 #include "profile.h"
+#include "backup.h"
+#include "restore.h"
 #include "exchange.h"
 int mds_ui_init(void);
 void mds_ui_qr_reset(void);
@@ -61,4 +63,7 @@ void mds_ui_saved(const MdsGallery *,unsigned,unsigned);
 int mds_ui_gallery_retry_pending(void);
 void mds_ui_backup(const char *notice);
 const char *mds_ui_backup_gallery(const MdsGallery *);
+int mds_ui_backup_open(MdsBackupBrowser *);
+void mds_ui_backup_browser(const MdsBackupBrowser *);
+void mds_ui_restore_confirm(const MdsRestore *);
 #endif
