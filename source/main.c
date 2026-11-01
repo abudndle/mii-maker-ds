@@ -73,6 +73,8 @@ int main(void)
     unsigned page=0,drawn_page=99;
     MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
     MdsGalleryControls gallery_controls;mds_gallery_controls_reset(&gallery_controls);
+     MdsGalleryActionPress gallery_action_press;
+     mds_gallery_action_press_reset(&gallery_action_press);
     int gallery_drag_arrow_latch=0;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
@@ -268,11 +270,21 @@ int main(void)
             /* Action-strip taps are distinct from selecting or dragging a
              * Mii box. Never activate them during an ongoing drag. */
             MdsGalleryTouchAction touch_action=MDS_GALLERY_ACTION_NONE;
-            if((down&KEY_TOUCH)&&gallery_drag.source<0)
-                touch_action=mds_gallery_action_touch(input.touch.px,input.touch.py);
-            if(touch_action==MDS_GALLERY_ACTION_EDIT)
-                gallery_action|=MDS_GALLERY_CONTROL_EDIT;
-            if((down&KEY_TOUCH)&&touch_action==MDS_GALLERY_ACTION_NONE){
+            if(down&KEY_TOUCH){
+                mds_gallery_action_press_begin(&gallery_action_press,
+                    gallery_drag.source<0?
+                    mds_gallery_action_touch(input.touch.px,input.touch.py):
+                    MDS_GALLERY_ACTION_NONE);
+                if(gallery_action_press.pressed!=MDS_GALLERY_ACTION_NONE&&
+                   (input.held&KEY_SELECT))
+                    gallery_controls.select_used=1;
+            }
+            /* Physical commands cancel an armed touch action so the same
+             * gesture cannot copy, edit or favorite a Mii twice. */
+            if(down&(KEY_A|KEY_B|KEY_X|KEY_Y|KEY_SELECT|KEY_L|KEY_R))
+                mds_gallery_action_press_reset(&gallery_action_press);
+            if((down&KEY_TOUCH)&&
+               gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 MdsGalleryBoxAction box_action=mds_gallery_box_press(
                     slot,slot>=0&&gallery.used[slot]);
@@ -317,6 +329,13 @@ int main(void)
                 }
                 gallery_drag_arrow_latch=arrow;
             }
+            if((input.held&KEY_TOUCH)&&
+               gallery_action_press.pressed!=MDS_GALLERY_ACTION_NONE)
+                mds_gallery_action_press_hold(&gallery_action_press,
+                                              live_touch_x,live_touch_y);
+            if(input.up&KEY_TOUCH)
+                touch_action=mds_gallery_action_press_release(
+                    &gallery_action_press,input.touch.px,input.touch.py);
             if(input.up&KEY_TOUCH){
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
@@ -351,6 +370,8 @@ int main(void)
             /* Ignore gallery mutations and export for the entire stylus
              * gesture, including the frame where a drop clears the drag.
              * Reset SELECT state so its later release cannot export. */
+            if(touch_action==MDS_GALLERY_ACTION_EDIT)
+                gallery_action|=MDS_GALLERY_CONTROL_EDIT;
             int block_gallery_actions=mds_gallery_drag_blocks_actions(
                 was_gallery_dragging,gallery_drag.source>=0);
             if(block_gallery_actions){
@@ -494,6 +515,8 @@ int main(void)
         }
         if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);
         if(screen!=MDS_SCREEN_GALLERY)mds_gallery_controls_reset(&gallery_controls);
+        if(screen!=MDS_SCREEN_GALLERY||editor.pending||camera_open)
+            mds_gallery_action_press_reset(&gallery_action_press);
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
