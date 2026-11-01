@@ -40,6 +40,13 @@ int main(int argc,char **argv)
         assert(mds_original_gallery_room_tab(canvas,256,192,
                 33,2,22,21,0));
         assert(canvas[2*256+33]==0x8044); /* unselected original tab */
+        /* CLMC pane RGB multiplier affects only original opaque texels. */
+        assert(mds_original_gallery_room_tab_tinted(canvas,256,192,
+                9,2,22,21,1,0x801fu));
+        assert(canvas[2*256+9]==0x8013); /* original red; green/blue muted */
+        assert(mds_original_gallery_room_tab_tinted(canvas,256,192,
+                9,2,22,21,1,0xffffu));
+        assert(canvas[2*256+9]==0x8033); /* neutral tint restores original */
         /* Scaled blitter clips safely on screen edges. */
         assert(mds_original_gallery_box_base(canvas,256,192,-18,190,42,46));
         assert(canvas[190*256]==0x8011);
