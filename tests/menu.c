@@ -9,8 +9,8 @@ assert(mds_gallery_slot_step(0,0,-1)==9);assert(mds_gallery_slot_step(0,9,1)==0)
 assert(mds_gallery_page_step(0,4,1)==14);
 assert(mds_gallery_page_step(4,47,1)==57);
 assert(mds_gallery_page_step(4,47,-1)==37);
-assert(mds_gallery_page_step(9,99,1)==9);
-assert(mds_gallery_page_step(0,0,-1)==90);
+assert(mds_gallery_page_step(9,99,1)==-1);
+assert(mds_gallery_page_step(0,0,-1)==-1);
 assert(mds_gallery_page_step(7,99,1)==80);
 assert(mds_gallery_page_step(10,0,1)==-1);
 assert(mds_gallery_page_step(3,35,0)==-1);
