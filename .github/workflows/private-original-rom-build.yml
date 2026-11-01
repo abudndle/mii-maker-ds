@@ -29,7 +29,7 @@ jobs:
       - name: Prepare host verification tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential python3 python3-pil curl gnupg
+          sudo apt-get install -y --no-install-recommends build-essential python3 python3-pil python3-venv curl gnupg
       - name: Fetch owner-supplied ZIP without logging contents
         shell: bash
         env:
@@ -45,6 +45,25 @@ jobs:
           else
             curl --fail --location --silent --show-error --retry 2 \
               "$ASSETS_URL" --output /tmp/mii-private-original.zip
+          fi
+          # A Google Drive share page can be HTTP 200 but HTML, not a ZIP.
+          # Retry via gdown only for Drive share links; never print secret URL.
+          if ! python3 -c 'import sys,zipfile;sys.exit(0 if zipfile.is_zipfile(sys.argv[1]) else 1)' /tmp/mii-private-original.zip; then
+            python3 -m venv /tmp/mii-private-gdown
+            /tmp/mii-private-gdown/bin/pip -q install 'gdown>=5.2,<6'
+            /tmp/mii-private-gdown/bin/python - <<'PY'
+          import os, sys, zipfile
+          from urllib.parse import urlparse
+          import gdown
+          uri = os.environ["ASSETS_URL"]
+          hostname = (urlparse(uri).hostname or "").lower()
+          if hostname not in ("drive.google.com", "docs.google.com"):
+              raise SystemExit("FAIL: private download is HTML/non-ZIP; set MII_ASSETS_URL to a direct ZIP URL")
+          out = "/tmp/mii-private-original.zip"
+          if not gdown.download(uri, out, quiet=True, fuzzy=True) or not zipfile.is_zipfile(out):
+              raise SystemExit("FAIL: Google Drive did not provide a ZIP; confirm file sharing permissions and direct download access")
+          print("PASS: Google Drive private archive downloaded (no URL or contents logged)")
+          PY
           fi
           python3 - <<'PY'
           import zipfile
