@@ -247,6 +247,16 @@ int main(void)
                     drawn_screen=-1;
                 }
             }
+            /* During a continuous stylus drag, crossing a room arrow pages
+             * the bottom destination boxes while retaining the grabbed Mii.
+             * The move itself is committed only when released on a box. */
+            if((k&KEY_TOUCH)&&gallery_drag.source>=0){
+                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+                if(arrow){
+                    int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
+                    if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;drawn_screen=-1;}
+                }
+            }
             if(input.up&KEY_TOUCH){
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
