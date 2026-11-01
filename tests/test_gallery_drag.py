@@ -30,7 +30,8 @@ checks={
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
-    "drag hover does not change room": "if((k&KEY_TOUCH)&&gallery_drag.source>=0)" not in gallery,
+    "continuous touch drag browses rooms over arrows": "if((k&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
+                                      "mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow)" in gallery,
     "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);" in main,
