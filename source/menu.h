@@ -14,6 +14,9 @@ typedef struct { unsigned char select_used,select_active; } MdsGalleryControls;
 /* A recall, edit or export excludes same-frame copy/delete/favorite. */
 int mds_gallery_controls_secondary_allowed(unsigned primary_action);
 void mds_gallery_controls_reset(MdsGalleryControls *controls);
+/* Any stylus interaction while SELECT is active consumes standalone export,
+ * including box selection, room navigation and drags (not only balloon taps). */
+void mds_gallery_controls_consume_touch(MdsGalleryControls *controls,int touch_active);
 unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up);
 int mds_home_touch(int,int);

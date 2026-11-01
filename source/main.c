@@ -255,6 +255,12 @@ int main(void)
                 (down&KEY_A)!=0,(input.held&KEY_A)!=0,
                 (down&KEY_SELECT)!=0,(input.held&KEY_SELECT)!=0,
                 (input.up&KEY_SELECT)!=0);
+            /* SELECT held across any touchscreen gesture (boxes, room tabs,
+             * arrows or action strip) is consumed, even if the stylus is
+             * released before SELECT. Otherwise SELECT-up could export the
+             * wrong Mii after touch selection or cross-room dragging. */
+            mds_gallery_controls_consume_touch(&gallery_controls,
+                ((input.down|input.held|input.up)&KEY_TOUCH)!=0);
             /* SELECT release and stylus release may arrive in one queued
              * VBlank. Do not export during an ongoing touch transaction. */
             gallery_action=mds_gallery_controls_suppress_export_on_touch(
