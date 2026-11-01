@@ -65,6 +65,7 @@ int main(void)
     int confirm_exit_response=-1;
     unsigned page=0,drawn_page=99;
     MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
+    MdsGalleryControls gallery_controls;mds_gallery_controls_reset(&gallery_controls);
     int gallery_drag_arrow_latch=0;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
@@ -229,7 +230,11 @@ int main(void)
                 else importer.status=editor.status;
                 drawn_screen=-1;
             }
-        }else if(screen==MDS_SCREEN_GALLERY){
+         }else if(screen==MDS_SCREEN_GALLERY){
+            unsigned gallery_action=mds_gallery_controls_step(&gallery_controls,
+                (down&KEY_A)!=0,(input.held&KEY_A)!=0,
+                (down&KEY_SELECT)!=0,(input.held&KEY_SELECT)!=0,
+                (input.up&KEY_SELECT)!=0);
             /* Room slots are selected and dragged with the touchscreen;
              * the D-pad must not move a box-selection cursor. */
             if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
@@ -327,8 +332,8 @@ int main(void)
             }
             /* A recalls Miis; hold SELECT+A for legacy create/edit/copy
              * until the equivalent touchscreen actions are available. */
-            if(down&KEY_A && !(k&KEY_SELECT)){mds_ui_room_recall();drawn_screen=-1;}
-            else if((down&KEY_A) && (k&KEY_SELECT)){
+            if(gallery_action&MDS_GALLERY_CONTROL_RECALL){mds_ui_room_recall();drawn_screen=-1;}
+            else if(gallery_action&MDS_GALLERY_CONTROL_EDIT){
                 if(!gallery.used[editor.slot]){
                     if(mds_editor_create(&editor,editor.slot)){
                         gender_return_screen=MDS_SCREEN_GALLERY;
@@ -348,7 +353,7 @@ int main(void)
             }
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
-            if(down&KEY_SELECT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
+            if(gallery_action&MDS_GALLERY_CONTROL_EXPORT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
             if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
@@ -428,7 +433,10 @@ int main(void)
                 else screen=editor_return_screen;
             }
         }
-        if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);
+        if(screen!=MDS_SCREEN_GALLERY){
+            mds_gallery_drag_reset(&gallery_drag);
+            mds_gallery_controls_reset(&gallery_controls);
+        }
         if(screen==MDS_SCREEN_EDITOR&&mds_editor_locked(&editor.draft)){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;editor.status="This received Mii cannot be edited.";}
         if(mds_ui_slider_active()){
             if(screen!=MDS_SCREEN_EDITOR||editor.pending||!(live_held&KEY_TOUCH)){mds_ui_slider_release();drawn_screen=-1;}
