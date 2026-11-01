@@ -205,6 +205,18 @@ void mds_gallery_controls_consume_touch(MdsGalleryControls *controls,int touch_a
 {
  if(controls&&controls->select_active&&touch_active)controls->select_used=1;
 }
+/* SELECT+Y copy, SELECT+L/R room changes and other physical chords must
+ * never also export an image. Apply after controls_step so a simultaneous
+ * SELECT-up + other-key edge is suppressed even if SELECT state reset. */
+unsigned mds_gallery_controls_consume_physical(MdsGalleryControls *controls,
+    unsigned action,int other_key_active)
+{
+ if(other_key_active){
+  if(controls&&controls->select_active)controls->select_used=1;
+  action&=~(unsigned)MDS_GALLERY_CONTROL_EXPORT;
+ }
+ return action;
+}
 unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up)
 {
