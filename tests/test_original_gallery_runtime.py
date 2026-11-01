@@ -18,7 +18,7 @@ checks={
         gallery.index("mds_original_gallery_box_base(bottom,256,192") <
         gallery.index("mds_thumbnail_blit(&gallery_thumbnails"),
     "source original selection borders and safe fallback":
-        "mds_original_gallery_box_border(bottom,256,192" in gallery and
+        "mds_original_gallery_box_border_tinted(bottom,256,192" in gallery and
         "outline(&gallery_hits[i]);" in gallery,
     "source art transparency preserved": "if(pixel&0x8000u)" in art,
     "source assets absent from public files": 'nitro:/art/Select/BtnMiiB.bin' in art and
