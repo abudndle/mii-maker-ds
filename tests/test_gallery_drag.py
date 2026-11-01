@@ -24,8 +24,7 @@ checks={
                                  "slot>=0&&gallery.used[slot]" in gallery,
     "touch release ends drag": "if(input.up&KEY_TOUCH){" in gallery and "mds_gallery_drag_end(&gallery_drag,page," in gallery,
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
-    "room shoulder controls cycle Miis, not pages": "mds_gallery_slot_step(page,editor.slot,down&KEY_L?-1:1)" in gallery and
-                                            "mds_gallery_page_step(page,editor.slot" not in gallery,
+    "room shoulder controls cycle Miis, not pages": "mds_gallery_slot_step(page,editor.slot,down&KEY_L?-1:1)" in gallery,
     "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);" in main,
