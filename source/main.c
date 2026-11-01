@@ -410,6 +410,7 @@ int main(void)
         }else if(!camera_open&&animate){
             mds_ui_scene_transition_step(animation_vblanks,0);
             if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery_top(&gallery,page,editor.slot,editor.status);
+            else if(screen==MDS_SCREEN_SAVED)mds_ui_gallery_top(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected),"Choose a saved Mii");
             else if(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_ACCESSORIES)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));
             else if(screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_GENDER)mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));
             mds_ui_present_top();
