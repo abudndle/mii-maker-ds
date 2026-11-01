@@ -10,7 +10,7 @@ typedef enum {
  MDS_GALLERY_CONTROL_EDIT=2,
  MDS_GALLERY_CONTROL_EXPORT=4
 } MdsGalleryControlAction;
-typedef struct { unsigned char select_used; } MdsGalleryControls;
+typedef struct { unsigned char select_used,select_active; } MdsGalleryControls;
 void mds_gallery_controls_reset(MdsGalleryControls *controls);
 unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up);
