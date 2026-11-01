@@ -54,6 +54,7 @@ void mds_ui_confirm(const char *);
 void mds_ui_confirm_reset(void);
 /* Source DialogBase02_DialogOut or DialogOutUp, input locked on exit. */
 int mds_ui_confirm_request_exit(int up);
+int mds_ui_confirm_choose(int yes,uint32_t now);
 int mds_ui_confirm_exit_done(uint32_t now);
 int mds_ui_confirm_touch_ready(uint32_t now);
 int mds_ui_confirm_animation_tick(uint32_t now);
