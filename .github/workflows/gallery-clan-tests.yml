@@ -1,0 +1,39 @@
+name: Original 3DS gallery CLAN playback (synthetic assets only)
+on:
+  push:
+    paths:
+      - 'source/gallery_clan*'
+      - 'source/original_gallery_art.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tools/extract_gallery_clan.py'
+      - 'tests/test_gallery_clan*'
+      - 'tests/test_original_gallery_art.py'
+      - '.github/workflows/gallery-clan-tests.yml'
+  pull_request:
+    paths:
+      - 'source/gallery_clan*'
+      - 'source/original_gallery_art.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tools/extract_gallery_clan.py'
+      - 'tests/test_gallery_clan*'
+      - 'tests/test_original_gallery_art.py'
+      - '.github/workflows/gallery-clan-tests.yml'
+
+jobs:
+  gallery-clan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run C host tests for source animation state/curves
+        run: python3 tests/test_gallery_clan.py
+      - name: Verify source-derived curves are wired to original gallery
+        run: python3 tests/test_gallery_clan_wiring.py
+      - name: Original synthetic sprite renderer and CLMC color modulation
+        run: python3 tests/test_original_gallery_art.py
+      - name: Compile source-only private CLAN extractor
+        run: python3 -m py_compile tools/extract_gallery_clan.py
