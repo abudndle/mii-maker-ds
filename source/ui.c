@@ -784,7 +784,7 @@ static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
 static unsigned walk_room_start=UINT32_MAX;
 static unsigned walk_ticks;
 static unsigned walk_home_until;
-void mds_ui_room_return_home(void)
+void mds_ui_room_recall(void)
 {
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         mds_room_walk_tick(&room_walk[local],local,0,1);
