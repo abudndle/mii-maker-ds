@@ -8,9 +8,10 @@ editor = (root / "source/editor.c").read_text()
 gallery = main.split("}else if(screen==MDS_SCREEN_GALLERY){", 1)[1].split(
     "}else if(screen==MDS_SCREEN_GENDER){", 1
 )[0]
-shortcut = gallery.split("if(down&KEY_X){", 1)[1].split(
-    "if(down&KEY_Y)", 1
+shortcut = gallery.split("if((down&KEY_X)&&!block_gallery_actions){", 1)[1].split(
+    "if((down&KEY_Y)&&!block_gallery_actions)", 1
 )[0]
+assert "int block_gallery_actions=mds_gallery_drag_blocks_actions(" in gallery
 assert "if(input.held&KEY_SELECT)" in shortcut
 assert "gallery_controls.select_used=1;" in shortcut
 assert "mds_editor_toggle_favorite(&editor,persist,NULL)" in shortcut
