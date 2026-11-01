@@ -235,7 +235,15 @@ int main(void)
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 /* A bare arrow tap changes rooms; an active drag never pages
                  * until release, so the displayed room stays stable. */
-                if(gallery_drag.source<0&&arrow){
+                int room=mds_gallery_room_touch(input.touch.px,input.touch.py);
+                /* Room tabs, arrow controls, and Mii boxes are separate
+                 * original 3DS panes. A room-tab tap never starts a drag. */
+                if(gallery_drag.source<0&&room>=0){
+                    page=(unsigned)room;
+                    editor.slot=page*10+editor.slot%10;
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                    drawn_screen=-1;
+                }else if(gallery_drag.source<0&&arrow){
                     int next=mds_gallery_page_step(page,editor.slot,arrow);
                     if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
                 }else if(gallery_drag.source<0&&slot>=0&&gallery.used[slot]){
