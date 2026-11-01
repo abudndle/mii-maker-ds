@@ -52,7 +52,7 @@ static int original_sprite_ready(OriginalSprite *sprite)
 }
 
 static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
-                                int width,int height,int x,int y,int w,int h)
+                                int width,int height,int x,int y,int w,int h,uint16_t tint)
 {
     if(!canvas||width<=0||height<=0||width>512||height>512||
        w<=0||h<=0||w>512||h>512)return 0;
@@ -66,8 +66,15 @@ static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
             if(dest_x<0||dest_x>=width)continue;
             unsigned original_x=(unsigned)col*sprite->expected_width/(unsigned)w;
             uint16_t pixel=sprite->pixels[original_y*sprite->expected_width+original_x];
-            if(pixel&0x8000u)
-                canvas[(size_t)dest_y*(unsigned)width+(size_t)dest_x]=pixel;
+            if(pixel&0x8000u){
+                /* CLMC source pane color: scale each original pixel channel.
+                 * The source opacity bit is left intact; all integer math. */
+                unsigned r=((unsigned)(pixel&31u)*((unsigned)tint&31u)+15u)/31u;
+                unsigned g=((unsigned)((pixel>>5)&31u)*((unsigned)(tint>>5)&31u)+15u)/31u;
+                unsigned blue=((unsigned)((pixel>>10)&31u)*((unsigned)(tint>>10)&31u)+15u)/31u;
+                canvas[(size_t)dest_y*(unsigned)width+(size_t)dest_x]=
+                    (uint16_t)(0x8000u|r|(g<<5)|(blue<<10));
+            }
         }
     }
     return 1;
@@ -76,23 +83,27 @@ static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
 int mds_original_gallery_box_base(uint16_t *canvas,int width,int height,
                                   int x,int y,int w,int h)
 {
-    return original_sprite_blit(&room_box_base,canvas,width,height,x,y,w,h);
+    return original_sprite_blit(&room_box_base,canvas,width,height,x,y,w,h,0xffffu);
 }
 
 int mds_original_gallery_box_border(uint16_t *canvas,int width,int height,
                                     int x,int y,int w,int h)
 {
-    return original_sprite_blit(&room_box_line,canvas,width,height,x,y,w,h);
+    return original_sprite_blit(&room_box_line,canvas,width,height,x,y,w,h,0xffffu);
 }
 
+int mds_original_gallery_room_tab_tinted(uint16_t *canvas,int width,int height,
+                                         int x,int y,int w,int h,int selected,uint16_t tint)
+{
+    OriginalSprite *sprite=selected?&room_tab_selected:&room_tab_line;
+    if(original_sprite_blit(sprite,canvas,width,height,x,y,w,h,tint))return 1;
+    if(selected)
+        return original_sprite_blit(&room_tab_line,canvas,width,height,x,y,w,h,tint);
+    return 0;
+}
 int mds_original_gallery_room_tab(uint16_t *canvas,int width,int height,
                                   int x,int y,int w,int h,int selected)
 {
-    /* Both panes are from the original source archive. Mapping the 3DS
-     * BCLAN keyframe color/alpha states remains future integration work. */
-    OriginalSprite *sprite=selected?&room_tab_selected:&room_tab_line;
-    if(original_sprite_blit(sprite,canvas,width,height,x,y,w,h))return 1;
-    /* A missing private selected resource must not hide an available base. */
-    if(selected)return original_sprite_blit(&room_tab_line,canvas,width,height,x,y,w,h);
-    return 0;
+    return mds_original_gallery_room_tab_tinted(canvas,width,height,
+                                                x,y,w,h,selected,0xffffu);
 }
