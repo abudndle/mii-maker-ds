@@ -43,6 +43,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
+      - name: Verify original balloon CLAN source parity without private assets
+        run: python3 -m unittest discover -s tests -p test_verify_balloon_clan.py
       - name: Verify private local ZIP-to-ROM build orchestration
         run: python3 tests/test_private_build.py
       - name: Validate build prerequisite diagnostics

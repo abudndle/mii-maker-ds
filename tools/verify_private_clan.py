@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from clan_keyframes import inventory
+from verify_balloon_clan import verify_balloon_clips
 from generate_clan_home_visual import generate as generate_home
 from generate_clan_dialog import generate as generate_dialog
 from generate_clan_editor import generate as generate_editor
@@ -76,6 +77,7 @@ def check(archive, source=SOURCE):
     return {
         "clips": catalog["clip_count"], "channels": catalog["channel_count"],
         "headers": verify_tables(catalog, source),
+        "balloon": verify_balloon_clips(catalog, source),
     }
 
 
@@ -91,6 +93,8 @@ def main():
             args.report.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except (OSError, ValueError, KeyError, TypeError, EOFError) as exc:
         parser.exit(1, f"FAIL: private CLAN table parity: {exc}\n")
+    print("PASS: original SelectBalloonButton %d clips / %d channels" % (
+        summary["balloon"]["clips"], summary["balloon"]["channels"]))
     print("PASS: %d original CLAN clips / %d channels / %d committed animation tables" % (
         summary["clips"], summary["channels"],
         sum(entry["channels"] for entry in summary["headers"].values()),

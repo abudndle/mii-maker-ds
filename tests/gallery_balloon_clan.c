@@ -53,6 +53,8 @@ int main(void)
     assert(!mds_gallery_balloon_clan_active(&state,252));
     mds_gallery_balloon_clan_play(&state,(MdsGalleryBalloonClip)255,253);
     assert(state.clip==MDS_BALLOON_DECIDE&&state.started==240);
+    mds_gallery_balloon_clan_play(&state,(MdsGalleryBalloonClip)-1,254);
+    assert(state.clip==MDS_BALLOON_DECIDE&&state.started==240);
     mds_gallery_balloon_clan_reset(&state);
     assert(!mds_gallery_balloon_clan_active(&state,2));
     assert(mds_gallery_balloon_clan_actions_visible(&state,2));
