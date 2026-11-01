@@ -17,7 +17,7 @@ VERSION=1
 CACHE_RELATIVE=Path("build/private-validation-cache.json")
 SUFFIXES={".py",".c",".h",".json"}
 SCAN_DIRS=("source","tools","tests")
-STATIC_ASSETS=re.compile(r'nitro:/([^"\\s]+)')
+STATIC_ASSETS=re.compile(r'nitro:/([^"\s]+)')
 
 
 def _sha(path:Path)->str:
