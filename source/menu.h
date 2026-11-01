@@ -57,6 +57,9 @@ int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsi
 /* Physical gallery commands are ignored throughout a stylus drag, including
  * the release event where drag_end has already cleared the source. */
 int mds_gallery_drag_blocks_actions(int was_dragging,int dragging);
+/* Cancel all gallery input state atomically before returning Home. */
+void mds_gallery_cancel_for_exit(MdsGalleryDrag *drag,
+    MdsGalleryControls *controls,MdsGalleryActionPress *press,int *arrow_latch);
 /* Iterate the cartridge's 100-slot save gallery without file selection. */
 int mds_gallery_next_saved(const unsigned char *used,unsigned current,int direction);
 int mds_home_focus_step(int,int);
