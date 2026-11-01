@@ -52,7 +52,7 @@ def fingerprint(root:Path,archive:Path)->dict:
         if path.is_symlink():
             raise ValueError("source validation depends on a symbolic link: "+str(path))
         rel=path.relative_to(root).as_posix().encode("utf-8")
-        if path.suffix==".c" and path.name!="avatar.c":
+        if path.suffix==".c" and path.name not in ("avatar.c", "gallery_balloon_clan.c"):
             literals=STATIC_ASSETS.findall(path.read_text(encoding="utf-8"))
             if not literals:
                 continue
