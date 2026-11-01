@@ -88,3 +88,17 @@ int mds_room_next_refresh(const MdsRoomCache *cache,
  }
  return -1;
 }
+
+void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home)
+{
+ if(!walk||local>=MDS_ROOM_SLOTS)return;
+ if(return_home){walk->dx=0;walk->dy=0;walk->phase=0;return;}
+ /* Stagger ten actors; move in a small loop around each assigned slot.
+  * Fixed-point-free motion is reproducible on ARM9 and in host tests. */
+ unsigned phase=(ticks/12u+local*7u)%64u;
+ int x=(int)(phase<16u?phase:phase<32u?16u:phase<48u?48u-phase:0u);
+ int y=(int)(phase<16u?0u:phase<32u?phase-16u:phase<48u?16u:64u-phase);
+ walk->dx=(int16_t)(x-8);
+ walk->dy=(int16_t)(y-8);
+ walk->phase=(uint8_t)phase;
+}
