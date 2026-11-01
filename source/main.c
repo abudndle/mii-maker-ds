@@ -385,7 +385,9 @@ int main(void)
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||editor_selection_repaint||editor_adjust_repaint||((screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED)&&
                      mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
-            else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
+            else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(
+                &gallery,page,editor.slot,
+                save_ready?editor.status:"Cartridge save unavailable");
             else if(screen==MDS_SCREEN_SAVED)mds_ui_saved(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected));
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);
             else if(screen==MDS_SCREEN_IMPORT)mds_ui_import(&importer);
