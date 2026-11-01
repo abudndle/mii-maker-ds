@@ -35,6 +35,9 @@ int main(int argc,char **argv)
         assert(canvas[2*256+9]==0x8033); /* selected-tab source pixel */
         assert(canvas[49*256+21]==0x8022); /* box border overlays fill */
         assert(canvas[49*256+22]==0x8022);
+        assert(mds_original_gallery_box_border_tinted(canvas,256,192,
+                21,49,42,46,0x801fu));
+        assert(canvas[49*256+21]==0x8002); /* original red, mute G/B */
         assert(canvas[48*256+21]==0x9111); /* no overflow outside widget */
         assert(canvas[2*256+8]==0x9111);
         assert(mds_original_gallery_room_tab(canvas,256,192,
