@@ -1,44 +1,28 @@
 #include "view.h"
-#include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <limits.h>
-static int absolute(int v){return v<0?-v:v;}
-int main(void)
+static const int16_t sine_q14[MDS_VIEW_STEPS]={
+ 0,4240,8192,11585,14189,15826,16384,15826,14189,11585,8192,4240,
+ 0,-4240,-8192,-11585,-14189,-15826,-16384,-15826,-14189,-11585,-8192,-4240
+};
+unsigned mds_view_step(unsigned current,int direction)
 {
- assert(mds_view_step(0,1)==1);
- assert(mds_view_step(0,-1)==23);
- assert(mds_view_step(23,1)==0);
- assert(mds_view_step(24,1)==1);
- assert(mds_view_step(25,-1)==0);
- assert(mds_view_step(11,0)==11);
- assert(mds_view_step(0,INT_MIN)==23);
- assert(mds_view_step(0,INT_MAX)==1);
- int32_t x=1000,z=0;
- mds_view_rotate(&x,&z,0);assert(x==1000&&z==0);
- mds_view_rotate(&x,&z,6);assert(x==0&&z==-1000);
- mds_view_rotate(&x,&z,6);assert(x==-1000&&z==0);
- mds_view_rotate(&x,&z,6);assert(x==0&&z==1000);
- mds_view_rotate(&x,&z,6);assert(x==1000&&z==0);
- mds_view_rotate(&x,&z,24);assert(x==1000&&z==0);
- mds_view_rotate(NULL,&z,1);mds_view_rotate(&x,NULL,1);
- x=30000;z=-11000;
- mds_view_rotate(&x,&z,3);
- assert(absolute(x-13436)<4&&absolute(z+28991)<4);
- /* Source BOD3 vertices can approach 524288 units. Arithmetic must be
-  * wide enough and not wrap like 32-bit intermediate multiplies. */
- x=524288;z=-524288;
- mds_view_rotate(&x,&z,3);
- assert(absolute(x)<100&&absolute(z+741455)<100);
- /* Large model coordinates must saturate rather than wrap to the
-  * opposite side of the screen after a diagonal camera rotation. */
- x=INT32_MAX;z=INT32_MAX;
- mds_view_rotate(&x,&z,3);
- assert(x==INT32_MAX);
- assert(z==0);
- x=INT32_MIN;z=INT32_MIN;
- mds_view_rotate(&x,&z,3);
- assert(x==INT32_MIN);
- assert(z==0);
- puts("PASS: original Mii L/R preview camera steps, wrapping, 90-degree poses, wide coordinates");
+ current%=MDS_VIEW_STEPS;
+ if(!direction)return current;
+ return (current+(direction>0?1:MDS_VIEW_STEPS-1))%MDS_VIEW_STEPS;
+}
+static int32_t clamp_coordinate(int64_t value)
+{
+ if(value>INT32_MAX)return INT32_MAX;
+ if(value<INT32_MIN)return INT32_MIN;
+ return (int32_t)value;
+}
+void mds_view_rotate(int32_t *x,int32_t *z,unsigned step)
+{
+ if(!x||!z)return;
+ step%=MDS_VIEW_STEPS;
+ if(!step)return;
+ int32_t sine=sine_q14[step],cosine=sine_q14[(step+6)%MDS_VIEW_STEPS];
+ int64_t ox=*x,oz=*z;
+ *x=clamp_coordinate((ox*cosine+oz*sine)/16384);
+ *z=clamp_coordinate((oz*cosine-ox*sine)/16384);
 }
