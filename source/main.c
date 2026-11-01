@@ -240,24 +240,9 @@ int main(void)
                     drawn_screen=-1;
                 }
             }
-            if(down&KEY_A){
-                if(!gallery.used[editor.slot]){
-                    if(mds_editor_create(&editor,editor.slot)){
-                        gender_return_screen=MDS_SCREEN_GALLERY;
-                        mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
-                        screen=MDS_SCREEN_GENDER;
-                    }
-                }else if(gallery.miis[editor.slot].value[61]&1){
-                    /* Nintendo 3DS behavior: permitted received Miis must be
-                     * copied first; never edit the received original. */
-                    if(!mds_editor_request(&editor,MDS_EDIT_COPY_RECEIVED))
-                        drawn_screen=-1;
-                }else if(!mds_editor_locked(&gallery.miis[editor.slot])){
-                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                    editor_return_screen=MDS_SCREEN_GALLERY;
-                    screen=MDS_SCREEN_EDITOR;
-                }else editor.status="This received Mii cannot be edited.";
-            }
+            /* A recalls wandering Miis; creation and editing remain available
+             * through the touchscreen menu instead of hijacking A. */
+            if(down&KEY_A){mds_ui_room_return_home();drawn_screen=-1;}
             if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             if(down&KEY_SELECT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
