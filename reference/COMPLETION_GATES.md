@@ -58,3 +58,23 @@ without running the resulting ROM through a compatible emulator or hardware.
 - [x] Validate all **30** shipped RGB555 screen bitmaps and **331** packed sprite payloads
 - [x] Reject missing feature art, unsupported dynamic path templates, malformed sprite sizes and invalid screen dimensions before any private ROM build
 - [ ] Compile and boot an actual private DS ROM with BlocksDS and melonDS
+
+## Current saved-Mii gallery and original-scene acceptance (in progress)
+
+The transfer menu selects from the on-cartridge 100-Mii gallery rather
+than requiring external import; old SD import is retained as an *optional*
+action. An isolated test-save generator writes ten distinct synthetic
+characters with precisely one Personal/gold-crown Mii, never overwriting
+user saves. `source/room.[ch]` arranges ten separately cached original
+model previews using scaled `SelectMii` pane positions. Full-body
+render failures fall back to the original face/head renderer. This is
+not complete CLYT/CLAN rendering parity, audio, wireless transport,
+photo conversion, or original room choreography.
+
+**Do not accept a melonDS gallery screen merely because a PNG was
+captured.** Earlier automated input yielded an identical Home-screen
+capture. `tools/run_melonds_headless.sh` now sends physical XTest input
+and uses `tools/melonds_gallery_probe.py` to reject identical frames,
+a bottom-only menu change, and fewer than two independently changed Mii
+pane positions. Genuine screenshot acceptance and save persistence
+remain separate from a successful ROM boot.
