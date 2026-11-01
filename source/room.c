@@ -5,6 +5,19 @@ unsigned mds_room_start(unsigned selected)
 {
  return selected<MDS_SLOTS?(selected/MDS_ROOM_SLOTS)*MDS_ROOM_SLOTS:0;
 }
+int mds_room_position(unsigned local,int *x,int *y)
+{
+ /* Original B_Mii_00...09 CLTY pane centers, with positive Y upward.
+  * 3DS x = [-108,-54,0,54,108]; y = +30 first row, -30 second.
+  * Mapping uses original 320x240 layout geometry, not invented positions. */
+ static const int8_t source_x[5]={-108,-54,0,54,108};
+ if(local>=MDS_ROOM_SLOTS||!x||!y)return 0;
+ int cx=160+source_x[local%5];
+ int cy=120+(local<5?-30:30);
+ *x=(cx*4)/5-(int)MDS_ROOM_W/2;
+ *y=(cy*4)/5-(int)MDS_ROOM_H/2;
+ return 1;
+}
 void mds_room_select(MdsRoomCache *cache,unsigned selected)
 {
  if(!cache||selected>=MDS_SLOTS)return;
