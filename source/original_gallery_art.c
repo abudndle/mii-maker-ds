@@ -24,6 +24,11 @@ static OriginalSprite room_tab_line = {
 static OriginalSprite room_tab_selected = {
     "nitro:/art/Select/BtnRoomEDITline01.bin",32,28,0,{0}
 };
+/* The 16x16 original Select.arc shadow stamp is a separate pane from the
+ * 12x18 arrow graphic. Its visible portion is composited through CLVC. */
+static OriginalSprite arrow_shadow = {
+    "nitro:/art/Select/BtnScrollShadow.bin",16,16,0,{0}
+};
 
 static int original_sprite_ready(OriginalSprite *sprite)
 {
@@ -75,6 +80,43 @@ static int original_sprite_blit(OriginalSprite *sprite,uint16_t *canvas,
                 canvas[(size_t)dest_y*(unsigned)width+(size_t)dest_x]=
                     (uint16_t)(0x8000u|r|(g<<5)|(blue<<10));
             }
+        }
+    }
+    return 1;
+}
+
+/* Blend the PRIVATE original 16x16 shadow stamp using source CLVC alpha.
+ * The original texture's own A1 bit is applied before interpolation.
+ * Color and position are not replaced with a synthetic glow/rectangle.
+ * The caller scales the source CLYT pane onto the DS screen. */
+int mds_original_gallery_arrow_shadow(uint16_t *canvas,int width,int height,
+                                      int x,int y,int w,int h,unsigned alpha)
+{
+    if(!canvas||width<=0||height<=0||width>512||height>512||
+       w<=0||h<=0||w>512||h>512||!alpha)return 0;
+    /* Keep partial opacity from the original CLVC track, but reject absurd
+     * user-side values safely in this generic image compositing routine. */
+    if(alpha>255u)alpha=255u;
+    if(!original_sprite_ready(&arrow_shadow))return 0;
+    for(int row=0;row<h;row++){
+        long py=(long)y+row;
+        if(py<0||py>=height)continue;
+        unsigned sy=(unsigned)row*arrow_shadow.expected_height/(unsigned)h;
+        for(int col=0;col<w;col++){
+            long px=(long)x+col;
+            if(px<0||px>=width)continue;
+            unsigned sx=(unsigned)col*arrow_shadow.expected_width/(unsigned)w;
+            uint16_t src=arrow_shadow.pixels[sy*arrow_shadow.expected_width+sx];
+            if(!(src&0x8000u))continue;
+            size_t index=(size_t)py*(unsigned)width+(size_t)px;
+            uint16_t dst=canvas[index];
+            unsigned out=0;
+            for(unsigned shift=0;shift<=10;shift+=5){
+                unsigned sv=(src>>shift)&31u,dv=(dst>>shift)&31u;
+                unsigned value=(dv*(255u-alpha)+sv*alpha+127u)/255u;
+                out|=value<<shift;
+            }
+            canvas[index]=(uint16_t)(0x8000u|out);
         }
     }
     return 1;
