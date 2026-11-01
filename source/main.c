@@ -64,6 +64,7 @@ int main(void)
     int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
     unsigned page=0,drawn_page=99;
     MdsGalleryDrag gallery_drag;mds_gallery_drag_reset(&gallery_drag);
+    int gallery_drag_arrow_latch=0;
     uint32_t slider_changed=0;int slider_preview_pending=0;
     int last_transition_screen=MDS_SCREEN_HOME;
     int last_profile_mode=-1;
@@ -260,20 +261,25 @@ int main(void)
              * The move itself is committed only when released on a box. */
             if((k&KEY_TOUCH)&&gallery_drag.source>=0){
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
-                if(arrow){
+                if(arrow&&arrow!=gallery_drag_arrow_latch){
                     int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                     if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;drawn_screen=-1;}
                 }
+                gallery_drag_arrow_latch=arrow;
             }
             if(input.up&KEY_TOUCH){
                 unsigned source=0;
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 if(gallery_drag.source>=0&&arrow){
-                    /* Arrow tap pages the destination room but keeps the
-                     * grabbed Mii active. A later box tap/drop commits it. */
-                    int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
-                    if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                    /* Do not double-page on release after crossing an arrow
+                     * while held. Source remains grabbed until a box drop. */
+                    if(gallery_drag_arrow_latch!=arrow){
+                        int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
+                        if(next>=0){page=(unsigned)next/10;drawn_screen=-1;}
+                    }
+                    gallery_drag_arrow_latch=0;
                 }else if(gallery_drag.source>=0){
+                    gallery_drag_arrow_latch=0;
                     int destination=mds_gallery_drag_end(&gallery_drag,page,
                         mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
                     if(destination>=0){
