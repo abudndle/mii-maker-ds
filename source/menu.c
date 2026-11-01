@@ -26,7 +26,7 @@ MdsGalleryTouchAction mds_gallery_action_touch(int x,int y)
 }
 void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture)
 {
- if(gesture)gesture->pressed=MDS_GALLERY_ACTION_NONE;
+ if(gesture){gesture->pressed=MDS_GALLERY_ACTION_NONE;gesture->target_slot=-1;}
 }
 void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
                                     MdsGalleryTouchAction action)
@@ -35,6 +35,13 @@ void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
  gesture->pressed=(action>=MDS_GALLERY_ACTION_FAVORITE&&
                    action<=MDS_GALLERY_ACTION_EDIT)?
                    action:MDS_GALLERY_ACTION_NONE;
+ gesture->target_slot=-1;
+}
+void mds_gallery_action_press_bind_slot(MdsGalleryActionPress *gesture,unsigned slot)
+{
+ if(!gesture)return;
+ gesture->target_slot=gesture->pressed!=MDS_GALLERY_ACTION_NONE&&slot<100u?
+                      (int)slot:-1;
 }
 void mds_gallery_action_press_hold(MdsGalleryActionPress *gesture,int x,int y)
 {
@@ -47,10 +54,20 @@ MdsGalleryTouchAction mds_gallery_action_press_release(
 {
  if(!gesture)return MDS_GALLERY_ACTION_NONE;
  MdsGalleryTouchAction action=gesture->pressed;
- gesture->pressed=MDS_GALLERY_ACTION_NONE;
+ mds_gallery_action_press_reset(gesture);
  return action!=MDS_GALLERY_ACTION_NONE&&
         mds_gallery_action_touch(x,y)==action?
         action:MDS_GALLERY_ACTION_NONE;
+}
+MdsGalleryTouchAction mds_gallery_action_press_release_for_slot(
+    MdsGalleryActionPress *gesture,int x,int y,unsigned slot,int visible)
+{
+ if(!gesture)return MDS_GALLERY_ACTION_NONE;
+ if(!visible||slot>=100u||gesture->target_slot!=(int)slot){
+  mds_gallery_action_press_reset(gesture);
+  return MDS_GALLERY_ACTION_NONE;
+ }
+ return mds_gallery_action_press_release(gesture,x,y);
 }
 MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied)
 {

@@ -14,7 +14,7 @@ assert 'mds_gallery_balloon_clan_actions_visible(&gallery_balloon_state,now)' in
 assert 'if(g->used[selected]&&mds_ui_gallery_actions_visible(now))' in ui
 assert 'if(!g->used[selected]||mds_ui_gallery_actions_visible(now))' in ui
 main=(root/'source/main.c').read_text()
-assert 'gallery_drag.source<0&&mds_ui_gallery_actions_visible(animation_vblanks)?' in main
+assert 'gallery_drag.source<0&&\n                    (!gallery.used[editor.slot]||mds_ui_gallery_actions_visible(animation_vblanks))?' in main
 assert 'balloon.favorite_scale_q16' in ui
 assert 'balloon.balloon_alpha*balloon.favorite_alpha' in ui
 assert 'mds_original_gallery_action_icon_alpha(bottom,256,192,' in ui
