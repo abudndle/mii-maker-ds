@@ -78,3 +78,9 @@ and uses `tools/melonds_gallery_probe.py` to reject identical frames,
 a bottom-only menu change, and fewer than two independently changed Mii
 pane positions. Genuine screenshot acceptance and save persistence
 remain separate from a successful ROM boot.
+
+### EEPROM test fixture and real-room verification
+- [x] Host-generated isolated ten-Mii fixture round-trips in both 8K compact and 64K legacy formats, with one Personal Mii
+- [x] GitHub original-resource build, model and motion integrity tests remain independent of gameplay testing
+- [ ] Prove the 8K compact fixture is recognized by melonDS's emulated DS cartridge before accepting ten-Mii room renders
+- [ ] Compare all ten source-layout room characters with the original 3DS game, including animation and persistence across reboot
