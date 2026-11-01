@@ -32,6 +32,10 @@ int main(void)
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,0,&a,rendered));
  assert(mds_room_matches(&cache,19,0,&a));
+ /* Room cache identity is based on appearance, not slot selection. */
+ assert(mds_room_matches(&cache,10,0,&a));
+ assert(!mds_room_matches(&cache,9,0,&a));
+ assert(!mds_room_matches(&cache,19,1,&a));
  assert(mds_room_blit(&cache,19,0,dst,256,192,-9,0));
  assert(dst[0]==0x801f);
  /* Extreme placement must not wrap onto the opposite edge of the room. */
@@ -46,6 +50,8 @@ int main(void)
  assert(dst[0]==0);
  a.value[5]++;
  assert(!mds_room_matches(&cache,19,0,&a));
+ assert(mds_room_capture(&cache,19,1,&a,rendered));
+ assert(mds_room_matches(&cache,19,1,&a));
  mds_room_select(&cache,20);
  assert(cache.start==20);
  assert(!cache.actor[0].valid);
