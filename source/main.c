@@ -259,6 +259,8 @@ int main(void)
             }
             if(down&KEY_TOUCH){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
+                MdsGalleryBoxAction box_action=mds_gallery_box_press(
+                    slot,slot>=0&&gallery.used[slot]);
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 int edge_invalid=input.touch.py>=59&&input.touch.py<131&&
                     ((page==0&&input.touch.px<19)||
@@ -278,12 +280,13 @@ int main(void)
                 }else if(gallery_drag.source<0&&arrow){
                     int next=mds_gallery_page_step(page,editor.slot,arrow);
                     if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_ui_gallery_navigation(arrow,animation_vblanks);mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
-                }else if(gallery_drag.source<0&&slot>=0&&gallery.used[slot]){
-                    /* A tap selects immediately; if the stylus moves before
-                     * release, the same gesture becomes a drag operation. */
+                }else if(gallery_drag.source<0&&box_action!=MDS_GALLERY_BOX_NONE){
+                    /* A tap selects any box, including an empty destination.
+                     * Only a saved Mii can be grabbed and dragged. */
                     editor.slot=(unsigned)slot;
                     mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                    mds_gallery_drag_begin(&gallery_drag,page,slot,1);
+                    if(box_action==MDS_GALLERY_BOX_DRAG)
+                        mds_gallery_drag_begin(&gallery_drag,page,slot,1);
                     mds_ui_gallery_confirm(animation_vblanks);
                     drawn_screen=-1;
                 }
