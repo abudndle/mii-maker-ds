@@ -12,6 +12,18 @@ int mds_gallery_touch(int x,int y,unsigned page)
     for(unsigned i=0;i<sizeof gallery_hits/sizeof gallery_hits[0];i++)if(inside(&gallery_hits[i],x,y))return (int)(page*10)+gallery_hits[i].action;
     return -1;
 }
+/* Bottom-screen accessibility strip: outside the source-derived room tabs,
+ * fixed Mii boxes, and side arrows. A later private asset conversion can
+ * replace these provisional bounds with transformed SelectBalloonButton panes.
+ * Gaps between actions are intentionally inert. */
+MdsGalleryTouchAction mds_gallery_action_touch(int x,int y)
+{
+ if(y<168||y>=191||x<8||x>=248)return MDS_GALLERY_ACTION_NONE;
+ if(x<84)return MDS_GALLERY_ACTION_FAVORITE;
+ if(x>=90&&x<166)return MDS_GALLERY_ACTION_COPY;
+ if(x>=172)return MDS_GALLERY_ACTION_EDIT;
+ return MDS_GALLERY_ACTION_NONE;
+}
 MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied)
 {
  if(slot<0||slot>=100)return MDS_GALLERY_BOX_NONE;
