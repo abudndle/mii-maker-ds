@@ -231,10 +231,13 @@ int main(void)
                 if(gallery_drag.source<0&&arrow){
                     int next=mds_gallery_page_step(page,editor.slot,arrow);
                     if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
-                }else if(gallery_drag.source<0){
-                    mds_gallery_drag_begin(&gallery_drag,page,slot,
-                                           slot>=0&&gallery.used[slot]);
-                    if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
+                }else if(gallery_drag.source<0&&slot>=0&&gallery.used[slot]){
+                    /* A tap selects immediately; if the stylus moves before
+                     * release, the same gesture becomes a drag operation. */
+                    editor.slot=(unsigned)slot;
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                    mds_gallery_drag_begin(&gallery_drag,page,slot,1);
+                    drawn_screen=-1;
                 }
             }
             if(input.up&KEY_TOUCH){
