@@ -46,7 +46,9 @@ int main(void)
     assert(style.room_transition);
     assert(!mds_gallery_clan_update(&fx,1,11,201));
     assert(mds_gallery_clan_style(&fx,202,&style));
-    assert(!style.room_transition); /* 2 source ticks only */
+    assert(style.room_transition); /* source frame 1 key is rendered */
+    assert(mds_gallery_clan_style(&fx,203,&style));
+    assert(!style.room_transition); /* room-color transition completed */
     assert(!mds_gallery_clan_update(&fx,10,11,203)); /* out-of-range page */
     assert(!mds_gallery_clan_update(&fx,1,100,203)); /* out-of-range slot */
     assert(!mds_gallery_clan_style(&fx,205,&style));
