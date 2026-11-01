@@ -138,7 +138,9 @@ static void triangle(Vertex a,Vertex b,Vertex c,const uint8_t*color,int masked,c
   int wa=ar,wb=brw,wc=cr;int64_t zf=zr,lf=lr,uf=ur,vf=vr;
   for(int x=x0;x<=x1;x++,wa+=ax,wb+=bx,wc+=cx,zf+=zx,lf+=lx,uf+=ux,vf+=vx){
    if(wa<0||wb<0||wc<0)continue;
-   int z=(int)(zf/65536),idx=y*S+x;if(z<depth[idx])continue;
+   int64_t zwide=zf/65536;
+   if(zwide<INT_MIN||zwide>INT_MAX)continue;
+   int z=(int)zwide,idx=y*S+x;if(z<depth[idx])continue;
    unsigned alpha=255,rgb[3];int light=clamp((int)(lf/65536),255);
    if(masked||tex){
     int u=(int)(uf/65536),v=(int)(vf/65536);uint32_t col;
