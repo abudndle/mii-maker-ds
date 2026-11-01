@@ -1,0 +1,20 @@
+name: Mii gallery Favorite controls (synthetic only)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  favorite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check SELECT+X shortcut, delete and export isolation
+        run: python3 tests/test_gallery_favorite_wiring.py
+      - name: Verify Favorite save rollback and Mii ownership rules
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -Isource \
+            tests/editor.c source/editor.c source/save.c \
+            source/avatar.c source/unicode.c -o /tmp/mds-favorite-test
+          /tmp/mds-favorite-test
