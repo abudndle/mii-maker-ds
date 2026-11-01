@@ -15,7 +15,7 @@ checks={
                                                     "(86+y)*256+240+x" in ui,
  "left-right arrow mirrored": "original_room_arrow[y*12+(11-x)]" in ui,
  "source selection background retained": 'bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);' in ui,
- "runtime used in gallery": "    draw_original_room_arrows();" in ui,
+ "runtime used in gallery": "    draw_original_room_arrows(&navigation);" in ui,
  "converter validates input": "CLIM tiled-data size mismatch" in source and
                                "invalid CLIM footer fields" in source,
 }
