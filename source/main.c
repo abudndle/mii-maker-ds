@@ -60,6 +60,13 @@ int main(void)
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
+    /* On a writable blank cartridge, first launch must create the
+     * console's Personal Mii before ordinary home/gallery navigation. */
+    if(save_ready&&mds_gallery_empty(&gallery)&&
+       mds_editor_create(&editor,0)){
+        mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
+        screen=MDS_SCREEN_GENDER;
+    }
     int saved_selected=-1,qr_return_screen=MDS_SCREEN_HOME;
     int editor_return_screen=MDS_SCREEN_HOME,pending_editor_return=0;
     int confirm_exit_response=-1;
@@ -369,11 +376,17 @@ int main(void)
                 screen=MDS_SCREEN_EDITOR;
             }
             if(down&KEY_B){
-                mds_profile_cancel(&profile);
-                /* Cancel new-Mii creation without leaving a dirty draft. */
-                editor.draft=editor.baseline;editor.pending=MDS_EDIT_NONE;
-                editor.status="Creation cancelled";
-                screen=gender_return_screen;
+                if(save_ready&&mds_gallery_empty(&gallery)){
+                    /* First-boot Personal Mii setup is mandatory, but a
+                     * missing or unreadable save never traps the player. */
+                    editor.status="Choose your first Mii to continue.";
+                }else{
+                    mds_profile_cancel(&profile);
+                    /* Cancel optional new-Mii creation cleanly. */
+                    editor.draft=editor.baseline;editor.pending=MDS_EDIT_NONE;
+                    editor.status="Creation cancelled";
+                    screen=gender_return_screen;
+                }
             }
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PROFILE){
@@ -431,9 +444,16 @@ int main(void)
             if((input.held&KEY_B)&&(down&KEY_Y))mds_editor_request(&editor,MDS_EDIT_DELETE);
             else if(down&KEY_Y){camera_qr=0;camera_open=mds_camera_open();editor.status=mds_camera_status();}
             if((down&KEY_B)&&!(input.held&KEY_Y)){
-                mds_editor_request(&editor,MDS_EDIT_RELOAD);
-                if(editor.pending)pending_editor_return=1;
-                else screen=editor_return_screen;
+                if(save_ready&&mds_gallery_empty(&gallery)){
+                    /* First Mii is assigned the gold crown on save.
+                     * Do not discard its draft before it is persisted. */
+                    editor.status="Save your first Mii before leaving.";
+                    drawn_screen=-1;
+                }else{
+                    mds_editor_request(&editor,MDS_EDIT_RELOAD);
+                    if(editor.pending)pending_editor_return=1;
+                    else screen=editor_return_screen;
+                }
             }
         }
         if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);
