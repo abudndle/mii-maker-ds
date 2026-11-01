@@ -240,7 +240,10 @@ int main(void)
                     drawn_screen=-1;
                 }
             }
-            if(down&KEY_A){
+            /* A recalls Miis; hold SELECT+A for legacy create/edit/copy
+             * until the equivalent touchscreen actions are available. */
+            if(down&KEY_A && !(k&KEY_SELECT)){mds_ui_room_recall();drawn_screen=-1;}
+            else if((down&KEY_A) && (k&KEY_SELECT)){
                 if(!gallery.used[editor.slot]){
                     if(mds_editor_create(&editor,editor.slot)){
                         gender_return_screen=MDS_SCREEN_GALLERY;
