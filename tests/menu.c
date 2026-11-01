@@ -36,7 +36,17 @@ assert(mds_gallery_drag_begin(&drag,4,47,1));
 assert(mds_gallery_drag_end(&drag,4,47,&from)==-1); /* dropping on self */
 assert(drag.source==-1);
 assert(mds_gallery_drag_begin(&drag,4,47,1));
-assert(mds_gallery_drag_end(&drag,5,47,&from)==-1); /* destination wrong page */
+assert(mds_gallery_drag_end(&drag,5,47,&from)==-1); /* dropping on source */
+/* A stale destination from a different room must never be committed. */
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,49,&from)==-1); /* off-page slot */
+assert(drag.source==-1);
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,4,52,&from)==-1); /* future-room slot */
+assert(drag.source==-1);
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,52,&from)==52&&from==47); /* valid cross-room move */
+assert(drag.source==-1);
 assert(mds_gallery_drag_begin(&drag,4,47,1));
 assert(mds_gallery_drag_end(&drag,5,-1,&from)==-1); /* outside a slot */
 assert(mds_gallery_drag_begin(&drag,4,47,1));
