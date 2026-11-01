@@ -23,6 +23,13 @@ def record(rom, assets):
             "asset_zip_size": assets.stat().st_size,
             "private_assets_included": False}
 
+def write_provenance(rom, assets, output):
+    data = record(rom, assets)
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(data, sort_keys=True, indent=2) + "\n")
+    return data
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("rom", type=Path)

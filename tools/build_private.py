@@ -77,6 +77,8 @@ def build(archive: Path, validate_only=False, jobs=2, no_cache=False) -> None:
     run(sys.executable, "tests/rom_motion_packs.py", ROM, "--asset-zip", archive)
     run(sys.executable, "tests/rom_arm_sections.py", ROM)
 
+    from private_build_provenance import write_provenance
+    write_provenance(ROM, archive, ROOT / "build/private-build-provenance.json")
     digest = hashlib.sha256(ROM.read_bytes()).hexdigest()
     print("PASS: locally built ROM: " + str(ROM))
     print("SHA-256: " + digest)
