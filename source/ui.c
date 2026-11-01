@@ -769,7 +769,14 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
            gallery_room_attempts[local]<3u)gallery_retry_pending=1;
     char title[42];snprintf(title,sizeof title,"Room %u / 20",start/5+1);
     label(8,3,title);
-    label(8,165,"Five saved Miis per room");
+    if(motion_scene&&motions[0].file){
+        const char *clip_name=gallery_selected_clip<0?"Auto":
+            motions[0].clips[gallery_selected_clip].name;
+        char clip_label[48];
+        snprintf(clip_label,sizeof clip_label,"Motion: %s",clip_name);
+        label(8,150,clip_label);
+        label(8,163,"UP/DOWN: Clip   START: Auto");
+    }else label(8,165,"Five saved Miis per room");
     if(notice&&notice[0]&&strcmp(notice,"Ready"))
         label(8,179,display_status(notice));
 }
