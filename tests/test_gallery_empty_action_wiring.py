@@ -12,7 +12,7 @@ guard = """if(!gallery.used[editor.slot]&&
                 touch_action==MDS_GALLERY_ACTION_COPY))
                 touch_action=MDS_GALLERY_ACTION_NONE;"""
 assert guard in gallery
-assert gallery.index("mds_gallery_action_press_release(") < gallery.index(guard)
+assert gallery.index("mds_gallery_action_press_release_for_slot(") < gallery.index(guard)
 assert gallery.index(guard) < gallery.index(
     "if(touch_action==MDS_GALLERY_ACTION_EDIT)")
 assert 'if(g->used[selected]&&mds_ui_gallery_actions_visible(now)){\n        text_at(bottom,38,174,' in ui
