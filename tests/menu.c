@@ -35,4 +35,17 @@ assert(mds_gallery_drag_begin(&drag,2,22,1));
 mds_gallery_drag_reset(&drag);
 assert(mds_gallery_drag_end(&drag,3,34,&from)==-1);
 assert(mds_gallery_drag_end(NULL,3,34,&from)==-1);
+unsigned char occupied[100]={0};
+assert(mds_gallery_next_saved(occupied,0,1)==-1);
+assert(mds_gallery_next_saved(NULL,0,1)==-1);
+assert(mds_gallery_next_saved(occupied,100,1)==-1);
+occupied[0]=occupied[42]=occupied[99]=1;
+assert(mds_gallery_next_saved(occupied,0,1)==42);
+assert(mds_gallery_next_saved(occupied,0,-1)==99);
+assert(mds_gallery_next_saved(occupied,99,1)==0);
+assert(mds_gallery_next_saved(occupied,42,-1)==0);
+assert(mds_gallery_next_saved(occupied,42,0)==42);
+occupied[42]=occupied[99]=0;
+assert(mds_gallery_next_saved(occupied,0,1)==0);
+assert(mds_gallery_next_saved(occupied,0,-1)==0);
 puts("PASS: original menu, gallery D-pad and cross-page stylus drag move/swap guards");}

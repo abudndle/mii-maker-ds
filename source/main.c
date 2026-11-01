@@ -121,13 +121,13 @@ int main(void)
                     screen=MDS_SCREEN_GENDER;notice="";
                 }else notice=editor.status;
             }else if(action==MDS_HOME_TRANSFER){mds_ui_import_open(&importer);screen=MDS_SCREEN_IMPORT;}
-            else if(action==MDS_HOME_QR){screen=MDS_SCREEN_QR;qr_select_image=0;mds_ui_qr_reset();notice="L/R: choose a saved Mii";if(!gallery.used[editor.slot]){for(unsigned i=0;i<100;i++)if(gallery.used[i]){editor.slot=i;break;}}}
+            else if(action==MDS_HOME_QR){screen=MDS_SCREEN_QR;qr_select_image=0;mds_ui_qr_reset();notice="L/R: choose a saved Mii";if(!gallery.used[editor.slot]){int saved=mds_gallery_next_saved(gallery.used,editor.slot,1);if(saved>=0)editor.slot=(unsigned)saved;}}
             else if(action==MDS_HOME_HELP)notice="Choose View or Create. B returns here.";
             if(down&KEY_B)notice="";
         }else if(screen==MDS_SCREEN_QR){
             int action=0;
             if(down&KEY_B){if(qr_select_image){qr_select_image=0;drawn_screen=-1;}else screen=MDS_SCREEN_HOME;}
-            if(down&(KEY_L|KEY_R)){unsigned candidate=editor.slot;for(unsigned i=0;i<100;i++){candidate=(candidate+(down&KEY_L?99:1))%100;if(gallery.used[candidate]){editor.slot=candidate;break;}}mds_ui_qr_reset();drawn_screen=-1;}
+            if(down&(KEY_L|KEY_R)){int saved=mds_gallery_next_saved(gallery.used,editor.slot,down&KEY_L?-1:1);if(saved>=0)editor.slot=(unsigned)saved;mds_ui_qr_reset();drawn_screen=-1;}
             if(down&KEY_A)action=qr_select_image?2:1;
             if(down&KEY_Y)action=2;
             if(down&KEY_SELECT)action=3;
