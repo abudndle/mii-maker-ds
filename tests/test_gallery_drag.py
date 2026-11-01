@@ -26,7 +26,9 @@ checks={
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
     "tap selects without requiring a drop move": "Tap box to select; drag the Mii" in (root/"source/ui.c").read_text(),
     "drag renders Mii sprite instead of moving box": "mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23)" in (root/"source/ui.c").read_text() and "if(slot==selected)outline(&gallery_hits[i]);" in (root/"source/ui.c").read_text(),
-    "physical L/R navigate rooms": "mds_gallery_page_step(page,editor.slot,direction)" in gallery and "gallery_drag.source<0" in gallery,
+    "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
+    "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
+                                      "gallery_drag.source>=0" in gallery,
     "drag hover does not change room": "if((k&KEY_TOUCH)&&gallery_drag.source>=0)" not in gallery,
     "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
