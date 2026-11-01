@@ -13,6 +13,11 @@ for token in ("if((down&KEY_X)&&!block_gallery_actions&&",
     assert token in gallery, token
 assert "KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START" in gallery
 assert "mds_gallery_controls_suppress_export_on_touch(" in gallery
+assert "mds_gallery_controls_consume_physical(" in gallery
+assert "KEY_L|KEY_R|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START;" in gallery
+assert "((input.down|input.held|input.up)&other_gallery_keys)!=0);" in gallery
+assert gallery.index("mds_gallery_controls_consume_physical(") < gallery.index(
+    "mds_gallery_controls_consume_touch(")
 assert "mds_gallery_controls_consume_touch(&gallery_controls," in gallery
 assert "((input.down|input.held|input.up)&KEY_TOUCH)!=0);" in gallery
 assert gallery.index("mds_gallery_controls_consume_touch(") < gallery.index(
