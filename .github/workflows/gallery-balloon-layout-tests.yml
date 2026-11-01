@@ -1,0 +1,23 @@
+name: Original balloon hierarchy (asset-free)
+on:
+  pull_request:
+    paths:
+      - 'tools/extract_balloon_layout.py'
+      - 'tests/test_extract_balloon_layout.py'
+      - '.github/workflows/gallery-balloon-layout-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/extract_balloon_layout.py'
+      - 'tests/test_extract_balloon_layout.py'
+      - '.github/workflows/gallery-balloon-layout-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  balloon-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test original CLYT hierarchy extraction without proprietary assets
+        run: python3 tests/test_extract_balloon_layout.py
