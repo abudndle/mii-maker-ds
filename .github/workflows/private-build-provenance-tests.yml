@@ -1,0 +1,15 @@
+name: Private build provenance tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  synthetic-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test provenance without original Nintendo assets
+        run: python3 -m unittest discover -s tests -p test_private_build_provenance.py -v
