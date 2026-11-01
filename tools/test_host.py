@@ -11,6 +11,8 @@ with tempfile.TemporaryDirectory(prefix='mii-ds-tests-') as td:
   print("RUN:",name,flush=True)
   exe=Path(td)/name
   cmd=[args.cc,'-std=c11','-Wall','-Wextra','-Werror','-g','-I',str(root/'source')]
+  # The cartridge-SPI host suite deliberately substitutes the NDS SDK header.
+  if name=='save_nds_spi':cmd+=['-I',str(root/'tests'/'mock_nds')]
   if not args.no_sanitizers:cmd+=['-fsanitize=address,undefined']
   cmd += [str(root/'tests'/(name+'.c'))]+[str(root/'source'/(m+'.c')) for m in modules]+['-lm','-o',str(exe)]
   subprocess.run(cmd,check=True)
