@@ -23,6 +23,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_runtime_asset_parity.py
       - name: Verify fictional SDK compile inputs and private Docker workflow
         run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
+      - name: Install image support for synthetic screenshot regression tests
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil
       - name: Verify real multi-Mii emulator screenshot acceptance gate
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify original CLAN numeric build-parity gate
