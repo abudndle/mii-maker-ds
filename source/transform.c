@@ -9,6 +9,35 @@ static const Fields fields[13]={
  {33,32,-1,-1,-1,-1},{38,37,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},{42,40,-1,-1,-1,41},{-1,-1,-1,-1,-1,-1}
 };
 static void bounded(MdsAvatar*a,int f,int delta){if(f<0)return;int v=a->value[f]+delta;if(v<0)v=0;if(v>mds_fields[f].maximum)v=mds_fields[f].maximum;a->value[f]=(uint8_t)v;}
+const char *mds_transform_button_for_field(unsigned category,int field,int direction)
+{
+ if(category>=13||direction==0)return NULL;
+ Fields c=fields[category];
+ /* Match the source button's actual field semantics, not the first arrow
+  * or change button found in the current category. */
+ static const char *const buttons[]={
+  "B_Change_00","B_Change_01","B_Change_02","B_Change_03",
+  "B_Change_04","B_Change_05","B_Change_06","B_Change_07",
+  "B_Change_08","B_Change_09"
+ };
+ int button=-1;
+ if(field==c.y&&field>=0)button=direction>0?0:1;
+ else if(field==c.size&&field>=0)button=direction>0?3:2;
+ else if((category==4||category==5)&&field==c.rotation&&field>=0)
+  button=direction>0?4:5;
+ else if((category==4||category==5)&&field==c.spacing&&field>=0)
+  button=direction>0?7:6;
+ else if((category==4||category==5)&&field==c.stretch&&field>=0)
+  button=direction>0?9:8;
+ else if(category==7&&field==c.stretch&&field>=0)
+  button=direction>0?5:4;
+ else if(category==11&&field==c.x&&field>=0)
+  button=direction>0?4:5;
+ else if(category==3&&field==7&&direction>0)
+  button=4; /* Source hair flip icon has only a positive action. */
+ return button>=0?buttons[button]:NULL;
+}
+
 int mds_transform_touch(MdsAvatar*a,int*field,unsigned category,const char*name)
 {
  if(!a||!field||!name||category>=13)return 0;

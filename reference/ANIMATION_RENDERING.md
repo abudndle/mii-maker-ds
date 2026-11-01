@@ -139,3 +139,39 @@ The color transition affects the DS outlines, not the original CLYT
 material hierarchy; scaling affects selected feature sprites, not every
 3DS pane. All original game resources remain private. The ROM still
 requires a BlocksDS build plus actual melonDS and DS/DSi visual/input tests.
+
+## Original editor arrow and change-button feedback milestone
+
+Original user-provided `EditEye_Decide` and `EditHair_Decide` BCLAN
+tracks supply nine numeric-only property channels: four `P_Change_00`
+translation/material tracks, three `P_BtnArrowR` material RGB tracks,
+and the Eye/Hair arrow Y motion tracks. The keyframes are reproduced
+from private metadata by `tools/generate_clan_adjust.py` without shipping
+the original BCLAN, texture, or layout files in public source control.
+
+`source/clan_adjust.[ch]` evaluates these clips with the shared ARM9
+Q16.16 Hermite evaluator on the 60 Hz clock. Its first-paint timing,
+timer-wrap, input cancellation, and final redraw preserve static
+editor screens even if a model render takes multiple VBlanks.
+`source/ui.c` maps real original `B_ArrowL`, `B_ArrowR` and
+`B_Change*` hitbox coordinates onto the live DS bitmap for short
+colored outline/translation cues, while the original icon and hitbox
+coordinates remain intact. Keyboard adjustments trigger feedback
+only when the underlying avatar field changes; touch-based
+transforms and arrow navigation trigger the same effect. Keyboard input
+is routed to the corresponding original named CLYT control via
+`mds_transform_button_for_field`: position, size, rotation, spacing,
+stretch and width adjustments use their specific control rectangles
+rather than the first button in the page. Selection or color changes
+without a source change button do not create a misleading adjustment cue.
+A touchscreen adjustment which is clamped at an endpoint or a reset
+to an already-default value also leaves the source artwork unchanged.
+`tests/transform.c` checks both directions for all feature-transform
+button families, including unsupported and out-of-range inputs.
+
+The original pane transform is **adapted as a border overlay**, not a
+complete reconstruction of source CLYT materials/geometry.
+Only these Decide tracks have been attached. The full original
+menu audio and remaining clips are not yet ported. Host C/ASan/UBSan
+and source-generator tests do not replace BlocksDS ROM compilation,
+melonds image comparisons, or physical DS/DSi verification.
