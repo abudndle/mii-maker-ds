@@ -269,3 +269,58 @@ Run the asset-free host and source regressions:
 python3 tests/test_original_scroll_shadow.py
 python3 tests/test_original_scroll_shadow_wiring.py
 ```
+
+
+## Milestone 71: original two-button confirmation dialog opening
+
+The user's private Mii Maker 3DS `Dialog.arc/anim` contains the
+two-button `DialogBase02_DialogIn.bclan`, which has an identical
+`W_Dialog` CLPA Y curve to the already ported original
+`DialogBase00_DialogIn` and `DialogBase01_DialogIn` clips.
+Its source SHA-256 is:
+`7548f0d85b14edf98dcb01ec21d3b6d101e32ba7eb37b1a98f02aa9c73a36f4a`.
+
+The exact source Hermite channel is 21 source frames (0 through 20):
+
+| Source frame | W_Dialog Y (3DS px) | Source tangent |
+| ---: | ---: | ---: |
+| 0 | -240 | 0 |
+| 17 | +2 | 0 |
+| 20 | 0 | -0.6667 |
+
+In the DS confirmation overlay, `source/confirm_motion.c` now
+uses the existing integer Hermite CLAN decoder and the exact 240-to-192
+Y conversion. The animation plays on **a cached copy of the dialog
+bitmap over a cached, stationary underlying gallery screen**. This
+avoids re-rendering all ten 3D Mii thumbnails every 60 Hz tick.
+The extracted source BCLAN is not distributed or embedded.
+
+The visual dialog begins offscreen, enters on the original source Y
+keys, slightly overshoots, and settles on the static touchscreen
+confirmation hitboxes. Touch confirmation is gated until the panel
+arrives so players cannot press invisible controls; A and B keyboard
+confirmation/cancellation still work during entrance. The original
+DialogBase02 parent pane is 338 x 258 3DS pixels and its two button
+panes are independent controls, as validated from the private CLYT.
+
+The existing `nitro:/ui/confirm.rgb555` artwork remains in use for
+the panel face: **this milestone ports the source motion, not a claim
+that the current dialog appearance is pixel-identical to 3DS**.
+The original game artwork for the dialog body and buttons, its CLMC
+press states, DialogOut/OutUp visuals, and audio cues still require
+additional integration. Source timing uses a provisional two DS
+VBlanks for each original animation frame, pending melonDS/3DS
+comparison.
+
+Source-only, asset-free host tests verify keyframe timing, overshoot,
+last-frame cleanup, VBlank rollover, clipped RGB555 compositing,
+underlying-screen restoration, rejection of accidental touches during
+entrance, and prompt reset after acceptance/cancellation.
+
+To check the original files locally without publishing them, run:
+
+```sh
+python3 tools/extract_confirm_dialog_clan.py /private/Dialog/anim
+python3 tests/test_confirm_motion.py
+python3 tests/test_confirm_motion_wiring.py
+```

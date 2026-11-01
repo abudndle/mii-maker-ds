@@ -1,0 +1,35 @@
+name: Original 3DS confirmation dialog (synthetic assets only)
+on:
+  push:
+    paths:
+      - 'source/confirm_motion.*'
+      - 'source/clan_dialog.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_motion*.py'
+      - 'tools/extract_confirm_dialog_clan.py'
+      - '.github/workflows/original-confirm-dialog-tests.yml'
+  pull_request:
+    paths:
+      - 'source/confirm_motion.*'
+      - 'source/clan_dialog.*'
+      - 'source/ui.*'
+      - 'source/main.c'
+      - 'tests/test_confirm_motion*.py'
+      - 'tools/extract_confirm_dialog_clan.py'
+      - '.github/workflows/original-confirm-dialog-tests.yml'
+
+jobs:
+  confirm-dialog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: C host test original CLPA dialog motion and background restoration
+        run: python3 tests/test_confirm_motion.py
+      - name: Verify source animation lifecycle and touch mapping
+        run: python3 tests/test_confirm_motion_wiring.py
+      - name: Syntax-check private source numeric extractor
+        run: python3 -m py_compile tools/extract_confirm_dialog_clan.py

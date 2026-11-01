@@ -91,7 +91,10 @@ int main(void)
         }else if(editor.pending){
             int response=-1;
             if(down&KEY_A)response=1;else if(down&KEY_B)response=0;
-            else if(down&KEY_TOUCH){touchPosition t;t=input.touch;response=mds_ui_confirm_touch(t.px,t.py);}
+            else if((down&KEY_TOUCH)&&mds_ui_confirm_touch_ready(animation_vblanks)){
+                touchPosition t;t=input.touch;
+                response=mds_ui_confirm_touch(t.px,t.py);
+            }
             if(response>=0){
                 int copy_prompt=editor.pending==MDS_EDIT_COPY_RECEIVED;
                 int confirmed=mds_editor_confirm(&editor,response,persist,NULL);
@@ -494,6 +497,12 @@ int main(void)
         }else if(!camera_open){
             mds_ui_scene_transition_step(animation_vblanks,0);
         }
+        /* The original DialogBase02 scene slides independently on the
+         * bottom framebuffer. No expensive gallery 3D redraw is required. */
+        if(!camera_open&&editor.pending)
+            (void)mds_ui_confirm_animation_tick(animation_vblanks);
+        else if(!editor.pending)
+            mds_ui_confirm_reset();
         /* Only the 42x46 floating Mii is repainted while the stylus moves;
          * original fixed room tabs, box hitboxes, and saved records stay put.
          * The touch coordinates refresh every VBlank, even when no new key
