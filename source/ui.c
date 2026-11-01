@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "ui.h"
+#include "backup.h"
 #include "head.h"
 #include "view.h"
 #include "thumbnail.h"
@@ -779,6 +780,7 @@ void mds_ui_home(int focus,const char *notice)
             }
         }
     if(notice&&notice[0])label(8,156,notice);
+    label(8,177,"SELECT: Gallery backup");
 }
 static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
 static unsigned walk_room_start=UINT32_MAX;
@@ -1039,6 +1041,28 @@ void mds_ui_gender(int create,int choice)
  }
 }
 void mds_ui_accessories(void){show_profile_hint=0;bitmap("nitro:/ui/accessories.rgb555",bottom);center_bottom(128,70,"Choose a feature to edit.");}
+void mds_ui_backup(const char *notice)
+{
+ load_widgets();mds_ui_restore_top();
+ label(8,20,"Gallery backup");
+ label(8,48,"Copy all saved Miis to the SD card.");
+ label(8,72,"Existing backups are kept.");
+ label(8,96,"The cartridge save is unchanged.");
+ if(notice&&notice[0])label(8,144,notice);
+ bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,"Back up saved gallery?");
+ button(28,71,200,32,"A: Create backup");button(28,111,200,32,"B: Back");
+ center_bottom(128,154,"MiiMaker/Backups");
+}
+const char *mds_ui_backup_gallery(const MdsGallery *gallery)
+{
+ if(!fatInitDefault())return "SD card is unavailable.";
+ const char *drive=isDSiMode()?"sd:":"fat:";
+ char directory[64],path[128];
+ snprintf(directory,sizeof directory,"%s/MiiMaker",drive);
+ if(mkdir(directory,0777)&&errno!=EEXIST)return "Could not create backup folder.";
+ snprintf(directory,sizeof directory,"%s/MiiMaker/Backups",drive);
+ return mds_backup_message(mds_backup_export(gallery,directory,path,sizeof path));
+}
 void mds_ui_confirm(const char *message){bitmap("nitro:/ui/confirm.rgb555",bottom);center_bottom(128,27,message);}
 int mds_ui_confirm_touch(int x,int y){const char *h=mds_profile_hit(7,x,y);if(!strcmp(h,"B_BtnCommon_00"))return 1;if(!strcmp(h,"B_BtnCommon_01"))return 0;return -1;}
 

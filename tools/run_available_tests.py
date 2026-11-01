@@ -21,11 +21,11 @@ env = os.environ.copy()
 env["ASAN_OPTIONS"] = "detect_leaks=0"
 
 with tempfile.TemporaryDirectory(prefix="mii-ds-portable-") as temporary:
-    for name in ("animation", "gui_tween"):
+    for name, module in (("animation_clock", "animation"), ("gui_tween", "gui_tween")):
         target = Path(temporary) / name
         subprocess.run(
             [args.cc, *flags, str(root / "tests" / (name + ".c")),
-             str(root / "source" / (name + ".c")), "-o", str(target)],
+             str(root / "source" / (module + ".c")), "-o", str(target)],
             check=True,
         )
         subprocess.run([str(target)], env=env, check=True)
