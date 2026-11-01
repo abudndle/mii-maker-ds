@@ -919,6 +919,8 @@ void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
  mds_ui_gallery(g,page,selected,"Choose a saved Mii");
  text_at(bottom,5,154,"A: QR   Y: Copy   X: File import");
 }
+static int gallery_drag_slot=-1;
+void mds_ui_gallery_drag(int slot){gallery_drag_slot=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;}
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     if(!ok)return;
@@ -942,9 +944,9 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                 mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
-        if(slot==selected)outline(&gallery_hits[i]);
+        if(slot==selected||slot==(unsigned)gallery_drag_slot)outline(&gallery_hits[i]);
     }
-    text_at(bottom,10,154,"Drag Mii; hold + L/R pages");
+    text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii: release on a box or room arrow":"Drag Mii; tap room arrows to browse");
 }
 
 static const uint8_t profile_colors[12][3]={{210,30,20},{255,110,25},{255,216,32},{120,210,32},{0,120,48},{10,72,180},{60,170,222},{245,90,125},{115,40,173},{72,56,24},{224,224,224},{24,24,20}};
