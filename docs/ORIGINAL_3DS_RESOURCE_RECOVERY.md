@@ -122,3 +122,54 @@ Run `python3 tests/test_original_gallery_art.py` and
 `python3 tests/test_original_gallery_runtime.py` without any private
 assets, or build the private NitroFS ROM to check real original images in
 melonDS. An ARM9 compile smoke test alone does not count as emulator proof.
+
+
+## Milestone 68: source-keyframed 3DS room-selection feedback
+
+The original, user-supplied `layout/Select.arc/anim/` archive was
+inspected privately, **not** published to this repository. The relevant
+Nintendo CLAN tracks were recovered from the binary's bounded `pai1`
+channel records (3-float Hermite keyframes). Only the small numeric
+channels, source frame counts and source digests are retained as
+portable `source/gallery_clan_generated.h`.
+
+| Original animation | Source frames | Ported source channels |
+| --- | ---: | --- |
+| `SelectMii_Select.bclan` | 6 | `P_Mii_00` CLPA X/Y scale (1.0 → 1.1 → 1.0 over source frames 0–2) |
+| `EDITSelectBase_Select.bclan` | 2 | `P_Room_00` CLMC R/G/B from (220,255,244) to (50,118,80) |
+| `EDITSelectBase_Unselect.bclan` | 2 | Reverse CLMC R/G/B from (50,118,80) to (220,255,244) |
+
+Source SHA-256 identifiers (private files, **not** uploads):
+
+- `SelectMii_Select`: `13b835186a2ebdda947ef20ea75f73f52d9edd8a13e2b4dd26718d933660d258`
+- `EDITSelectBase_Select`: `58502d329d84c5db65a146983be0939d4f3a61b1816d801fbd5d5e28f8c804cd`
+- `EDITSelectBase_Unselect`: `b636b327a56793d47710f15f7811f4bf2e73eef1d9dc8c4089e08527452c9993`
+
+The DS port now evaluates those actual source curves in signed Q16.16
+using the existing no-FPU Hermite evaluator. The selected Mii **thumbnail**
+expands briefly, then returns to its original size. The 10 Mii
+destination boxes never move and retain the existing 3DS-derived
+touch rectangles; room-tab sprites are modulated by the source CLMC
+colors on navigation. The full source 6-frame clip contains no further
+scale changes after source frame 2, so the DS renderer stops refreshing
+after the visible keys and performs one final cleanup redraw.
+
+The display uses **two DS VBlanks per source frame provisionally**;
+this is not yet a hardware-verified playback rate. No 3DS CLAN BCLAN
+payload or other copyrighted bytes enter the public repository.
+
+Run the local synthetic tests:
+```sh
+python3 tests/test_gallery_clan.py
+python3 tests/test_gallery_clan_wiring.py
+python3 tests/test_original_gallery_art.py
+```
+To reproduce the recovered metadata **privately**:
+```sh
+python3 tools/extract_gallery_clan.py /private/Select/anim
+```
+
+Remaining work: original GUI pane transforms beyond the targeted
+P_Mii_00 scale and P_Room_00 color channels, alpha/visibility events,
+BCLAN easing for other control hierarchies, stock timing, audio cues,
+and actual pixel-by-pixel melonDS screenshots.

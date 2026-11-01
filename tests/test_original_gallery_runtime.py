@@ -11,7 +11,7 @@ input_branch=main.split("}else if(screen==MDS_SCREEN_GALLERY){",1)[1].split(
     "}else if(screen==MDS_SCREEN_GENDER){",1)[0]
 checks={
     "original room-tab art drawn from recovered panes":
-        "mds_original_gallery_room_tab(bottom,256,192," in gallery and
+        "mds_original_gallery_room_tab_tinted(bottom,256,192," in gallery and
         "const MdsMenuHit *tab=&gallery_room_hits[room];" in gallery,
     "original box art under Mii thumbnails":
         "mds_original_gallery_box_base(bottom,256,192" in gallery and

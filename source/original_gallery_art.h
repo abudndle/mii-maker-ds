@@ -12,4 +12,7 @@ int mds_original_gallery_box_border(uint16_t *canvas,int width,int height,
                                     int x,int y,int w,int h);
 int mds_original_gallery_room_tab(uint16_t *canvas,int width,int height,
                                   int x,int y,int w,int h,int selected);
+/* CLMC tint is a per-channel source color multiplier, not a fabricated overlay. */
+int mds_original_gallery_room_tab_tinted(uint16_t *canvas,int width,int height,
+                                         int x,int y,int w,int h,int selected,uint16_t tint);
 #endif
