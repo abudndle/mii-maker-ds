@@ -19,8 +19,9 @@ checks={
     "release position preserved": "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" in irq,
     "release has priority over key repeats": "if(!(event.down||event.up)&&queued>=23)return;" in irq,
     "release not discarded on full queue": "if(!(event.down||event.up))return;" in irq,
-    "touch-down selects tapped occupied box": "editor.slot=(unsigned)slot;" in gallery and
-                                 "slot>=0&&gallery.used[slot]" in gallery,
+    "touch-down selects occupied and empty boxes": "editor.slot=(unsigned)slot;" in gallery and
+                                 "mds_gallery_box_press(" in gallery and
+                                 "box_action!=MDS_GALLERY_BOX_NONE" in gallery,
     "touch-down captures occupied source for optional drag": "mds_gallery_drag_begin(&gallery_drag,page,slot,1)" in gallery,
     "touch release ends drag": "if(input.up&KEY_TOUCH){" in gallery and "mds_gallery_drag_end(&gallery_drag,page," in gallery,
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
@@ -40,7 +41,8 @@ checks={
     "continuous arrow hover uses live VBlank coordinates": "mds_gallery_room_arrow(live_touch_x,live_touch_y,page)" in gallery,
     "no ghost sprite after a cancelled drop": "drawn_screen=-1;\n                    if(destination>=0){" in gallery,
     "stylus movement does not require key-repeat events": "mds_ui_gallery_drag_follow(live_touch_x,live_touch_y)" in main,
-    "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
+    "reject empty source": "slot,slot>=0&&gallery.used[slot]" in gallery and
+                           "if(box_action==MDS_GALLERY_BOX_DRAG)" in gallery,
     "persist gallery move": "mds_editor_move(&editor,(unsigned)destination,persist,NULL)" in gallery,
     "cancel drag after leaving gallery": "if(screen!=MDS_SCREEN_GALLERY)mds_gallery_drag_reset(&gallery_drag);" in main,
     "public sorting API": "int mds_editor_move(MdsEditor *,unsigned destination,MdsPersist,void *);" in api,
@@ -55,7 +57,7 @@ for label,okay in checks.items():
         raise SystemExit("FAIL: "+label)
 # Both source and destination must be resolved while in the gallery branch,
 # and the source must be captured before seeing the destination.
-assert gallery.index("mds_gallery_drag_begin(&gallery_drag,page,slot,") < gallery.index("if(input.up&KEY_TOUCH){")
+assert gallery.index("mds_gallery_box_press(") < gallery.index("if(box_action==MDS_GALLERY_BOX_DRAG)") < gallery.index("mds_gallery_drag_begin(&gallery_drag,page,slot,") < gallery.index("if(input.up&KEY_TOUCH){")
 assert gallery.index("if(input.up&KEY_TOUCH){") < gallery.index("mds_editor_move(&editor,")
 assert gallery.index("mds_gallery_drag_end(&gallery_drag,page,") < gallery.index("mds_editor_move(&editor,")
 assert "drag_page" not in gallery
