@@ -4,6 +4,7 @@ on:
     branches:
       - milestone/github-real-nds-private-build-20261031
       - milestone/melonds-private-boot-20261101
+      - milestone/saved-mii-rooms-transfer-crown-20261101
   workflow_dispatch:
 permissions:
   contents: read
