@@ -14,7 +14,6 @@
 #include "clan_adjust.h"
 #include "clan_overlay.h"
 #include "clan_dialog.h"
-#include "clan_overlay.h"
 #include "clan_scene.h"
 #include "image.h"
 #include "mii_qr.h"
@@ -549,8 +548,11 @@ int mds_ui_touch(MdsAvatar *a,int *field,int x,int y){
    unsigned n=(unsigned)(hit->name[8]-'0')*10u+(unsigned)(hit->name[9]-'0');
    int f=color_fields[category];if(n<=mds_fields[f].maximum){a->value[f]=(uint8_t)n;*field=f;}return 1;
   }
+  uint8_t before[sizeof(a->value)];
+  memcpy(before,a->value,sizeof before);
   if(mds_transform_touch(a,field,category,hit->name)){
-   if(editor_hit_kind(hit->name))
+   /* A clamped change or already-reset feature has no Decide press. */
+   if(editor_hit_kind(hit->name)&&memcmp(before,a->value,sizeof before))
     editor_adjust_press(render_clock?render_clock():0,hit);
    return 1;
   }
