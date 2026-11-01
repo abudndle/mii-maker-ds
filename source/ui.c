@@ -429,16 +429,15 @@ void mds_ui_editor_adjust_key(uint32_t now,int field,int direction)
 {
  if(!direction)return;
  unsigned current=pick(field);
- const UiHit *change=NULL,*arrow=NULL;
+ const char *name=mds_transform_button_for_field(current,field,direction);
+ if(!name)return; /* Selection/key color changes use their own CLAN cue. */
  for(unsigned i=0;i<UI_HIT_COUNT;i++){
-  const UiHit *h=&ui_hits[i];
-  if(h->category!=current)continue;
-  if(!change&&!strncmp(h->name,"B_Change",8))change=h;
-  if(direction>0&&!strcmp(h->name,"B_ArrowR"))arrow=h;
-  if(direction<0&&!strcmp(h->name,"B_ArrowL"))arrow=h;
+  const UiHit *hit=&ui_hits[i];
+  if(hit->category==current&&!strcmp(hit->name,name)){
+   editor_adjust_press(now,hit);
+   return;
+  }
  }
- if(arrow)editor_adjust_press(now,arrow);
- else if(change)editor_adjust_press(now,change);
 }
 int mds_ui_editor_adjust_tick(uint32_t now)
 {
