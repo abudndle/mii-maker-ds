@@ -990,7 +990,7 @@ static void draw_original_room_arrows(const MdsGalleryNavStyle *style)
                                       3+left_dx,89,13,13,shadow_alpha);
     mds_original_gallery_arrow_shadow(bottom,256,192,
                                       240+right_dx,89,13,13,shadow_alpha);
-    for(int y=0;y<18;y>
+    for(int y=0;y<18;y++)
         for(int x=0;x<12;x++){
             uint16_t left=original_room_arrow[y*12+x];
             uint16_t right=original_room_arrow[y*12+(11-x)];
