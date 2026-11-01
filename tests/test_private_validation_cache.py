@@ -38,7 +38,9 @@ class CacheTests(unittest.TestCase):
             "version","archive_size","archive_sha256","source_sha256"})
         self.assertNotIn(str(self.asset),str(record))
         (self.root/"source/main.c").write_text("int main(void){return 1;}\n")
-        self.assertFalse(cache.cache_hit(self.root,self.asset))
+        self.assertTrue(cache.cache_hit(self.root,self.asset)) # gameplay edit only
+        (self.root/"source/main.c").write_text('const char *art="nitro:/ui/new.rgb555";\n')
+        self.assertFalse(cache.cache_hit(self.root,self.asset)) # new runtime asset
         cache.cache_store(self.root,self.asset)
         self.assertTrue(cache.cache_hit(self.root,self.asset))
         (self.root/"tools/verify.py").write_text("print('changed')\n")
