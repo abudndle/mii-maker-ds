@@ -95,6 +95,20 @@ int main(void)
  attempts[4]=3;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
  assert(mds_room_next_refresh(NULL,occupied,attempts,0)==-1);
+ assert(mds_room_next_refresh(&cache,NULL,attempts,0)==-1);
+ assert(mds_room_next_refresh(&cache,occupied,NULL,0)==-1);
+ /* A retry-exhausted missing actor must not block a healthy cached actor. */
+ occupied[7]=1;
+ cache.actor[7].valid=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==7);
+ assert(mds_room_next_refresh(&cache,occupied,attempts,8)==7);
+ /* An occupied uncached actor with attempts remaining takes priority. */
+ occupied[9]=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ attempts[9]=3;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==7);
+ /* The cursor can wrap even if it is larger than the room size. */
+ assert(mds_room_next_refresh(&cache,occupied,attempts,1007)==7);
  puts("PASS: source-derived ten-Mii room positions, independent cached model images, invalidation and clipping");
  return 0;
 }
