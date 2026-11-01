@@ -12,6 +12,12 @@ int mds_original_gallery_box_border(uint16_t *canvas,int width,int height,
                                     int x,int y,int w,int h);
 int mds_original_gallery_box_border_tinted(uint16_t *canvas,int width,int height,
                                            int x,int y,int w,int h,uint16_t tint);
+/* Source Select.arc BtnScrollShadow.bclim, 16x16 original texture.
+ * Apply the actual ScrollL/ScrollR CLVC shadow alpha (0..200) by
+ * per-channel RGB555 interpolation against the existing backdrop.
+ * Missing or malformed private NitroFS art must leave pixels unchanged. */
+int mds_original_gallery_arrow_shadow(uint16_t *canvas,int width,int height,
+                                      int x,int y,int w,int h,unsigned alpha);
 int mds_original_gallery_room_tab(uint16_t *canvas,int width,int height,
                                   int x,int y,int w,int h,int selected);
 /* CLMC tint is a per-channel source color multiplier, not a fabricated overlay. */
