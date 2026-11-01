@@ -947,7 +947,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         }
         if(slot==selected)outline(&gallery_hits[i]);
     }
-    if(gallery_drag_slot>=0&&gallery_drag_slot/10==page&&gallery_drag_x>=0&&gallery_drag_y>=0){
+    if(gallery_drag_slot>=0&&gallery_drag_x>=0&&gallery_drag_y>=0){
         unsigned local=(unsigned)gallery_drag_slot%10;
         if(g->used[gallery_drag_slot]&&mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
             mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23);
