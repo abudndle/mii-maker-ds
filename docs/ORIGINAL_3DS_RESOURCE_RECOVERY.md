@@ -218,3 +218,54 @@ Full 3DS animation/event parity, other arrow shadow layers, original
 audio, exact 3DS frame timing, and real private-ROM melonDS visual testing
 remain future milestones. The current two-VBlank source-frame cadence
 is provisional.
+
+
+## Milestone 70: original scroll-shadow artwork and CLVC compositing
+
+The user's privately recovered original
+`layout/Select.arc/timg/BtnScrollShadow.bclim` was decoded and inspected:
+- Original texture is **16 x 16**, CLIM A4 (format 13), and contains
+  transparent and opaque pixels. The exact pixel data is not in GitHub.
+- Source .bclim SHA-256:
+  `7740c7ac44427260ce59e27aeafae72c82f042eacbd5d199b4cad98f9e5cdc56`
+- Locally converted RGB555A1 sprite SHA-256:
+  `8f8351fdca22e3a26e05371c0d884412f262e3939d68ca875679192ad1e6f9d1`.
+- The original EDITSelectBase_ScrollL and ScrollR BCLAN clips each supply
+  CLVC 0x1000 on the P_ArrowLSdw_00/01 and P_ArrowRSdw_00/01
+  panes. Their available source values fade **200 to 0** and **0 to 200**
+  respectively during source frames zero to one.
+
+The DS source now optionally loads `nitro:/art/Select/BtnScrollShadow.bin`
+and draws the converted, source-derived 16 x 16 original stamp at 13 x 13
+DS pixels on both arrow centers, behind the already integrated source
+BtnArrow art. The 3DS-to-DS ratio is 4/5. The shadow RGB555 color
+channels are composited over the existing lower-screen bitmap using the
+source CLVC opacity, and the source 1-bit transparency mask remains
+respected. Both shadow sprites share the arrow navigation translation,
+but the original pane touch hitboxes **never move**.
+
+Runtime validates exact sprite width, height and payload length and
+caches the original asset only once; missing or malformed files leave
+the existing gallery unchanged. No placeholder/synthetic shadow is
+shown when the source original asset is absent.
+
+**Private installation:** Install the companion six-file private gallery
+asset bundle, keeping the files under `nitrofiles/art/Select/`. Never
+commit that bundle or Nintendo textures to the public GitHub source.
+Local rebuilds include those NitroFS files automatically.
+
+**Caution:** The original background pane hierarchy may affect the
+shadow's exact image placement and color modulation beyond the verified
+P_ArrowLSdw CLVC opacity. The 13x13 centered stamp alignment is based
+on source size/arrow pane center, not a pixel-perfect hardware capture.
+The source-frame cadence remains provisionally 2 DS VBlanks per
+original frame. The rest of the 3DS UI animation hierarchy, full
+select/deselect button events, audio and full private-ROM melonDS
+visual verification remain open.
+
+Run the asset-free host and source regressions:
+
+```sh
+python3 tests/test_original_scroll_shadow.py
+python3 tests/test_original_scroll_shadow_wiring.py
+```
