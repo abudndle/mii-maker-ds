@@ -8,6 +8,48 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
+int mds_backup_scan(MdsBackupBrowser *browser,const char *directory)
+{
+ memset(browser,0,sizeof *browser);browser->status="No gallery backups found.";
+ if(!directory||strlen(directory)>=sizeof browser->directory){browser->status="Backup folder path is too long.";return 0;}
+ strcpy(browser->directory,directory);
+ DIR *folder=opendir(directory);
+ if(!folder){browser->status="Could not open backup folder.";return 0;}
+ uint8_t present[MDS_BACKUP_LIMIT/8]={0};struct dirent *entry;int failed=0;
+ for(;;){
+  errno=0;entry=readdir(folder);
+  if(!entry){failed=errno!=0;break;}
+  const char *name=entry->d_name;
+  if(strlen(name)!=16||strncmp(name,"Gallery",7)||strcmp(name+11,".mdsc"))continue;
+  unsigned id=0;int valid=1;
+  for(unsigned i=7;i<11;i++){if(name[i]<'0'||name[i]>'9'){valid=0;break;}id=id*10+(unsigned)(name[i]-'0');}
+  if(!valid)continue;
+  char path[128];struct stat info;snprintf(path,sizeof path,"%.95s/%.16s",directory,name);
+  if(stat(path,&info)||!S_ISREG(info.st_mode))continue;
+  present[id/8]|=(uint8_t)(1u<<(id%8));
+ }
+ if(closedir(folder))failed=1;
+ if(failed){browser->status="Could not read backup folder.";return 0;}
+ for(unsigned i=MDS_BACKUP_LIMIT;i-->0;)if(present[i/8]&(1u<<(i%8)))browser->ids[browser->count++]=(uint16_t)i;
+ if(browser->count)browser->status="Choose a backup to preview.";
+ return 1;
+}
+void mds_backup_step(MdsBackupBrowser *browser,int direction)
+{
+ if(!browser->count)return;
+ int count=(int)browser->count;
+ browser->selected=(unsigned)(((int)browser->selected+direction%count+count)%count);
+}
+int mds_backup_path(const MdsBackupBrowser *browser,char *path,size_t size)
+{
+ if(!path||!size)return 0;
+ path[0]=0;
+ if(!browser->count||browser->selected>=browser->count||browser->ids[browser->selected]>=MDS_BACKUP_LIMIT)return 0;
+ int length=snprintf(path,size,"%s/Gallery%04u.mdsc",browser->directory,browser->ids[browser->selected]);
+ if(length<0||(size_t)length>=size){path[0]=0;return 0;}
+ return 1;
+}
 MdsBackupResult mds_backup_export(const MdsGallery *gallery,const char *directory,char *path,size_t path_size)
 {
  if(!path||!path_size)return MDS_BACKUP_PATH;
