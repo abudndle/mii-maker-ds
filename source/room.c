@@ -12,10 +12,13 @@ int mds_room_position(unsigned local,int *x,int *y)
   * Mapping uses original 320x240 layout geometry, not invented positions. */
  static const int8_t source_x[5]={-108,-54,0,54,108};
  if(local>=MDS_ROOM_SLOTS||!x||!y)return 0;
- int cx=160+source_x[local%5];
- int cy=120+(local<5?-30:30);
- *x=(cx*4)/5-(int)MDS_ROOM_W/2;
- *y=(cy*4)/5-(int)MDS_ROOM_H/2;
+ /* The source B_Mii panes are 52x58 around their origin.
+  * Scale each ORIGINAL top-left edge, then round to DS pixels; rounding a
+  * scaled center first is off by one pixel at both outer columns. */
+ int src_left=160+source_x[local%5]-26;
+ int src_top=120+(local<5?-30:30)-29;
+ *x=(src_left*4+2)/5;
+ *y=(src_top*4+2)/5;
  return 1;
 }
 void mds_room_select(MdsRoomCache *cache,unsigned selected)
