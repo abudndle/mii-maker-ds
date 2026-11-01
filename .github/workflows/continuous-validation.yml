@@ -1,0 +1,46 @@
+name: Continuous DS Port Validation
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main, 'dev', 'develop', 'development', 'feature/**', 'milestone/**', 'm81/**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: continuous-ds-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  host-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python syntax checks
+        run: python3 -m compileall -q tools tests
+      - name: Run repository Python regression scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            echo "Testing $file"
+            python3 "$file"
+            count=$((count+1))
+          done < <(find tests -maxdepth 1 -type f -name 'test_*.py' -print0 | sort -z)
+          echo "Executed $count Python regression scripts"
+          test "$count" -gt 0
+      - name: Check for prohibited committed ROMs and archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Ei '\.(nds|cci|cia|3ds|ncch|3dsx|zip|7z|rar)$'; then
+            echo "Potential private binary/archive committed; review required"
+            exit 1
+          fi
+  # Proprietary resource retrieval stays in a separate trusted private workflow.
+  # Never pass MII_ASSETS_URL to pull_request jobs or upload ROMs as artifacts.
