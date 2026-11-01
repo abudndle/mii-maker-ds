@@ -9,6 +9,12 @@ on:
       - 'source/editor.c'
       - 'tests/gallery_action_touch.c'
       - 'tests/test_gallery_action_wiring.py'
+      - 'tests/test_private_balloon_art.py'
+      - 'tools/private_balloon_art.py'
+      - 'tools/restore_asset_zip.py'
+      - 'tools/verify_runtime_assets.py'
+      - 'tests/rom_all_assets.py'
+      - 'source/original_gallery_art.*'
       - '.github/workflows/gallery-action-touch-tests.yml'
   push:
     branches: [main]
@@ -37,3 +43,5 @@ jobs:
           python3 tests/test_gallery_favorite_wiring.py
           python3 tests/test_gallery_controls_wiring.py
           python3 tests/test_gallery_drag.py
+          python3 tests/test_private_balloon_art.py
+          python3 tests/test_original_gallery_art.py

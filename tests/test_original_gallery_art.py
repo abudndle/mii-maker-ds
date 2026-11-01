@@ -27,11 +27,20 @@ int main(int argc,char **argv)
     int base=mds_original_gallery_box_base(canvas,256,192,21,49,42,46);
     int frame=mds_original_gallery_box_border(canvas,256,192,21,49,42,46);
     int room=mds_original_gallery_room_tab(canvas,256,192,9,2,22,21,1);
+    int favorite=mds_original_gallery_action_icon(canvas,256,192,14,169,20,20,1,0);
+    int personal=mds_original_gallery_action_icon(canvas,256,192,40,169,20,20,1,1);
+    int copy=mds_original_gallery_action_icon(canvas,256,192,98,169,20,20,2,0);
+    int edit=mds_original_gallery_action_icon(canvas,256,192,181,169,20,20,3,0);
+    assert(!mds_original_gallery_action_icon(canvas,256,192,181,169,20,20,4,0));
     if(!good){
-        assert(!base&&!frame&&!room);
+        assert(!base&&!frame&&!room&&!favorite&&!personal&&!copy&&!edit);
         assert(canvas[49*256+21]==0x9111);
     }else{
-        assert(base&&frame&&room);
+        assert(base&&frame&&room&&favorite&&personal&&copy&&edit);
+        assert(canvas[169*256+14]==0x8111);
+        assert(canvas[169*256+40]==0x8222);
+        assert(canvas[169*256+98]==0x8333);
+        assert(canvas[169*256+181]==0x8444);
         assert(canvas[2*256+9]==0x8033); /* selected-tab source pixel */
         assert(canvas[49*256+21]==0x8022); /* box border overlays fill */
         assert(canvas[49*256+22]==0x8022);
@@ -94,6 +103,10 @@ def run() -> None:
         write_fake_sprite(private_dir/"BtnMiiLine.bin",54,60,0x8022)
         write_fake_sprite(private_dir/"BtnRoomEDITline01.bin",32,28,0x8033)
         write_fake_sprite(private_dir/"BtnRoomEDITline.bin",32,28,0x8044)
+        write_fake_sprite(private_dir/"IconFavorite.bin",32,32,0x8111)
+        write_fake_sprite(private_dir/"IconMyMii.bin",32,32,0x8222)
+        write_fake_sprite(private_dir/"IconCopyB.bin",20,18,0x8333)
+        write_fake_sprite(private_dir/"IconOpen.bin",16,16,0x8444)
         subprocess.run([str(binary),"good"],cwd=root,check=True)
 
 if __name__=="__main__":

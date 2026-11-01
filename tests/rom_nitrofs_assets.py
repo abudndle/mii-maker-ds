@@ -14,6 +14,8 @@ REQUIRED = (
     "ui/qr-menu-ds.rgb555", "ui/qr-menu-dsi.rgb555",
     "ui/photo-select.rgb555",
     "art/StatusPersonal.bin", "art/StatusFavorite.bin",
+    "art/Select/IconFavorite.bin", "art/Select/IconMyMii.bin",
+    "art/Select/IconCopyB.bin", "art/Select/IconOpen.bin",
     "font/number.bin",
 )
 

@@ -8,8 +8,11 @@ import argparse
 import json
 import re
 import struct
+import sys
 import zipfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from private_balloon_art import derived_icons
 
 ROOT = Path(__file__).resolve().parents[1]
 UI_BYTES = 256 * 192 * 2
@@ -92,32 +95,40 @@ def verify(archive, root=ROOT):
                         name in names):
                     raise ValueError("Unsafe/duplicate private NitroFS archive name")
                 names[name] = info
-        missing = sorted(paths - names.keys())
+        derived = derived_icons(z)
+        missing = sorted(paths - (names.keys() | derived.keys()))
         if missing:
             raise ValueError(f"Runtime referenced NitroFS assets missing ({len(missing)}): {missing[:8]}")
         tested_ui = tested_art = 0
         # All shipped bitmaps and icons, including screens not currently used.
         graphics = {x for x in names if (x.startswith("ui/") and x.endswith(".rgb555")) or
                     (x.startswith("art/") and x.endswith(".bin"))}
+        graphics.update(derived)
         for name in sorted(paths | graphics):
-            info = names[name]
-            if not info.file_size:
+            data = derived.get(name)
+            info = names.get(name)
+            size = len(data) if data is not None else info.file_size
+            if not size:
                 raise ValueError("Empty NitroFS asset: " + name)
             if name.startswith("ui/") and name.endswith(".rgb555"):
-                if info.file_size != UI_BYTES:
-                    raise ValueError(f"Invalid DS RGB555 screen dimensions: {name}, {info.file_size}")
+                if size != UI_BYTES:
+                    raise ValueError(f"Invalid DS RGB555 screen dimensions: {name}, {size}")
                 tested_ui += 1
             if name.startswith("art/") and name.endswith(".bin"):
-                if info.file_size < 6 or info.file_size > 4 + 2*128*128:
+                if size < 6 or size > 4 + 2*128*128:
                     raise ValueError(f"Invalid feature sprite size: {name}")
-                with z.open(info) as data:
-                    width, height = struct.unpack("<HH", data.read(4))
+                if data is None:
+                    with z.open(info) as source:
+                        header = source.read(4)
+                else:
+                    header = data[:4]
+                width, height = struct.unpack("<HH", header)
                 if not (1 <= width <= 256 and 1 <= height <= 192 and
-                        width*height <= 128*128 and info.file_size == 4 + 2*width*height):
+                        width*height <= 128*128 and size == 4 + 2*width*height):
                     raise ValueError(f"Invalid RGB555 sprite header/payload: {name}")
                 tested_art += 1
         return {**totals, "runtime_assets": len(paths), "verified_ui_bitmaps": tested_ui,
-                "verified_art_sprites": tested_art, "packed_nitrofs_files": len(names)}
+                "verified_art_sprites": tested_art, "packed_nitrofs_files": len(names) + len(derived)}
 
 
 def main():
