@@ -11,8 +11,6 @@ jobs:
   blocksds-compile-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    container:
-      image: skylyrac/blocksds:slim-latest
     env:
       CI: "true"
       MDS_SYNTHETIC_COMPILE_ONLY: "yes"
@@ -22,12 +20,17 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
       - name: Generate synthetic UI/asset placeholders for compiler only
         run: python3 tools/generate_ci_compile_assets.py
-      - name: Compile and link real ARM9/ARM7 DS program with BlocksDS
-        run: make -j2
-      - name: Check synthetic ROM's executable sections and region layout
+      - name: Compile and link ARM9/ARM7 using official BlocksDS container
         run: |
+          docker run --rm --network none --cap-drop ALL \
+            --security-opt no-new-privileges \
+            -v "$PWD:/work" -w /work --entrypoint make \
+            skylyrac/blocksds:slim-latest SDK_STAGE=1 -j2 mii-ds.nds
+      - name: Fix and verify synthetic ROM executable sections and DS boundaries
+        run: |
+          python3 tools/fix_nds_regions.py mii-ds.nds
           python3 tests/rom_arm_sections.py mii-ds.nds
           python3 tests/rom_regions.py
-      - name: Remove nonplayable synthetic ROM (never publish)
+      - name: Delete fake ROM (never publish or distribute)
         if: always()
         run: rm -f mii-ds.nds
