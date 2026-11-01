@@ -16,7 +16,7 @@ checks = (
     ("room body-preview cancellation tracked", "if(render_cancelled_count!=before)gallery_retry_pending=1;" in top),
     ("thumbnail cancellation tracked", "if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;" in gallery),
     ("thumbnail rendered only if ready", "if(ready)mds_thumbnail_capture(" in gallery),
-    ("five saved actors in upper room", "for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)" in top),
+    ("ten saved actors in source layout", "for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)" in top and "mds_room_position(local,&x,&y)" in top),
     ("individual actor cache per room", "mds_room_matches(&gallery_room" in top),
     ("retry only when no input waiting", "mds_ui_gallery_retry_pending()&&!input_waiting()" in main_redraw),
     ("redraw only in gallery or saved picker", "screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED" in main_redraw and "mds_ui_gallery_retry_pending()" in main_redraw),
