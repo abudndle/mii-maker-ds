@@ -36,6 +36,13 @@ void mds_gallery_action_press_cancel_for_physical(
 {
  if(physical_down||physical_up)mds_gallery_action_press_reset(gesture);
 }
+/* Physical keys held across several VBlanks have no press/release edge.
+ * Cancel the stylus action throughout that overlap, not just on edges. */
+void mds_gallery_action_press_cancel_for_held(
+    MdsGalleryActionPress *gesture,int physical_held)
+{
+ if(physical_held)mds_gallery_action_press_reset(gesture);
+}
 unsigned mds_gallery_controls_suppress_export_on_touch(
     unsigned action,int touch_active)
 {

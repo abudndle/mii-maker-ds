@@ -35,6 +35,10 @@ void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture);
 /* A physical button's press OR release cancels a pending stylus command. */
 void mds_gallery_action_press_cancel_for_physical(
     MdsGalleryActionPress *gesture,int physical_down,int physical_up);
+/* A key already held before stylus-down has no new edge; it still must
+ * prevent a concurrent Favorite/Copy/Edit touch transaction. */
+void mds_gallery_action_press_cancel_for_held(
+    MdsGalleryActionPress *gesture,int physical_held);
 /* SELECT-up must not export an image while a touch gesture is in progress. */
 unsigned mds_gallery_controls_suppress_export_on_touch(
     unsigned action,int touch_active);
