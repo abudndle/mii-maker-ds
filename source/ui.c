@@ -8,6 +8,7 @@
 #include "thumbnail.h"
 #include "original_gallery_art.h"
 #include "gallery_clan.h"
+#include "gallery_balloon_clan.h"
 #include "gallery_nav_clan.h"
 #include "room.h"
 #include "animation.h"
@@ -63,6 +64,7 @@ static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
 static MdsGalleryClan gallery_clan_state;
+static MdsGalleryBalloonClan gallery_balloon_state;
 static MdsGalleryNavClan gallery_nav_clan_state;
 void mds_ui_gallery_navigation(int direction,uint32_t now)
 {
@@ -81,13 +83,16 @@ static int gallery_clan_was_active;
 void mds_ui_gallery_clan_reset(void)
 {
     mds_gallery_clan_reset(&gallery_clan_state);
+    mds_gallery_balloon_clan_reset(&gallery_balloon_state);
     mds_gallery_nav_clan_reset(&gallery_nav_clan_state);
     gallery_clan_painted=UINT32_MAX;gallery_clan_was_active=0;
 }
 int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now)
 {
     int changed=mds_gallery_clan_update(&gallery_clan_state,page,selected,now);
+    if(changed)mds_gallery_balloon_clan_select(&gallery_balloon_state,now);
     int active=mds_gallery_clan_active(&gallery_clan_state,now)||
+               mds_gallery_balloon_clan_active(&gallery_balloon_state,now)||
                mds_gallery_nav_clan_active(&gallery_nav_clan_state,now);
     int repaint=changed||(active&&gallery_clan_painted!=now)||
                 (gallery_clan_was_active&&!active);
@@ -1072,9 +1077,11 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
     MdsGalleryClanStyle clan;
+    MdsGalleryBalloonStyle balloon;
     MdsGalleryNavStyle navigation;
     uint32_t now=render_clock?render_clock():0;
     mds_gallery_clan_style(&gallery_clan_state,now,&clan);
+    mds_gallery_balloon_clan_style(&gallery_balloon_state,now,&balloon);
     mds_gallery_nav_clan_style(&gallery_nav_clan_state,now,&navigation);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
     /* Full background redraw invalidates the previous sprite backing store. */
@@ -1169,10 +1176,23 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
      * NitroFS resource archive. The provisional strip avoids overlap with
      * source-derived boxes; its final anchor still requires recovery. */
     if(g->used[selected]){
-        mds_original_gallery_action_icon(bottom,256,192,14,169,20,20,1,
-                                         g->miis[selected].value[51]!=0);
-        mds_original_gallery_action_icon(bottom,256,192,98,169,20,20,2,0);
-        mds_original_gallery_action_icon(bottom,256,192,181,169,20,20,3,0);
+        int personal=g->miis[selected].value[51]!=0;
+        /* Apply source SelectBalloonButton_Select opacity and Favorite
+         * parent/icon scale to the original private textures. Do not move
+         * touch bounds with the animation: the true runtime balloon anchor
+         * has not yet been verified against the selected-Mii scene. */
+        unsigned size=personal?20u:
+            (20u*balloon.favorite_scale_q16+32768u)/65536u;
+        if(size>32u)size=32u;
+        unsigned alpha=personal?balloon.balloon_alpha:
+            (balloon.balloon_alpha*balloon.favorite_alpha+127u)/255u;
+        mds_original_gallery_action_icon_alpha(bottom,256,192,
+            24-(int)size/2,179-(int)size/2,(int)size,(int)size,
+            1,personal,alpha);
+        mds_original_gallery_action_icon_alpha(bottom,256,192,
+            98,169,20,20,2,0,balloon.balloon_alpha);
+        mds_original_gallery_action_icon_alpha(bottom,256,192,
+            181,169,20,20,3,0,balloon.balloon_alpha);
     }
     text_at(bottom,38,174,g->used[selected]&&g->miis[selected].value[51]?"Owner":"Fav");
     text_at(bottom,124,174,"Copy");
