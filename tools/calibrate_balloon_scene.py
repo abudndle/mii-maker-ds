@@ -52,6 +52,8 @@ def _solve3(rows, values):
 
 
 def calibrate(layout, measurements, max_error=2.0):
+    if (not isinstance(layout, dict) or not isinstance(measurements, dict)):
+        raise ValueError("invalid calibration inputs")
     if (not isinstance(max_error, (int, float)) or isinstance(max_error, bool) or
             not math.isfinite(max_error) or not 0 < max_error <= 10):
         raise ValueError("invalid maximum residual")
@@ -71,10 +73,9 @@ def calibrate(layout, measurements, max_error=2.0):
         raise ValueError("four to 64 independent pane measurements required")
     pane_map = {}
     for pane in panes:
-        name = pane.get("name")
-        if name in pane_map:
-            raise ValueError("ambiguous source pane name")
-        pane_map[name] = pane
+        if not isinstance(pane, dict) or not isinstance(pane.get("name"), str):
+            raise ValueError("invalid source pane entry")
+        pane_map.setdefault(pane["name"], []).append(pane)
     source, target, used = [], [], set()
     for observation in observations:
         if not isinstance(observation, dict):
@@ -83,10 +84,12 @@ def calibrate(layout, measurements, max_error=2.0):
         if not isinstance(name, str) or name in used or name not in pane_map:
             raise ValueError("duplicate or unknown measurement pane")
         used.add(name)
+        if len(pane_map[name]) != 1:
+            raise ValueError("ambiguous measured source pane")
         x, y = _finite_pair(observation.get("ds_center"), "measured center")
         if not (0 <= x <= 256 and 0 <= y <= 192):
             raise ValueError("measured center outside DS screen")
-        rect = pane_map[name].get("ds_bounds")
+        rect = pane_map[name][0].get("ds_bounds")
         if (not isinstance(rect, list) or len(rect) != 4 or
                 any(not isinstance(v, (int, float)) or isinstance(v, bool) or
                     not math.isfinite(v) for v in rect) or
