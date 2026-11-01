@@ -35,6 +35,12 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_runtime_asset_parity.py
       - name: Verify fictional SDK compile inputs and private Docker workflow
         run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
+      - name: Verify real compact 8K EEPROM and legacy dual-bank synthetic Mii saves
+        run: python3 -m unittest discover -s tests -p test_eeprom_gallery_fixture.py
+      - name: Install Pillow required by strict framebuffer regression tests
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil
+      - name: Verify real multi-Mii emulator screenshot acceptance gate
+        run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
       - name: Verify private local ZIP-to-ROM build orchestration

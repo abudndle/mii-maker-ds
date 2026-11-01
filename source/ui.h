@@ -55,6 +55,7 @@ void mds_ui_camera_notice(const char *);
 void mds_ui_restore_top(void);
 void mds_ui_home(int,const char *);
 void mds_ui_gallery(const MdsGallery *,unsigned,unsigned,const char *);
+void mds_ui_saved(const MdsGallery *,unsigned,unsigned);
 /* An interrupted slow thumbnail render should be retried once input is idle. */
 int mds_ui_gallery_retry_pending(void);
 #endif

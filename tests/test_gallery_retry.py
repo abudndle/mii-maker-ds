@@ -13,11 +13,15 @@ checks = (
     ("pending flag declared", "static int gallery_retry_pending;" in ui),
     ("pending state exposed", "int mds_ui_gallery_retry_pending(void)" in header),
     ("pending state reset on gallery draw", "gallery_retry_pending=0;" in gallery),
-    ("selected full-body cancellation tracked", "if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;" in top),
+    ("room body-preview cancellation retained", "else if(render_cancelled_count==before)" in top and "gallery_retry_pending=1;" in top),
+    ("slow rendering never hides later cached Miis", "rendered_one_actor=1;" in top and "break; /* Limit model work" not in top),
+    ("interrupted model does not exhaust retry quota", "gallery_room_attempts[local]++;" in top and top.index("gallery_room_attempts[local]++;") > top.index("else if(render_cancelled_count==before)")),
     ("thumbnail cancellation tracked", "if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;" in gallery),
     ("thumbnail rendered only if ready", "if(ready)mds_thumbnail_capture(" in gallery),
+    ("ten saved actors in source layout", "for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)" in top and "mds_room_position(local,&x,&y)" in top),
+    ("individual actor cache per room", "mds_room_matches(&gallery_room" in top),
     ("retry only when no input waiting", "mds_ui_gallery_retry_pending()&&!input_waiting()" in main_redraw),
-    ("redraw only in gallery", "screen==MDS_SCREEN_GALLERY&&mds_ui_gallery_retry_pending()" in main_redraw),
+    ("redraw only in gallery or saved picker", "screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED" in main_redraw and "mds_ui_gallery_retry_pending()" in main_redraw),
 )
 for name, ok in checks:
     if not ok:

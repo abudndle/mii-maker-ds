@@ -6,6 +6,7 @@
 #include "head.h"
 #include "view.h"
 #include "thumbnail.h"
+#include "room.h"
 #include "animation.h"
 #include "motion.h"
 #include "gui_tween.h"
@@ -56,6 +57,9 @@ static MdsCflArchive cfl;
 static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
+static MdsRoomCache gallery_room;
+static unsigned gallery_room_attempts[MDS_ROOM_SLOTS];
+static unsigned gallery_room_last_start=UINT32_MAX;
 static int gallery_retry_pending;
 _Static_assert(MDS_HEAD_SIDE==MDS_THUMBNAIL_SOURCE_SIDE,"gallery thumbnail source geometry must match renderer");
 static uint16_t *head_pixels=head_cache[0];
@@ -245,6 +249,10 @@ static int preview(const MdsAvatar *a,int mode)
  if(!preview_cached[mode]||memcmp(a->value,head_avatars[mode].value,sizeof a->value)||preview_view[mode]!=requested_view||(mode&&preview_pose[mode]!=pose_index)){
   uint32_t started=render_clock?render_clock():0;
   int result=mode&&body?mds_mii_render_view(&cfl,a,body,size,render_pixels,mode==2,requested_view):mds_head_render_view(&cfl,a,render_pixels,requested_view);
+  /* Missing/invalid body models must not hide otherwise valid saved Miis.
+   * Keep the original CFL head geometry visible until full-body parity is fixed. */
+  if(result==0&&mode&&body)
+   result=mds_head_render_view(&cfl,a,render_pixels,requested_view);
   if(result<0){
    render_cancelled_count++;
    /* A cancelled redraw may reuse the previous pose only for the same
@@ -720,26 +728,70 @@ void mds_ui_home(int focus,const char *notice)
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
-    if(!ok)return;
+    (void)page; /* Room position comes from saved Mii slot, not ten-slot grid page. */
+    if(!ok||!g||selected>=MDS_SLOTS)return;
     memcpy(top,top_backgrounds[1],sizeof top_canvas);
-    char text[48];
-    unsigned before_cancel=render_cancelled_count;
-    int ready=g->used[selected]&&preview(&g->miis[selected],2);
-    if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;
-    if(ready){
-        paint_head(top,48,12,160,160);
-        const char *name=g->miis[selected].name;label((256-text_width(name))/2,3,name);
-    }else if(g->used[selected])label(75,83,"Preview unavailable.");
-    else label(82,83,"A: Create a Mii");
-    if(motion_scene&&motions[0].file){
-        const char*clip_name=gallery_selected_clip<0?"Auto":motions[0].clips[gallery_selected_clip].name;
-        snprintf(text,sizeof text,"Motion: %s",clip_name);label(8,150,text);
-        label(8,163,"UP/DOWN: Clip   START: Auto");
+    unsigned start=mds_room_start(selected);
+    mds_room_select(&gallery_room,selected);
+    if(start!=gallery_room_last_start){
+        gallery_room_last_start=start;
+        memset(gallery_room_attempts,0,sizeof gallery_room_attempts);
     }
-    snprintf(text,sizeof text,"%u / 10",page+1);label(222-text_width(text),177,text);
-    if(notice&&notice[0]&&strcmp(notice,"Ready"))label(8,177,display_status(notice));else label(8,177,"Y: Copy  X: Erase  SELECT: Image");
+    /* Draw all ten Miis using the original SelectMii layout. Retain separate cached
+     * 3D previews per actor so changing selection never replaces another Mii. */
+    int unfinished=0;
+    int rendered_one_actor=0;
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
+        unsigned slot=start+local;
+        int x=0,y=0;
+        if(!mds_room_position(local,&x,&y))continue;
+        if(slot>=MDS_SLOTS||!g->used[slot])continue;
+        if(!mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
+            unfinished=1;
+            if(!rendered_one_actor&&gallery_room_attempts[local]<3u){
+                unsigned before=render_cancelled_count;
+                int ready=preview(&g->miis[slot],2);
+                rendered_one_actor=1; /* One costly 3D render per repaint. */
+                if(ready){
+                    mds_room_capture(&gallery_room,selected,local,
+                                     &g->miis[slot],head_pixels);
+                }else if(render_cancelled_count==before){
+                    /* Count real decode failures, not interrupted renders.
+                     * Touch/animation input must not permanently blank Miis. */
+                    gallery_room_attempts[local]++;
+                }else{
+                    gallery_retry_pending=1;
+                }
+            }
+        }
+        if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
+            mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);
+        status_icon(top,x+14,y+18,&g->miis[slot]);
+        if(slot==selected)label(x+15,y-9,"v");
+    }
+    if(unfinished)for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
+        if(g->used[start+local]&&
+           !mds_room_matches(&gallery_room,selected,local,&g->miis[start+local])&&
+           gallery_room_attempts[local]<3u)gallery_retry_pending=1;
+    char title[42];snprintf(title,sizeof title,"Room %u / 10",start/10+1);
+    label(8,3,title);
+    if(motion_scene&&motions[0].file){
+        const char *clip_name=gallery_selected_clip<0?"Auto":
+            motions[0].clips[gallery_selected_clip].name;
+        char clip_label[48];
+        snprintf(clip_label,sizeof clip_label,"Motion: %s",clip_name);
+        label(8,150,clip_label);
+        label(8,163,"UP/DOWN: Clip   START: Auto");
+    }else label(8,165,"Ten saved Miis per room");
+    if(notice&&notice[0]&&strcmp(notice,"Ready"))
+        label(8,179,display_status(notice));
 }
 int mds_ui_gallery_retry_pending(void){return gallery_retry_pending;}
+void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
+{
+ mds_ui_gallery(g,page,selected,"Choose a saved Mii");
+ text_at(bottom,5,154,"A: QR   Y: Copy   X: File import");
+}
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     if(!ok)return;
