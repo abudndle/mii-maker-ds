@@ -134,7 +134,14 @@ static void load_animations(void)
 static void gallery_advance_actor_pose(void)
 {
  static unsigned next_actor;
+ static unsigned last_room_start=UINT32_MAX;
  if(!motion_scene)return;
+ /* Room changes invalidate all cached actors. Restart the round-robin at
+  * the new room's first slot instead of carrying the previous room's index. */
+ if(last_room_start!=gallery_room.start){
+  last_room_start=gallery_room.start;
+  next_actor=0;
+ }
  /* A pose update must not repeatedly discard a preview still awaiting its
   * first render. Prefer a valid actor, so the one-render-per-repaint budget
   * eventually fills every room slot even when animation advances quickly. */
