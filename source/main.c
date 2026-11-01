@@ -233,6 +233,15 @@ int main(void)
                                        slot>=0&&gallery.used[slot]);
                 if(slot>=0){editor.slot=(unsigned)slot;mds_editor_request(&editor,MDS_EDIT_RELOAD);drawn_screen=-1;}
             }
+            /* While holding a Mii box, dragging to a side arrow changes the
+             * destination room without discarding the original source slot. */
+            if((k&KEY_TOUCH)&&gallery_drag.source>=0){
+                int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
+                if(arrow){
+                    int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
+                    if(next>=0){page=(unsigned)next/10;editor.slot=(unsigned)next;drawn_screen=-1;}
+                }
+            }
             if(input.up&KEY_TOUCH){
                 unsigned source;
                 int destination=mds_gallery_drag_end(&gallery_drag,page,
