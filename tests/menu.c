@@ -57,6 +57,7 @@ assert(mds_gallery_next_saved(occupied,0,-1)==0);
 MdsGalleryControls controls={0};
 assert(mds_gallery_controls_step(NULL,1,1,1,1,0)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,0,0,0,0,0)==MDS_GALLERY_CONTROL_NONE);
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE); /* stray release */
 assert(mds_gallery_controls_step(&controls,1,1,0,0,0)==MDS_GALLERY_CONTROL_RECALL);
 assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_EXPORT);
@@ -72,6 +73,7 @@ assert(mds_gallery_controls_step(&controls,0,1,1,1,0)==MDS_GALLERY_CONTROL_NONE)
 assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
 mds_gallery_controls_reset(&controls); /* leaving the gallery */
+assert(mds_gallery_controls_step(&controls,0,0,0,0,1)==MDS_GALLERY_CONTROL_NONE); /* release after scene switch */
 assert(mds_gallery_controls_step(&controls,0,0,0,0,0)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,0,0,1,1,0)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,1,1,0,1,0)==MDS_GALLERY_CONTROL_EDIT);
