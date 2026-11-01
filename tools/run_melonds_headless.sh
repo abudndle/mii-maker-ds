@@ -51,24 +51,37 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   import -window "$win" -depth 8 "$MELONDS_IMAGE"
   test -s "$MELONDS_IMAGE"
   if [ -s "$PWD/mii-ds.sav" ]; then
-    # Isolated synthetic save is prepared by CI, not any user save.
-    # Home View Mii Characters is centered at X=112, lower panel Y≈235.
+    # The earlier xdotool click --window used XSendEvent, which SDL
+    # discarded: the before and after PNGs were BYTE-IDENTICAL. Use
+    # physical XTest mouse down/up after focusing the actual game window.
+    xdotool windowfocus --sync "$win" || true
     xdotool mousemove --window "$win" 120 232
-    xdotool click --window "$win" 1
-    sleep 16
+    xdotool mousedown 1
+    sleep 0.45
+    xdotool mouseup 1
+    sleep 15
     if ! kill -0 "$emu_pid" 2>/dev/null; then
       echo "FAIL: melonDS exited during saved-Mii gallery navigation"
       exit 1
     fi
     import -window "$win" -depth 8 "$MELONDS_GALLERY_IMAGE"
-    test -s "$MELONDS_GALLERY_IMAGE"
-    echo "PASS: emulator gallery interaction screenshot captured"
+    if ! python3 tools/melonds_gallery_probe.py "$MELONDS_IMAGE" "$MELONDS_GALLERY_IMAGE"; then
+      echo "Retry: physical touch did not prove gallery; try mapped DS A keyboard key."
+      xdotool windowfocus --sync "$win" || true
+      xdotool key --clearmodifiers x
+      sleep 14
+      import -window "$win" -depth 8 "$MELONDS_GALLERY_IMAGE"
+      # Never accept a screenshot of Home or another menu as a gallery.
+      python3 tools/melonds_gallery_probe.py "$MELONDS_IMAGE" "$MELONDS_GALLERY_IMAGE"
+    fi
+    echo "PASS: emulator entered gallery and displayed at least two saved Miis"
   fi
   echo "PASS: melonDS remained running and a framebuffer was captured"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_IMAGE" --report "$RUNNER_TEMP/melonds-boot-metadata.json"
 if [ -s "${MELONDS_GALLERY_IMAGE:-}" ]; then
   python3 tools/melonds_screen_probe.py "$MELONDS_GALLERY_IMAGE" --report "$RUNNER_TEMP/melonds-gallery-metadata.json"
+  python3 tools/melonds_gallery_probe.py "$MELONDS_IMAGE" "$MELONDS_GALLERY_IMAGE" --report "$RUNNER_TEMP/melonds-gallery-scene.json"
 fi
 # Suppress potentially sensitive file paths in emulator logs.
 if grep -Eiq 'segmentation fault|fatal error|failed to open rom|failed to load rom' "$MELONDS_LOG"; then
