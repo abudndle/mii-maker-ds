@@ -850,6 +850,15 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
                 }
             }
         }
+    }
+    /* Composite in fixed original SelectMii pane order. Rendering priority
+     * may rotate, but draw order must not: overlapping heads and selection
+     * markers otherwise flicker as the preview cursor advances. */
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
+        unsigned slot=start+local;
+        int x=0,y=0;
+        if(slot>=MDS_SLOTS||!g->used[slot]||
+           !mds_room_position(local,&x,&y))continue;
         if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
             mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);
         status_icon(top,x+14,y+18,&g->miis[slot]);
