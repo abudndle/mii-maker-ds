@@ -44,13 +44,13 @@ def command(archive, root=ROOT, image=IMAGE, jobs=2, environ=None):
     return args
 
 
-def build(archive, jobs=2, validate_only=False, image=IMAGE):
+def build(archive, jobs=2, validate_only=False, image=IMAGE, no_cache=False):
     archive = Path(archive).expanduser().resolve(strict=True)
     # Fail missing SDK access before extracting any owner-private content.
     cmd = command(archive, image=image, jobs=jobs)
     if not validate_only and shutil.which("docker") is None:
         raise ValueError("Docker is not installed; see official BlocksDS Docker documentation")
-    check_zip(archive)
+    check_zip(archive,use_cache=not no_cache)
     if validate_only:
         print("PASS: private original archives, model motions, CLAN and NitroFS UI verified")
         print("No original resources extracted and no ROM generated")
@@ -91,6 +91,8 @@ def main():
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--image", default=IMAGE)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="force full source and private resource validation")
     parser.add_argument("--dry-run", action="store_true",
                         help="show compiler invocation without running or reading ZIP bytes")
     args = parser.parse_args()
@@ -100,7 +102,8 @@ def main():
             print("Compiler invocation prepared (private ZIP stays on host):")
             print(" ".join(shlex_quote(part) for part in cmd))
             return 0
-        build(args.private_zip, args.jobs, args.validate_only, args.image)
+        build(args.private_zip, args.jobs, args.validate_only, args.image,
+              args.no_cache)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"FAIL: private BlocksDS Docker build: {exc}\n")
     return 0
