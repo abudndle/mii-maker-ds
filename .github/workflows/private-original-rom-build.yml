@@ -1,0 +1,134 @@
+name: Private original-resource Mii Maker DS build
+on:
+  push:
+    branches:
+      - milestone/github-real-nds-private-build-20261031
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-original-rom:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CI: "true"
+    steps:
+      - name: Check required private resource secret
+        shell: bash
+        env:
+          ASSETS_URL: ${{ secrets.MII_ASSETS_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ASSETS_URL" ]; then
+            echo "::error title=Private original ZIP missing::Set repository Actions secret MII_ASSETS_URL to an access-controlled direct ZIP download. The public GitHub repository must never contain the original archive."
+            exit 1
+          fi
+          echo "Private resource URL secret is configured (value withheld)."
+      - name: Checkout DS source
+        uses: actions/checkout@v4
+      - name: Prepare host verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential python3 python3-pil curl gnupg
+      - name: Fetch owner-supplied ZIP without logging contents
+        shell: bash
+        env:
+          ASSETS_URL: ${{ secrets.MII_ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.MII_ASSETS_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ -n "$ASSETS_TOKEN" ]; then
+            curl --fail --location --silent --show-error --retry 2 \
+              -H "Authorization: Bearer $ASSETS_TOKEN" \
+              "$ASSETS_URL" --output /tmp/mii-private-original.zip
+          else
+            curl --fail --location --silent --show-error --retry 2 \
+              "$ASSETS_URL" --output /tmp/mii-private-original.zip
+          fi
+          python3 - <<'PY'
+          import zipfile
+          archive='/tmp/mii-private-original.zip'
+          if not zipfile.is_zipfile(archive):
+              raise SystemExit('FAIL: private URL did not return a ZIP (check authentication and direct link)')
+          print('PASS: private resource ZIP received; no archive contents logged')
+          PY
+      - name: Validate original resources before extraction
+        run: |
+          set -euo pipefail
+          python3 tools/restore_asset_zip.py /tmp/mii-private-original.zip
+          python3 tests/rom_motion_packs.py --source-only --asset-zip /tmp/mii-private-original.zip
+          python3 tools/verify_private_clan.py /tmp/mii-private-original.zip
+          python3 tools/verify_runtime_assets.py /tmp/mii-private-original.zip
+      - name: Restore private resources on isolated runner
+        run: |
+          set -euo pipefail
+          python3 tools/restore_asset_zip.py /tmp/mii-private-original.zip --extract-to .
+          python3 tools/check_assets.py
+          python3 tools/validate_body_models.py
+          python3 tools/test_original_render.py --asset-zip /tmp/mii-private-original.zip
+      - name: Compile ARM9/ARM7 with official BlocksDS SDK (no container network)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network none --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            --mount "type=bind,source=$PWD,target=/work" \
+            -w /work --entrypoint make \
+            skylyrac/blocksds:slim-latest SDK_STAGE=1 -j2 mii-ds.nds
+      - name: Verify private ROM, all packaged originals, ARM sections, and DS boundaries
+        run: |
+          set -euo pipefail
+          python3 tools/fix_nds_regions.py mii-ds.nds
+          test -s mii-ds.nds
+          python3 tests/rom_regions.py
+          python3 tests/rom_nitrofs_assets.py mii-ds.nds
+          python3 tests/rom_all_assets.py mii-ds.nds --asset-zip /tmp/mii-private-original.zip
+          python3 tests/rom_body_models.py mii-ds.nds
+          python3 tests/rom_motion_packs.py mii-ds.nds --asset-zip /tmp/mii-private-original.zip
+          python3 tests/rom_arm_sections.py mii-ds.nds
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          rom=Path("mii-ds.nds")
+          print("PASS: actual private ROM compiled and validated")
+          print("ROM size:",rom.stat().st_size)
+          print("ROM SHA-256:",hashlib.sha256(rom.read_bytes()).hexdigest())
+          PY
+      - name: Encrypt ROM for optional private retrieval
+        shell: bash
+        env:
+          ROM_PASSPHRASE: ${{ secrets.MII_ROM_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ ! -f mii-ds.nds ]; then exit 1; fi
+          if [ -z "$ROM_PASSPHRASE" ]; then
+            echo "No ROM artifact exported; add secret MII_ROM_PASSPHRASE to enable encrypted download."
+            exit 0
+          fi
+          if [ "${#ROM_PASSPHRASE}" -lt 20 ]; then
+            echo "::error::MII_ROM_PASSPHRASE must be at least 20 characters to export an encrypted build."
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$ROM_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --cipher-algo AES256 --symmetric \
+            --output mii-ds.nds.gpg mii-ds.nds
+          test -s mii-ds.nds.gpg
+          echo "ENCRYPTED_ROM=true" >> "$GITHUB_ENV"
+          echo "Encrypted ROM produced; plaintext never uploaded."
+      - name: Upload encrypted ROM only (never the original assets or plaintext ROM)
+        if: ${{ env.ENCRYPTED_ROM == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mii-maker-ds-private-encrypted
+          path: mii-ds.nds.gpg
+          retention-days: 1
+          if-no-files-found: error
+      - name: Delete private game files from runner
+        if: always()
+        shell: bash
+        run: |
+          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.nds.gpg
+          rm -rf nitrofiles assets/ui
