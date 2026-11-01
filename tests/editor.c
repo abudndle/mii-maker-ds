@@ -43,6 +43,15 @@ int main(void){
     mds_editor_begin(&e,&g);e.slot=10;mds_new(&e.draft);e.draft.value[46]=1;assert(!mds_editor_save(&e,saved,NULL)&&!g.used[10]);
     mds_gallery_new(&g);mds_editor_begin(&e,&g);e.draft.value[51]=1;e.draft.value[46]=1;assert(mds_editor_save(&e,saved,NULL));
     g.miis[0].value[48]=0;assert(!mds_editor_copy(&e,saved,NULL)&&!g.used[1]);g.miis[0].value[48]=1;
+    /* Neither touch nor Y may copy during a modal or with unsaved edits.
+     * This also guards the direct copy helper against a NULL editor. */
+    assert(!mds_editor_copy(NULL,saved,NULL));
+    e.pending=MDS_EDIT_DELETE;
+    assert(!mds_editor_copy(&e,saved,NULL)&&!g.used[1]);
+    e.pending=MDS_EDIT_NONE;
+    e.draft.value[5]^=1;
+    assert(!mds_editor_copy(&e,saved,NULL)&&!g.used[1]);
+    e.draft=e.baseline;
     assert(!mds_editor_copy(&e,failed,NULL)&&!g.used[1]);assert(mds_editor_copy(&e,saved,NULL)&&e.slot==1&&g.used[1]&&!g.miis[1].value[51]&&!g.miis[1].value[46]);
     assert(g.miis[0].value[51]&&g.miis[0].value[46]);
     mds_gallery_new(&g);mds_editor_begin(&e,&g);MdsAvatar imported;mds_new(&imported);strcpy(imported.name,"Imported");imported.value[51]=imported.value[46]=1;
