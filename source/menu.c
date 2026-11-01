@@ -198,6 +198,13 @@ void mds_gallery_controls_reset(MdsGalleryControls *controls)
 {
  if(controls){controls->select_used=0;controls->select_active=0;}
 }
+/* A SELECT-held box/room tap must consume the pending image export just as
+ * a Favorite/Copy/Edit tap does. Persist consumption after stylus-up so a
+ * later SELECT-up cannot export the newly selected Mii unexpectedly. */
+void mds_gallery_controls_consume_touch(MdsGalleryControls *controls,int touch_active)
+{
+ if(controls&&controls->select_active&&touch_active)controls->select_used=1;
+}
 unsigned mds_gallery_controls_step(MdsGalleryControls *controls,
  int a_down,int a_held,int select_down,int select_held,int select_up)
 {
