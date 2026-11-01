@@ -59,6 +59,7 @@ static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
 static MdsRoomCache gallery_room;
 static unsigned gallery_room_attempts[MDS_ROOM_SLOTS];
+static uint8_t gallery_room_occupied[MDS_ROOM_SLOTS];
 static unsigned gallery_room_last_start=UINT32_MAX;
 static int gallery_retry_pending;
 _Static_assert(MDS_HEAD_SIDE==MDS_THUMBNAIL_SOURCE_SIDE,"gallery thumbnail source geometry must match renderer");
@@ -145,7 +146,8 @@ static void gallery_advance_actor_pose(void)
    * first actor perpetually refreshing while later Miis remain invisible. */
   int pending=0;
   for(unsigned j=0;j<MDS_ROOM_SLOTS;j++)
-   if(!gallery_room.actor[j].valid&&gallery_room_attempts[j]<3u){pending=1;break;}
+   if(gallery_room_occupied[j]&&!gallery_room.actor[j].valid&&
+      gallery_room_attempts[j]<3u){pending=1;break;}
   if(pending)return;
   gallery_room.actor[local].valid=0;
   gallery_room_attempts[local]=0;
@@ -773,6 +775,10 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     if(!ok||!g||selected>=MDS_SLOTS)return;
     memcpy(top,top_backgrounds[1],sizeof top_canvas);
     unsigned start=mds_room_start(selected);
+    /* Only occupied slots may block animation refresh. Empty slots have no
+     * preview to render and must not starve animated characters. */
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
+        gallery_room_occupied[local]=(uint8_t)(start+local<MDS_SLOTS&&g->used[start+local]);
     mds_room_select(&gallery_room,selected);
     if(start!=gallery_room_last_start){
         gallery_room_last_start=start;
