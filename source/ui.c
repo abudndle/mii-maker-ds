@@ -135,7 +135,13 @@ static void gallery_advance_actor_pose(void)
 {
  static unsigned next_actor;
  static unsigned last_room_start=UINT32_MAX;
- if(!motion_scene)return;
+ if(!motion_scene){
+  /* Leaving the gallery ends this animation session. A later visit must
+   * restart the actor cycle even if it opens the same saved-Mii room. */
+  last_room_start=UINT32_MAX;
+  next_actor=0;
+  return;
+ }
  /* Room changes invalidate all cached actors. Restart the round-robin at
   * the new room's first slot instead of carrying the previous room's index. */
  if(last_room_start!=gallery_room.start){
