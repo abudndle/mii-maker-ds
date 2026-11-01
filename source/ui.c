@@ -919,6 +919,37 @@ void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
  mds_ui_gallery(g,page,selected,"Choose a saved Mii");
  text_at(bottom,5,154,"A: QR   Y: Copy   X: File import");
 }
+/* Optional ORIGINAL Select.arc/BtnArrow.bclim converted locally with
+ * tools/convert_original_bclim.py. Cached once so drawing never performs I/O.
+ * The original game resource is intentionally absent from the public tree. */
+static uint16_t original_room_arrow[12*18];
+static int original_room_arrow_state;
+static void draw_original_room_arrows(void)
+{
+    if(original_room_arrow_state==0){
+        original_room_arrow_state=-1;
+        FILE *f=fopen("nitro:/art/Select/BtnArrow.bin","rb");
+        if(f){
+            uint8_t header[4];
+            if(fread(header,1,sizeof header,f)==sizeof header &&
+               header[0]==12&&header[1]==0&&
+               header[2]==18&&header[3]==0&&
+               fread(original_room_arrow,1,sizeof original_room_arrow,f)==sizeof original_room_arrow)
+                original_room_arrow_state=1;
+            fclose(f);
+        }
+    }
+    if(original_room_arrow_state!=1)return;
+    /* EDITSelectBase B_ArrowL and B_ArrowR: 3DS source pane bounds
+     * 320x240 -> DS 256x192, centers y=95, x=9.5/246.5. */
+    for(int y=0;y<18;y++)
+        for(int x=0;x<12;x++){
+            uint16_t left=original_room_arrow[y*12+x];
+            uint16_t right=original_room_arrow[y*12+(11-x)];
+            if(left&0x8000u)bottom[(86+y)*256+3+x]=left;
+            if(right&0x8000u)bottom[(86+y)*256+240+x]=right;
+        }
+}
 static int gallery_drag_slot=-1;
 static int gallery_drag_x=-1,gallery_drag_y=-1;
 static MdsThumbnail gallery_drag_snapshot;
@@ -940,6 +971,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
+    draw_original_room_arrows();
     mds_thumbnail_page(&gallery_thumbnails,page);
     for(unsigned i=0;i<10;i++){
         unsigned slot=page*10+i;
