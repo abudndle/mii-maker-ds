@@ -361,7 +361,17 @@ int main(void)
                     screen=MDS_SCREEN_EDITOR;
                 }else editor.status="This received Mii cannot be edited.";
             }
-            if(down&KEY_X)mds_editor_request(&editor,MDS_EDIT_DELETE);
+            /* SELECT+X is a temporary accessible Favorite shortcut until
+             * the original 3DS SelectBalloonButton pane is touch-bound.
+             * Mark SELECT consumed so releasing it never exports an image. */
+            if(down&KEY_X){
+                if(input.held&KEY_SELECT){
+                    gallery_controls.select_used=1;
+                    if(mds_editor_toggle_favorite(&editor,persist,NULL))
+                        mds_ui_gallery_confirm(animation_vblanks);
+                    drawn_screen=-1;
+                }else mds_editor_request(&editor,MDS_EDIT_DELETE);
+            }
             if(down&KEY_Y){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             if(gallery_action&MDS_GALLERY_CONTROL_EXPORT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
         }else if(screen==MDS_SCREEN_GENDER){

@@ -138,6 +138,46 @@ int mds_editor_move(MdsEditor *e,unsigned destination,MdsPersist persist,void *c
  return 1;
 }
 
+/* A gallery Favorite button changes the saved record immediately.  Keep
+ * the transaction separate from profile editing so a failed cartridge write
+ * cannot leave a false red crown or an unsaved in-memory toggle. */
+int mds_editor_toggle_favorite(MdsEditor *e,MdsPersist persist,void *ctx)
+{
+    if(!e||!e->gallery||e->slot>=MDS_SLOTS)return 0;
+    MdsGallery *g=e->gallery;
+    if(!g->used[e->slot]){e->status="Choose a saved Mii first.";return 0;}
+    if(g->miis[e->slot].value[51]){
+        e->status="Your Personal Mii is always a Favorite.";
+        return 0;
+    }
+    if(mds_editor_locked(&g->miis[e->slot])){
+        e->status="This received Mii cannot be changed.";
+        return 0;
+    }
+    if(e->pending||mds_editor_dirty(e)){
+        e->status="Discard unsaved edits before changing Favorite.";
+        return 0;
+    }
+    if(!g->miis[e->slot].value[46]){
+        unsigned favorites=0;
+        for(unsigned i=0;i<MDS_SLOTS;i++)
+            if(i!=e->slot&&g->used[i]&&g->miis[i].value[46])favorites++;
+        if(favorites>=10){
+            e->status="You can save up to ten favorites.";
+            return 0;
+        }
+    }
+    e->draft.value[46]=e->draft.value[46]?0:1;
+    if(!mds_editor_save(e,persist,ctx)){
+        /* mds_editor_save rolls back gallery metadata and saved record.
+         * Restore the transient draft too: no unsaved Favorite change. */
+        e->draft=e->baseline;
+        return 0;
+    }
+    e->status=e->draft.value[46]?"Favorite added.":"Favorite removed.";
+    return 1;
+}
+
 int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 {
  MdsGallery*g=e->gallery;
