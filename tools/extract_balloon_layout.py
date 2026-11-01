@@ -53,8 +53,8 @@ def _rect(matrix, origin, width, height, canvas, offset, scene_affine):
         ds_x = (px+canvas[0]/2)*256/canvas[0]
         ds_y = (canvas[1]/2-py)*192/canvas[1]
         if scene_affine is not None:
-            aa, bb, tx, cc, dd, ty = scene_affine
-            ds_x, ds_y = aa*ds_x+bb*ds_y+tx, cc*ds_x+dd*ds_y+ty
+            aa, bb, anchor_x, cc, dd, anchor_y = scene_affine
+            ds_x, ds_y = aa*ds_x+bb*ds_y+anchor_x, cc*ds_x+dd*ds_y+anchor_y
         points.append((ds_x+offset[0], ds_y+offset[1]))
     xs, ys = zip(*points)
     return [round(min(xs), 4), round(min(ys), 4),
