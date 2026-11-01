@@ -1,5 +1,5 @@
-#ifndef MDS_ROOM_H
-#define MDS_ROOM_H
+#ifndef MDS_ROOM_MODULE_H
+#define MDS_ROOM_MODULE_H
 #include "save.h"
 #include <stdint.h>
 #define MDS_ROOM_SLOTS 5u
