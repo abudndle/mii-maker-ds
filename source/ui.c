@@ -921,7 +921,19 @@ void mds_ui_saved(const MdsGallery *g,unsigned page,unsigned selected)
 }
 static int gallery_drag_slot=-1;
 static int gallery_drag_x=-1,gallery_drag_y=-1;
-void mds_ui_gallery_drag(int slot,int x,int y){gallery_drag_slot=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;gallery_drag_x=x;gallery_drag_y=y;}
+static MdsThumbnail gallery_drag_snapshot;
+static int gallery_drag_snapshot_slot=-1;
+void mds_ui_gallery_drag(int slot,int x,int y)
+{
+    int next=(slot>=0&&slot<(int)MDS_SLOTS)?slot:-1;
+    if(next!=gallery_drag_snapshot_slot){
+        gallery_drag_snapshot.valid=0;
+        gallery_drag_snapshot_slot=next;
+    }
+    gallery_drag_slot=next;
+    gallery_drag_x=x;
+    gallery_drag_y=y;
+}
 void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
     if(!ok)return;
@@ -947,10 +959,25 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
         }
         if(slot==selected)outline(&gallery_hits[i]);
     }
-    if(gallery_drag_slot>=0&&gallery_drag_x>=0&&gallery_drag_y>=0){
+    /* Keep a compact copy of the grabbed Mii's thumbnail. The gallery cache
+     * deliberately holds only one room; it is cleared when L/R changes page.
+     * A separate 42x46 snapshot prevents the dragged actor disappearing. */
+    if(gallery_drag_slot>=0&&g->used[gallery_drag_slot]){
         unsigned local=(unsigned)gallery_drag_slot%10;
-        if(g->used[gallery_drag_slot]&&mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
-            mds_thumbnail_blit(&gallery_thumbnails,page,local,bottom,256,192,gallery_drag_x-21,gallery_drag_y-23);
+        if((unsigned)gallery_drag_slot/10==page&&
+           mds_thumbnail_matches(&gallery_thumbnails,page,local,&g->miis[gallery_drag_slot]))
+            gallery_drag_snapshot=gallery_thumbnails.slots[local];
+        if(gallery_drag_snapshot.valid&&gallery_drag_x>=0&&gallery_drag_y>=0)
+            for(unsigned y=0;y<MDS_THUMBNAIL_HEIGHT;y++){
+                int py=gallery_drag_y-23+(int)y;
+                if(py<0||py>=192)continue;
+                for(unsigned x=0;x<MDS_THUMBNAIL_WIDTH;x++){
+                    int px=gallery_drag_x-21+(int)x;
+                    if(px<0||px>=256)continue;
+                    uint16_t pixel=gallery_drag_snapshot.pixels[y*MDS_THUMBNAIL_WIDTH+x];
+                    if(pixel&0x8000u)bottom[py*256+px]=pixel;
+                }
+            }
     }
     text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
 }
