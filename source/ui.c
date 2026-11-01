@@ -740,6 +740,7 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     /* Draw all ten Miis using the original SelectMii layout. Retain separate cached
      * 3D previews per actor so changing selection never replaces another Mii. */
     int unfinished=0;
+    int rendered_one_actor=0;
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
         unsigned slot=start+local;
         int x=0,y=0;
@@ -747,15 +748,20 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         if(slot>=MDS_SLOTS||!g->used[slot])continue;
         if(!mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
             unfinished=1;
-            if(gallery_room_attempts[local]<3u){
+            if(!rendered_one_actor&&gallery_room_attempts[local]<3u){
                 unsigned before=render_cancelled_count;
                 int ready=preview(&g->miis[slot],2);
-                gallery_room_attempts[local]++;
-                if(ready)
+                rendered_one_actor=1; /* One costly 3D render per repaint. */
+                if(ready){
                     mds_room_capture(&gallery_room,selected,local,
                                      &g->miis[slot],head_pixels);
-                if(render_cancelled_count!=before)gallery_retry_pending=1;
-                break; /* Limit model work to one actor per redraw. */
+                }else if(render_cancelled_count==before){
+                    /* Count real decode failures, not interrupted renders.
+                     * Touch/animation input must not permanently blank Miis. */
+                    gallery_room_attempts[local]++;
+                }else{
+                    gallery_retry_pending=1;
+                }
             }
         }
         if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
