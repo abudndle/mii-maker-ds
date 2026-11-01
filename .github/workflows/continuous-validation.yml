@@ -22,18 +22,22 @@ jobs:
           persist-credentials: false
       - name: Python syntax checks
         run: python3 -m compileall -q tools tests
-      - name: Run repository Python regression scripts
+      - name: Run asset-free M81 regression suite
         shell: bash
         run: |
           set -euo pipefail
-          count=0
-          while IFS= read -r -d '' file; do
-            echo "Testing $file"
-            python3 "$file"
-            count=$((count+1))
-          done < <(find tests -maxdepth 1 -type f -name 'test_*.py' -print0 | sort -z)
-          echo "Executed $count Python regression scripts"
-          test "$count" -gt 0
+          # The repository also contains interactive emulator probes and private
+          # integration tests that cannot be run as plain python scripts.
+          for test_file in \
+            tests/test_calibrate_balloon_scene.py \
+            tests/test_extract_balloon_layout.py \
+            tests/test_gallery_action_wiring.py \
+            tests/test_gallery_balloon_wiring.py \
+            tests/test_gallery_drag.py \
+            tests/test_first_boot_flow.py \
+            tests/test_gallery_exit_wiring.py; do
+            python3 "$test_file"
+          done
       - name: Check for prohibited committed ROMs and archives
         shell: bash
         run: |
