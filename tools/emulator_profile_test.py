@@ -1,6 +1,6 @@
 import ctypes as C,sys,pathlib,json,time,argparse
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--core',required=True);parser.add_argument('--save-dir',required=True);parser.add_argument('--restart',action='store_true');parser.add_argument('--appearance',action='store_true');parser.add_argument('--backup',action='store_true');args=parser.parse_args()
 OUTPUT=ROOT/'validation';OUTPUT.mkdir(exist_ok=True)
 from PIL import Image
 core=C.CDLL(str(pathlib.Path(args.core).resolve()))
@@ -81,6 +81,37 @@ def avatar():return mem('editor',272)[4:130]
 def value(f):return avatar()[64+f]
 def scene():return int.from_bytes(mem('screen'),'little')
 run(300)
+if args.backup:
+ if args.restart:parser.error('--backup requires its own fresh save directory, not --restart')
+ def backup_message():
+  pointer=int.from_bytes(mem('backup_notice'),'little')
+  return C.string_at(ram+pointer-0x02000000,96).split(b'\0')[0]
+ assert scene()==0
+ key(2);assert scene()==9
+ original=mem('gallery',12716)
+ key(8);assert backup_message()==b'SD card is unavailable.' and mem('gallery',12716)==original
+ capture('melonds-backup-missing-sd')
+ tap(128,127);assert scene()==0
+ tap(140,80,180);tap(80,98,180);assert scene()==1
+ key(2,120);assert scene()==3
+ draft=avatar();original=mem('gallery',12716)
+ key(1);assert scene()==9
+ tap(128,87);assert backup_message()==b'Save your draft before backup.'
+ assert avatar()==draft and mem('gallery',12716)==original
+ capture('melonds-backup-dirty-draft')
+ key(0);assert scene()==3
+ key(3,300);assert mem('gallery',100)[0]==1
+ key(1);assert scene()==9
+ original=mem('gallery',12716)
+ key(8);assert backup_message()==b'SD card is unavailable.'
+ assert avatar()==draft and mem('gallery',12716)==original
+ capture('melonds-backup-saved-gallery')
+ key(0);assert scene()==3
+ if not sram:time.sleep(3.1);run(3)
+ if sram and sram_size:sram_file.write_bytes(C.string_at(core.retro_get_memory_data(0),sram_size))
+ core.retro_unload_game();core.retro_deinit()
+ print('PASS: backup panel buttons/touch, missing-SD errors, dirty-draft guard and unchanged saved gallery',flush=True)
+ raise SystemExit(0)
 if args.restart:
  tap(100,25,300);tap(42,70,300);key(8,180)
 else:

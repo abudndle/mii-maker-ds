@@ -10,6 +10,7 @@
 static MdsGallery gallery;
 static MdsEditor editor;
 static int save_ready;
+static const char *backup_notice="";
 static MdsProfile profile;
 static MdsImport importer;
 static int qr_select_image;
@@ -70,6 +71,7 @@ int main(void)
     MdsProfile profile_exit_visual;
     int profile_exit_pending=0,profile_exit_to_editor=0;
     const char *notice="",*drawn_notice=NULL;
+    int backup_return_screen=MDS_SCREEN_HOME;
     MdsEditor drawn;memset(&drawn,255,sizeof drawn);
     for(;;){
         MdsInput input=next_input();int k=input.repeat,down=input.down;
@@ -104,7 +106,19 @@ int main(void)
                     screen=editor_return_screen;
                 pending_editor_return=0;
             }
+        }else if(screen==MDS_SCREEN_BACKUP){
+            int response=-1;
+            if(down&KEY_B)response=0;else if(down&KEY_A)response=1;
+            else if(down&KEY_TOUCH)response=mds_ui_confirm_touch(input.touch.px,input.touch.py);
+            if(response==0)screen=backup_return_screen;
+            if(response==1){
+                if(!save_ready)backup_notice="Read a valid cartridge save first.";
+                else if(mds_editor_dirty(&editor))backup_notice="Save your draft before backup.";
+                else backup_notice=mds_ui_backup_gallery(&gallery);
+                drawn_screen=-1;
+            }
         }else if(screen==MDS_SCREEN_HOME){
+            if(down&KEY_SELECT){backup_return_screen=screen;backup_notice="";screen=MDS_SCREEN_BACKUP;continue;}
             int previous_focus=focus;
             if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
             if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
@@ -302,6 +316,7 @@ int main(void)
             }
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PROFILE){
+            if(!profile_exit_pending&&profile.mode==MDS_PROFILE_ROOT&&(down&KEY_Y)){backup_return_screen=screen;backup_notice="";screen=MDS_SCREEN_BACKUP;continue;}
           if(!profile_exit_pending){
             MdsProfile previous_profile=profile;
             unsigned favorites=0;for(unsigned i=0;i<100;i++)if(i!=editor.slot&&gallery.used[i])favorites+=gallery.miis[i].value[46];
@@ -406,6 +421,7 @@ int main(void)
         if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||editor_selection_repaint||editor_adjust_repaint||((screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED)&&
                      mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
+            else if(screen==MDS_SCREEN_BACKUP)mds_ui_backup(backup_notice);
             else if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_SAVED)mds_ui_saved(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected));
             else if(screen==MDS_SCREEN_QR)mds_ui_qr(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,notice,isDSiMode(),qr_select_image);

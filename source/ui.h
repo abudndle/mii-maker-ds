@@ -59,4 +59,6 @@ void mds_ui_gallery(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_saved(const MdsGallery *,unsigned,unsigned);
 /* An interrupted slow thumbnail render should be retried once input is idle. */
 int mds_ui_gallery_retry_pending(void);
+void mds_ui_backup(const char *notice);
+const char *mds_ui_backup_gallery(const MdsGallery *);
 #endif
