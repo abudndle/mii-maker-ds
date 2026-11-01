@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""Build your private Mii Maker DS ROM using the official BlocksDS Docker SDK.
+"""Compile a PRIVATE DS ROM with the official BlocksDS Docker image.
 
-No original files are committed, sent to GitHub Actions or uploaded. The
-private archive is mounted read-only inside the temporary container.
-Docker must already be installed locally and its official image available.
+Python validation runs on the host: the official slim SDK image does NOT
+contain Python. Only ARM9/ARM7 compilation and ROM assembly run in Docker.
+The private resource ZIP is read only by Python on the owner's computer and
+is NEVER mounted into Docker, committed, or uploaded.
 """
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+from build_private import ROOT, ROM, check_zip, run
+from restore_asset_zip import validate
+
 IMAGE = "skylyrac/blocksds:slim-latest"
 
 
-def command(archive, root=ROOT, image=IMAGE, jobs=2, validate_only=False, environ=None):
+def command(archive, root=ROOT, image=IMAGE, jobs=2, environ=None):
     env = os.environ if environ is None else environ
     root = Path(root).resolve(strict=True)
     archive = Path(archive).expanduser().resolve(strict=True)
@@ -24,26 +28,61 @@ def command(archive, root=ROOT, image=IMAGE, jobs=2, validate_only=False, enviro
         raise ValueError("private ZIP does not exist or is empty")
     if not 1 <= jobs <= 16:
         raise ValueError("jobs must be between 1 and 16")
-    if not image or any(ch.isspace() for ch in image) or image.startswith("-"):
+    if not image or any(c.isspace() for c in image) or image.startswith("-"):
         raise ValueError("invalid Docker image identifier")
-    # Avoid accidental Docker mount aliasing that would conceal the workspace.
-    if root == archive or root == archive.parent:
-        raise ValueError("keep private resource ZIP separate from project root")
+    if root == archive.parent:
+        raise ValueError("keep private resource ZIP outside the project root")
     args = [
         "docker", "run", "--rm", "--network", "none",
         "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
-        "--workdir", "/work",
+        "--workdir", "/work", "--entrypoint", "make",
         "--mount", f"type=bind,source={root},target=/work",
-        "--mount", f"type=bind,source={archive},target=/private/resources.zip,readonly",
     ]
     if hasattr(os, "getuid") and env.get("MDS_DOCKER_RUN_AS_ROOT") != "1":
         args += ["--user", f"{os.getuid()}:{os.getgid()}"]
-    args += [image, "python3", "tools/build_private.py", "/private/resources.zip"]
-    if validate_only:
-        args.append("--validate-only")
-    else:
-        args.extend(["--jobs", str(jobs)])
+    args += [image, "SDK_STAGE=1", f"-j{jobs}", "mii-ds.nds"]
     return args
+
+
+def build(archive, jobs=2, validate_only=False, image=IMAGE):
+    archive = Path(archive).expanduser().resolve(strict=True)
+    # Fail missing SDK access before extracting any owner-private content.
+    cmd = command(archive, image=image, jobs=jobs)
+    if not validate_only and shutil.which("docker") is None:
+        raise ValueError("Docker is not installed; see official BlocksDS Docker documentation")
+    check_zip(archive)
+    if validate_only:
+        print("PASS: private original archives, model motions, CLAN and NitroFS UI verified")
+        print("No original resources extracted and no ROM generated")
+        return
+    # Original resources are restored locally, never exposed via a mounted ZIP.
+    if validate(archive, ROOT):
+        raise ValueError("private ZIP extraction failed")
+    run(sys.executable, "tools/check_assets.py")
+    run(sys.executable, "tools/validate_body_models.py")
+    if shutil.which("gcc") or shutil.which("clang") or shutil.which("cc"):
+        run(sys.executable, "tools/test_original_render.py", "--asset-zip", archive)
+    else:
+        print("NOTE: host C compiler unavailable; original renderer host check skipped")
+    # Makefile SDK_STAGE avoids Python-dependent host preflight in slim container.
+    print("+ BlocksDS compiler stage inside offline Docker container", flush=True)
+    subprocess.run(cmd, cwd=ROOT, check=True)
+    run(sys.executable, "tools/fix_nds_regions.py", ROM)
+    if not ROM.is_file() or not ROM.stat().st_size:
+        raise ValueError("BlocksDS did not produce mii-ds.nds")
+    for extra in [
+        ("tests/rom_regions.py",),
+        ("tests/rom_nitrofs_assets.py", ROM),
+        ("tests/rom_all_assets.py", ROM, "--asset-zip", archive),
+        ("tests/rom_body_models.py", ROM),
+        ("tests/rom_motion_packs.py", ROM, "--asset-zip", archive),
+        ("tests/rom_arm_sections.py", ROM),
+    ]:
+        run(sys.executable, *extra)
+    digest = hashlib.sha256(ROM.read_bytes()).hexdigest()
+    print("PASS: original-resource ROM passed packaged payload and ARM sections")
+    print("SHA-256:", digest)
+    print("Keep this private ROM off public GitHub and release artifacts")
 
 
 def main():
@@ -53,28 +92,21 @@ def main():
     parser.add_argument("--image", default=IMAGE)
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true",
-                        help="show command without running Docker or accessing asset bytes")
+                        help="show compiler invocation without running or reading ZIP bytes")
     args = parser.parse_args()
     try:
-        cmd = command(args.private_zip, image=args.image, jobs=args.jobs,
-                      validate_only=args.validate_only)
+        cmd = command(args.private_zip, image=args.image, jobs=args.jobs)
         if args.dry_run:
-            print("Docker private build invocation prepared (resource ZIP is mounted read-only).")
+            print("Compiler invocation prepared (private ZIP stays on host):")
             print(" ".join(shlex_quote(part) for part in cmd))
             return 0
-        if shutil.which("docker") is None:
-            raise ValueError("Docker is not installed; see the official BlocksDS Docker setup")
-        subprocess.run(cmd, check=True, cwd=ROOT)
+        build(args.private_zip, args.jobs, args.validate_only, args.image)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"FAIL: private BlocksDS Docker build: {exc}\n")
-    if not args.validate_only:
-        print("Local ROM candidate: mii-ds.nds; keep it private.")
-        print("All private build-time ROM gates were run inside the container.")
     return 0
 
 
 def shlex_quote(item):
-    # Display only: direct subprocess.run is used, never a shell.
     import shlex
     return shlex.quote(str(item))
 
