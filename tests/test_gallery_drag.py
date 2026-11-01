@@ -19,11 +19,12 @@ checks={
     "release position preserved": "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" in irq,
     "release has priority over key repeats": "if(!(event.down||event.up)&&queued>=23)return;" in irq,
     "release not discarded on full queue": "if(!(event.down||event.up))return;" in irq,
-    "touch-down captures occupied source": "if(down&KEY_TOUCH){" in gallery and
-                                 "mds_gallery_drag_begin(&gallery_drag,page,slot," in gallery and
+    "touch-down selects tapped occupied box": "editor.slot=(unsigned)slot;" in gallery and
                                  "slot>=0&&gallery.used[slot]" in gallery,
+    "touch-down captures occupied source for optional drag": "mds_gallery_drag_begin(&gallery_drag,page,slot,1)" in gallery,
     "touch release ends drag": "if(input.up&KEY_TOUCH){" in gallery and "mds_gallery_drag_end(&gallery_drag,page," in gallery,
     "drag destination from original hitboxes": "mds_gallery_touch(input.touch.px,input.touch.py,page)" in gallery,
+    "tap selects without requiring a drop move": "Tap box to select; drag to move" in (root/"source/ui.c").read_text(),
     "physical L/R navigate rooms": "mds_gallery_page_step(page,editor.slot,direction)" in gallery and "gallery_drag.source<0" in gallery,
     "drag hover does not change room": "if((k&KEY_TOUCH)&&gallery_drag.source>=0)" not in gallery,
     "reject empty source": "slot>=0&&gallery.used[slot]" in gallery,
