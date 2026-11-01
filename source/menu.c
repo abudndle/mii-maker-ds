@@ -19,12 +19,6 @@ int mds_gallery_room_arrow(int x,int y,unsigned page)
     if(x>=236&&x<256)return page<9?1:0;
     return 0;
 }
-/* Independent room-selector button in the header, distinct from L/R arrows
- * and the ten Mii destination boxes. */
-int mds_gallery_room_button(int x,int y)
-{
-    return x>=96&&x<160&&y>=4&&y<36;
-}
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
 {
     if(page>=10||!direction)return -1;
