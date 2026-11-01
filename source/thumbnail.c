@@ -2,7 +2,7 @@
 #include <string.h>
 void mds_thumbnail_page(MdsThumbnailCache *cache,unsigned page)
 {
- if(!cache||cache->page==page)return;
+ if(!cache||page>=10||cache->page==page)return;
  for(unsigned i=0;i<MDS_THUMBNAIL_SLOTS;i++)cache->slots[i].valid=0;
  cache->page=page;
 }
