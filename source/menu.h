@@ -6,7 +6,6 @@ int mds_home_touch(int,int);
 int mds_gallery_touch(int,int,unsigned);
 /* Touchscreen room navigation: -1 left, +1 right, 0 elsewhere. */
 int mds_gallery_room_arrow(int x,int y,unsigned page);
-int mds_gallery_room_button(int x,int y);
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 /* Move to the next ten-slot page without losing the cursor position. */
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction);
