@@ -5,7 +5,6 @@ root=Path(__file__).resolve().parents[1]
 main=(root/"source/main.c").read_text()
 gallery=main.split("}else if(screen==MDS_SCREEN_GALLERY){",1)[1].split(
     "}else if(screen==MDS_SCREEN_GENDER){",1)[0]
-)
 assert "mds_gallery_action_press_bind_slot(&gallery_action_press,editor.slot);" in gallery
 assert "mds_gallery_action_press_release_for_slot(" in gallery
 assert "editor.slot,!gallery.used[editor.slot]||" in gallery
