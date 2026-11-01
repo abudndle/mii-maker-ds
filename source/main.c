@@ -441,7 +441,10 @@ int main(void)
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED);
         mds_ui_view_scene(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_ACCESSORIES);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
-        if(!camera_open&&(drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||editor_selection_repaint||editor_adjust_repaint||((screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED)&&
+        if(screen!=MDS_SCREEN_GALLERY)mds_ui_gallery_clan_reset();
+        int gallery_clan_repaint=screen==MDS_SCREEN_GALLERY&&
+            mds_ui_gallery_clan_tick(page,editor.slot,animation_vblanks);
+        if(!camera_open&&(gallery_clan_repaint||drawn_screen!=screen||drawn_focus!=focus||drawn_page!=page||drawn_notice!=notice||memcmp(&drawn,&editor,sizeof editor)||(screen==MDS_SCREEN_HOME&&mds_ui_home_focus_tick(animation_vblanks))||profile_transition_changed||editor_selection_repaint||editor_adjust_repaint||((screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED)&&
                      mds_ui_gallery_retry_pending()&&!input_waiting()))){
             if(screen==MDS_SCREEN_HOME)mds_ui_home(focus,notice);
             else if(screen==MDS_SCREEN_GALLERY){
