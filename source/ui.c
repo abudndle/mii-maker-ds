@@ -1165,9 +1165,18 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     /* Accessibility labels for the functional touch strip. These are not
      * substitute Nintendo icons: authentic SelectBalloonButton art and pane
      * transforms remain gated on the user's private source resources. */
-    text_at(bottom,12,174,"Favorite");
-    text_at(bottom,109,174,"Copy");
-    text_at(bottom,193,174,"Edit");
+    /* Original SelectBalloonButton textures are loaded from the private
+     * NitroFS resource archive. The provisional strip avoids overlap with
+     * source-derived boxes; its final anchor still requires recovery. */
+    if(g->used[selected]){
+        mds_original_gallery_action_icon(bottom,256,192,14,169,20,20,1,
+                                         g->miis[selected].value[51]!=0);
+        mds_original_gallery_action_icon(bottom,256,192,98,169,20,20,2,0);
+        mds_original_gallery_action_icon(bottom,256,192,181,169,20,20,3,0);
+    }
+    text_at(bottom,38,174,g->used[selected]&&g->miis[selected].value[51]?"Owner":"Fav");
+    text_at(bottom,124,174,"Copy");
+    text_at(bottom,206,174,g->used[selected]?"Edit":"Create");
     gallery_clan_painted=now;
 }
 
