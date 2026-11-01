@@ -237,7 +237,7 @@ int main(void)
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 int arrow=mds_gallery_room_arrow(input.touch.px,input.touch.py,page);
                 int edge_invalid=input.touch.py>=59&&input.touch.py<131&&
-                    ((page==0&&input.touch.px>=0&&input.touch.px<19)||
+                    ((page==0&&input.touch.px<19)||
                      (page==9&&input.touch.px>=237&&input.touch.px<256));
                 if(gallery_drag.source<0&&edge_invalid)
                     mds_ui_gallery_invalid(page==0?-1:1);
