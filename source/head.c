@@ -193,7 +193,10 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
     if(position>INT32_MAX)position=INT32_MAX;
     if(position<INT32_MIN)position=INT32_MIN;
     world[k]=(int32_t)position;
-    norm[k]=(int32_t)(((int64_t)transform[k*4]*n[0]+(int64_t)transform[k*4+1]*n[1]+(int64_t)transform[k*4+2]*n[2])/65536);
+    int64_t normal=((int64_t)transform[k*4]*n[0]+(int64_t)transform[k*4+1]*n[1]+(int64_t)transform[k*4+2]*n[2])/65536;
+    if(normal>INT32_MAX)normal=INT32_MAX;
+    if(normal<INT32_MIN)normal=INT32_MIN;
+    norm[k]=(int32_t)normal;
    }
    memcpy(p,world,sizeof p);memcpy(n,norm,sizeof n);
   }
