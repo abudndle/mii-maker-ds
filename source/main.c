@@ -164,6 +164,7 @@ int main(void)
             if(down&KEY_B)notice="";
         }else if(screen==MDS_SCREEN_SAVED){
             /* Choose existing Miis in the cartridge's own gallery. */
+            if(down&KEY_B)screen=MDS_SCREEN_HOME;
             if((k&(KEY_UP|KEY_LEFT))&&saved_selected>=0){
                 int next=mds_saved_next(&gallery,saved_selected,-1);
                 if(next>=0){saved_selected=next;page=(unsigned)next/10;drawn_screen=-1;}
@@ -259,7 +260,6 @@ int main(void)
             if(down&KEY_UP){if(mds_ui_motion_step(-1))drawn_screen=-1;}
             else if(down&KEY_DOWN){if(mds_ui_motion_step(1))drawn_screen=-1;}
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
-            if(down&KEY_B)screen=MDS_SCREEN_HOME;
             /* Physical L/R and original touchscreen arrows can page through
              * destination rooms while a grabbed Mii stays attached. */
             if(down&(KEY_L|KEY_R)){
