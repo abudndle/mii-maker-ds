@@ -16,12 +16,18 @@ typedef struct {
     unsigned exit_requested;
     unsigned exiting;
     unsigned exit_up;
+    uint32_t choice_started;
+    unsigned choice_active;
+    unsigned choice_tinted;
+    unsigned choose_yes;
 } MdsConfirmMotion;
 void mds_confirm_motion_reset(MdsConfirmMotion *motion);
 void mds_confirm_motion_begin(MdsConfirmMotion *motion,uint32_t now);
 /* A decision queues a source-derived exit, even if the entry is playing.
  * The exit begins only after the original entrance has settled. */
 int mds_confirm_motion_request_exit(MdsConfirmMotion *motion,int up);
+/* Play original six-frame DialogBase02_Select/Decide feedback before exit. */
+int mds_confirm_motion_choose(MdsConfirmMotion *motion,int yes,uint32_t now);
 int mds_confirm_motion_exit_done(const MdsConfirmMotion *motion,uint32_t now);
 int mds_confirm_motion_tick(MdsConfirmMotion *motion,uint32_t now);
 int mds_confirm_motion_ready(const MdsConfirmMotion *motion,uint32_t now);
