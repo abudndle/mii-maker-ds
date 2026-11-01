@@ -851,6 +851,19 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
             }
         }
     }
+    /* Walking offsets are per room slot, not per selection. Keep motion
+     * deterministic across redraws and avoid shifting cached appearance. */
+    static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
+    static unsigned walk_room_start=UINT32_MAX;
+    static unsigned walk_ticks;
+    if(walk_room_start!=start){
+        walk_room_start=start;
+        memset(room_walk,0,sizeof room_walk);
+        walk_ticks=0;
+    }
+    walk_ticks++;
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
+        if(g->used[start+local])mds_room_walk_tick(&room_walk[local],local,walk_ticks,0);
     /* Composite in fixed original SelectMii pane order. Rendering priority
      * may rotate, but draw order must not: overlapping heads and selection
      * markers otherwise flicker as the preview cursor advances. */
@@ -859,6 +872,8 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         int x=0,y=0;
         if(slot>=MDS_SLOTS||!g->used[slot]||
            !mds_room_position(local,&x,&y))continue;
+        x+=room_walk[local].dx;
+        y+=room_walk[local].dy;
         if(mds_room_matches(&gallery_room,selected,local,&g->miis[slot]))
             mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);
         status_icon(top,x+14,y+18,&g->miis[slot]);
@@ -867,8 +882,11 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
      * cannot cover it when the room contains several characters. */
     if(g->used[selected]){
         int selected_x=0,selected_y=0;
-        if(mds_room_position(selected-start,&selected_x,&selected_y))
+        if(mds_room_position(selected-start,&selected_x,&selected_y)){
+            selected_x+=room_walk[selected-start].dx;
+            selected_y+=room_walk[selected-start].dy;
             label(selected_x+15,selected_y-9,"v");
+        }
     }
     if(unfinished)for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         if(g->used[start+local]&&
