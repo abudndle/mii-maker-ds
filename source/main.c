@@ -292,7 +292,8 @@ int main(void)
             }
             /* Physical commands cancel an armed touch action so the same
              * gesture cannot copy, edit or favorite a Mii twice. */
-            if(down&(KEY_A|KEY_B|KEY_X|KEY_Y|KEY_SELECT|KEY_L|KEY_R))
+            if(down&(KEY_A|KEY_B|KEY_X|KEY_Y|KEY_SELECT|KEY_L|KEY_R|
+                     KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START))
                 mds_gallery_action_press_reset(&gallery_action_press);
             if((down&KEY_TOUCH)&&
                gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE){
@@ -421,7 +422,8 @@ int main(void)
             /* SELECT+X is a temporary accessible Favorite shortcut until
              * the original 3DS SelectBalloonButton pane is touch-bound.
              * Mark SELECT consumed so releasing it never exports an image. */
-            if((down&KEY_X)&&!block_gallery_actions){
+            if((down&KEY_X)&&!block_gallery_actions&&
+               mds_gallery_controls_secondary_allowed(gallery_action)){
                 if(input.held&KEY_SELECT){
                     gallery_controls.select_used=1;
                     if(mds_editor_toggle_favorite(&editor,persist,NULL))
@@ -429,13 +431,16 @@ int main(void)
                     drawn_screen=-1;
                 }else mds_editor_request(&editor,MDS_EDIT_DELETE);
             }
-            if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)){
+            if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)&&
+               mds_gallery_controls_secondary_allowed(gallery_action)){
                 if(mds_editor_toggle_favorite(&editor,persist,NULL))
                     mds_ui_gallery_confirm(animation_vblanks);
                 drawn_screen=-1;
             }
-            if((down&KEY_Y)&&!block_gallery_actions){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
-            else if(touch_action==MDS_GALLERY_ACTION_COPY){
+            if((down&KEY_Y)&&!block_gallery_actions&&
+               mds_gallery_controls_secondary_allowed(gallery_action)){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
+            else if(touch_action==MDS_GALLERY_ACTION_COPY&&
+                    mds_gallery_controls_secondary_allowed(gallery_action)){
                 if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;
                 drawn_screen=-1;
             }

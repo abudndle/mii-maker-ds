@@ -168,6 +168,12 @@ int mds_home_focus_step(int current,int delta)
 /* Use the VBlank-captured held state, never the auto-repeat bitmask, to
  * distinguish SELECT+A from an ordinary A press. Defer standalone SELECT
  * export until release: holding SELECT to edit must not export first. */
+int mds_gallery_controls_secondary_allowed(unsigned primary_action)
+{
+ /* A VBlank may carry multiple physical key edges. A primary gallery
+  * command wins over destructive secondary actions in that same event. */
+ return primary_action==MDS_GALLERY_CONTROL_NONE;
+}
 void mds_gallery_controls_reset(MdsGalleryControls *controls)
 {
  if(controls){controls->select_used=0;controls->select_active=0;}
