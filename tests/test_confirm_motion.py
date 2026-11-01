@@ -47,10 +47,12 @@ int main(void)
     assert(canvas[0]==0x801fu);
     assert(canvas[191*ROWWIDTH+255]==0x801fu);
     mds_confirm_motion_composite(canvas,under,dialog,-100);
-    assert(canvas[0]==0x801fu);
-    assert(canvas[99*ROWWIDTH+99]==0x801fu);
-    assert(canvas[100*ROWWIDTH+99]==0xfc00u);
-    assert(canvas[191*ROWWIDTH+255]==0xfc00u);
+    /* A pane translated upwards by 100 pixels appears on screen
+     * rows 0..91; rows 92..191 show the stationary gallery. */
+    assert(canvas[0]==0xfc00u);
+    assert(canvas[91*ROWWIDTH+99]==0xfc00u);
+    assert(canvas[92*ROWWIDTH+99]==0x801fu);
+    assert(canvas[191*ROWWIDTH+255]==0x801fu);
     mds_confirm_motion_composite(canvas,under,dialog,0);
     assert(canvas[0]==0xfc00u && canvas[191*ROWWIDTH+255]==0xfc00u);
     mds_confirm_motion_composite(canvas,under,dialog,192);
