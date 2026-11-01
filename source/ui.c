@@ -7,6 +7,7 @@
 #include "view.h"
 #include "thumbnail.h"
 #include "original_gallery_art.h"
+#include "gallery_clan.h"
 #include "room.h"
 #include "animation.h"
 #include "motion.h"
@@ -58,6 +59,24 @@ static MdsCflArchive cfl;
 static uint8_t *cfl_bytes;
 static uint16_t head_cache[3][MDS_HEAD_SIDE*MDS_HEAD_SIDE];
 static MdsThumbnailCache gallery_thumbnails;
+static MdsGalleryClan gallery_clan_state;
+static uint32_t gallery_clan_painted=UINT32_MAX;
+static int gallery_clan_was_active;
+void mds_ui_gallery_clan_reset(void)
+{
+    mds_gallery_clan_reset(&gallery_clan_state);
+    gallery_clan_painted=UINT32_MAX;gallery_clan_was_active=0;
+}
+int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now)
+{
+    int changed=mds_gallery_clan_update(&gallery_clan_state,page,selected,now);
+    int active=mds_gallery_clan_active(&gallery_clan_state,now);
+    int repaint=changed||(active&&gallery_clan_painted!=now)||
+                (gallery_clan_was_active&&!active);
+    gallery_clan_was_active=active;
+    return repaint;
+}
+
 static MdsRoomCache gallery_room;
 static unsigned gallery_room_attempts[MDS_ROOM_SLOTS];
 static unsigned gallery_motion_generation;
@@ -1019,6 +1038,9 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     if(!ok)return;
     gallery_retry_pending=0;
     mds_ui_gallery_top(g,page,selected,notice);
+    MdsGalleryClanStyle clan;
+    uint32_t now=render_clock?render_clock():0;
+    mds_gallery_clan_style(&gallery_clan_state,now,&clan);
     bitmap("nitro:/ui/gallery-bottom.rgb555",bottom);
     /* Full background redraw invalidates the previous sprite backing store. */
     gallery_drag_under_valid=0;
@@ -1028,8 +1050,13 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
      * the existing gallery background unchanged. */
     for(unsigned room=0;room<10;room++){
         const MdsMenuHit *tab=&gallery_room_hits[room];
-        mds_original_gallery_room_tab(bottom,256,192,
-            tab->x,tab->y,tab->w,tab->h,room==page);
+        uint16_t tint=0xffffu;
+        if(clan.room_transition){
+            if(room==page)tint=clan.selected_room_tint;
+            else if(room==clan.previous_page)tint=clan.previous_room_tint;
+        }
+        mds_original_gallery_room_tab_tinted(bottom,256,192,
+            tab->x,tab->y,tab->w,tab->h,room==page,tint);
     }
     mds_thumbnail_page(&gallery_thumbnails,page);
     for(unsigned i=0;i<10;i++){
@@ -1047,8 +1074,32 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
                 if(render_cancelled_count!=before_cancel)gallery_retry_pending=1;
                 if(ready)mds_thumbnail_capture(&gallery_thumbnails,page,i,&g->miis[slot],head_pixels);
             }
-            if(mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot]))
-                mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
+            if(mds_thumbnail_matches(&gallery_thumbnails,page,i,&g->miis[slot])){
+                if(slot==selected&&clan.scale_x_q16>65536u){
+                    /* Original SelectMii_Select P_Mii_00 CLPA SX/SY pulse.
+                     * The BOX itself and its touch hitbox stay fixed. */
+                    unsigned w=(MDS_THUMBNAIL_WIDTH*clan.scale_x_q16+32768u)/65536u;
+                    unsigned h=(MDS_THUMBNAIL_HEIGHT*clan.scale_y_q16+32768u)/65536u;
+                    if(w<1u)w=1u;if(h<1u)h=1u;
+                    if(w>64u)w=64u;if(h>64u)h=64u;
+                    int left=r->x+((int)MDS_THUMBNAIL_WIDTH-(int)w)/2;
+                    int top_y=r->y-2+((int)MDS_THUMBNAIL_HEIGHT-(int)h)/2;
+                    for(unsigned y=0;y<h;y++){
+                        int py=top_y+(int)y;
+                        if(py<0||py>=192)continue;
+                        for(unsigned x=0;x<w;x++){
+                            int px=left+(int)x;
+                            if(px<0||px>=256)continue;
+                            unsigned ox=x*MDS_THUMBNAIL_WIDTH/w;
+                            unsigned oy=y*MDS_THUMBNAIL_HEIGHT/h;
+                            uint16_t pixel=gallery_thumbnails.slots[i].pixels[
+                                oy*MDS_THUMBNAIL_WIDTH+ox];
+                            if(pixel&0x8000u)bottom[py*256+px]=pixel;
+                        }
+                    }
+                }else
+                    mds_thumbnail_blit(&gallery_thumbnails,page,i,bottom,256,192,r->x,r->y-2);
+            }
             status_icon(bottom,r->x,r->y+r->h-13,&g->miis[slot]);
         }
         int hovered=gallery_drag_slot>=0&&gallery_drag_x>=r->x&&
@@ -1072,6 +1123,7 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
             gallery_drag_draw_at(gallery_drag_x,gallery_drag_y);
     }
     text_at(bottom,10,154,gallery_drag_slot>=0?"Move Mii; release on a destination":"Tap box to select; drag the Mii");
+    gallery_clan_painted=now;
 }
 
 static const uint8_t profile_colors[12][3]={{210,30,20},{255,110,25},{255,216,32},{120,210,32},{0,120,48},{10,72,180},{60,170,222},{245,90,125},{115,40,173},{72,56,24},{224,224,224},{24,24,20}};
