@@ -188,8 +188,11 @@ static int mesh(const MdsCflArchive*a,unsigned sec,unsigned id,const float*ancho
   if(body_model){
    int32_t world[3],norm[3];
    for(int k=0;k<3;k++){
-    world[k]=(int32_t)(((int64_t)transform[k*4]*p[0]+(int64_t)transform[k*4+1]*p[1]+(int64_t)transform[k*4+2]*p[2])/65536);
-    world[k]+=transform[k*4+3];
+    int64_t position=((int64_t)transform[k*4]*p[0]+(int64_t)transform[k*4+1]*p[1]+(int64_t)transform[k*4+2]*p[2])/65536;
+    position+=transform[k*4+3];
+    if(position>INT32_MAX)position=INT32_MAX;
+    if(position<INT32_MIN)position=INT32_MIN;
+    world[k]=(int32_t)position;
     norm[k]=(int32_t)(((int64_t)transform[k*4]*n[0]+(int64_t)transform[k*4+1]*n[1]+(int64_t)transform[k*4+2]*n[2])/65536);
    }
    memcpy(p,world,sizeof p);memcpy(n,norm,sizeof n);
