@@ -41,8 +41,8 @@ class RuntimeAssets(unittest.TestCase):
                 self.packed[name] = b'private synthetic fixture only'
         self.archive = self.root / 'fixture.zip'
 
-    def write_archive(self):
-        with zipfile.ZipFile(self.archive, 'w', compression=zipfile.ZIP_DEFLATED) as z:
+    def write_archive(self, compression=zipfile.ZIP_DEFLATED):
+        with zipfile.ZipFile(self.archive, 'w', compression=compression) as z:
             for name, value in self.packed.items():
                 z.writestr('nitrofiles/'+name,value)
         return self.archive
@@ -54,6 +54,20 @@ class RuntimeAssets(unittest.TestCase):
         self.assertEqual(summary['verified_ui_bitmaps'],14)
         self.assertEqual(summary['verified_art_sprites'],26)
         self.assertEqual(summary['runtime_assets'],40)
+
+    def test_corrupt_payload_crc_is_rejected_even_when_metadata_is_valid(self):
+        self.write_archive(compression=zipfile.ZIP_STORED)
+        target = 'nitrofiles/ui/home-bottom.rgb555'
+        with zipfile.ZipFile(self.archive) as z:
+            info = z.getinfo(target)
+        raw = bytearray(self.archive.read_bytes())
+        name_length = int.from_bytes(raw[info.header_offset + 26:info.header_offset + 28], 'little')
+        extra_length = int.from_bytes(raw[info.header_offset + 28:info.header_offset + 30], 'little')
+        data_offset = info.header_offset + 30 + name_length + extra_length
+        raw[data_offset] ^= 0x01
+        self.archive.write_bytes(raw)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad CRC'):
+            module.verify(self.archive, self.root)
 
     def test_missing_final_sprite(self):
         self.packed.pop('art/Icon11'+'01.bin')
