@@ -94,7 +94,7 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn("pkill -KILL -x melonDS 2>/dev/null || true", s)
         self.assertIn("previous melonDS process survived cleanup; refusing Edit test", s)
         self.assertLess(s.index("pkill -TERM -x melonDS"),
-                        s.index("timeout 60s \\"$appimage\\" --appimage-extract"))
+                        s.index('timeout 60s "$appimage" --appimage-extract'))
         self.assertNotIn("pkill -f", s)
         self.assertNotIn("killall", s)
 
