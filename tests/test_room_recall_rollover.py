@@ -37,7 +37,7 @@ class RoomRecallRolloverTests(unittest.TestCase):
     def test_recall_counts_vblanks_not_redraws(self):
         source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
         self.assertIn("animation_clock-walk_last_clock", source)
-        self.assertIn("walk_ticks+=elapsed;", source)
+        self.assertIn("walk_ticks=((walk_ticks%768u)+(elapsed%768u))%768u;", source)
         self.assertNotIn("walk_ticks++;", source)
         remaining = 24
         for elapsed in (0, 0, 5, 0, 8, 11):
@@ -64,6 +64,14 @@ class RoomRecallRolloverTests(unittest.TestCase):
         self.assertIn("void mds_ui_room_pause(void);", header)
         self.assertIn("walk_last_clock=animation_clock;", ui)
         self.assertIn("if(screen!=MDS_SCREEN_GALLERY&&screen!=MDS_SCREEN_SAVED)mds_ui_room_pause();", main)
+
+    def test_room_walk_phase_remains_bounded_after_large_elapsed_ticks(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        self.assertIn("walk_ticks=((walk_ticks%768u)+(elapsed%768u))%768u;", source)
+        for previous, elapsed in ((767, 1), (123, 2**32 - 1), (767, 2**32 - 1)):
+            actual = ((previous % 768) + (elapsed % 768)) % 768
+            self.assertEqual(actual, (previous + elapsed) % 768)
+            self.assertLess(actual, 768)
 
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
