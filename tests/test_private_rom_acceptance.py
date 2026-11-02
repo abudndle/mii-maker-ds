@@ -105,6 +105,15 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(original.read_text(encoding="utf-8"), "protected")
             self.assertTrue(destination.is_symlink())
 
+    def test_atomic_report_directory_sync(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "build" / "private-acceptance-report.json"
+            with mock.patch("private_rom_acceptance.os.fsync", wraps=__import__("os").fsync) as sync:
+                write_report(path, {"status": "persisted"})
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"status": "persisted"})
+            if hasattr(__import__("os"), "O_DIRECTORY"):
+                self.assertGreaterEqual(sync.call_count, 2)
+
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "private.zip"
