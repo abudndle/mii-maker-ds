@@ -37,6 +37,7 @@ export MELONDS_RECEIVED_LOG="$RUNNER_TEMP/melonds-received.log"
 export MELONDS_RECEIVED_HOME="$RUNNER_TEMP/melonds-received-home.png"
 export MELONDS_RECEIVED_GALLERY="$RUNNER_TEMP/melonds-received-gallery.png"
 export MELONDS_RECEIVED_MODAL="$RUNNER_TEMP/melonds-received-modal.png"
+export MELONDS_RECEIVED_FIRST_MODAL="$RUNNER_TEMP/melonds-received-first-modal.png"
 export MELONDS_RECEIVED_CANCEL="$RUNNER_TEMP/melonds-received-cancel.png"
 export MELONDS_RECEIVED_EDITOR="$RUNNER_TEMP/melonds-received-editor.png"
 export MELONDS_RECEIVED_RETURN="$RUNNER_TEMP/melonds-received-return.png"
@@ -110,6 +111,8 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     win="$current"
     timeout 5s xdotool windowfocus --sync "$win" || true
     timeout 5s xdotool mousemove --window "$win" "$1" "$2"
+    # Let Qt process the pointer position before the stylus-down edge.
+    sleep 0.15
     timeout 5s xdotool mousedown 1
     sleep 0.35
     timeout 5s xdotool mouseup 1
@@ -141,6 +144,8 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     capture_received "$MELONDS_RECEIVED_MODAL"
     timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
   fi
+  # Keep the actual first prompt as a private-only identity reference.
+  cp "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_FIRST_MODAL"
   echo "Received acceptance: rejecting copy-to-edit via original No pane"
   tap 128 "$((touch_origin+127))"
   sleep 5
@@ -170,10 +175,16 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     exit 1
   }
   echo "Received acceptance: cancellation left cartridge byte-identical"
+  # No may clear the selected source. Re-select the same received slot before
+  # Edit, and require the second prompt to match the first source dialog.
+  tap 82 "$((touch_origin+71))"
+  sleep 3
+  capture_received "$MELONDS_RECEIVED_GALLERY"
   tap 210 "$((touch_origin+179))"
   sleep 5
   capture_received "$MELONDS_RECEIVED_MODAL"
-  timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_CANCEL" "$MELONDS_RECEIVED_MODAL"
+  timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
+  timeout 15s python3 tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_FIRST_MODAL" "$MELONDS_RECEIVED_MODAL"
   echo "Received acceptance: confirming copy-to-edit via original Yes pane"
   tap 128 "$((touch_origin+87))"
   sleep 7
