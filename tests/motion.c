@@ -67,7 +67,14 @@ int main(void)
  fseek(f,0,SEEK_SET);assert(fwrite(b,1,size,f)==size);fflush(f);
  assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));
  for(unsigned i=0;i<sizeof out;i++)assert(out[i]==0xa5);
- word(b+72+48+12,0);
+ /* An excessive transformed normal on the final vertex must also fail
+  * atomically, even when every transformed position remains in range. */
+ word(b+72+48+10*4,4096u*65536u);
+ memset(out,0x3c,sizeof out);
+ fseek(f,0,SEEK_SET);assert(fwrite(b,1,size,f)==size);fflush(f);
+ assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));
+ for(unsigned i=0;i<sizeof out;i++)assert(out[i]==0x3c);
+ word(b+72+48+10*4,65536u);
  fclose(f);
  /* Every header/table byte truncated; invalid matrix and non-finite head. */
  for(unsigned n=0;n<72;n++){f=tmpfile();assert(fwrite(b,1,n,f)==n);assert(!mds_motion_open(&m,f));fclose(f);}
