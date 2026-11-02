@@ -30,17 +30,39 @@ static unsigned duration(const MdsGalleryBalloonClan *state)
 
 void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state)
 {
-    if(state){state->active=0;state->started=0;state->clip=MDS_BALLOON_SELECT;}
+    if(state){state->active=0;state->started=0;state->clip=MDS_BALLOON_SELECT;state->pending_select=0;}
 }
 void mds_gallery_balloon_clan_play(MdsGalleryBalloonClan *state,
                                    MdsGalleryBalloonClip clip,uint32_t now)
 {
     if(!state||(unsigned)clip>(unsigned)MDS_BALLOON_UNDECIDE)return;
     state->active=1;state->started=now;state->clip=(uint8_t)clip;
+    state->pending_select=0;
 }
 void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now)
 {
     mds_gallery_balloon_clan_play(state,MDS_BALLOON_SELECT,now);
+}
+/* Selection changes are observable gameplay events, unlike an unverified
+ * source scene dispatch table. Keep the source 6-frame Unselect fade before
+ * the new 11-frame Select clip, without blocking gallery selection itself.
+ * Repeated changes during the fade do not restart it or starve the new icon. */
+void mds_gallery_balloon_clan_selection_changed(MdsGalleryBalloonClan *state,uint32_t now)
+{
+    if(!state)return;
+    if(!state->active){mds_gallery_balloon_clan_select(state,now);return;}
+    if(state->clip==MDS_BALLOON_UNSELECT&&state->pending_select)return;
+    mds_gallery_balloon_clan_play(state,MDS_BALLOON_UNSELECT,now);
+    state->pending_select=1;
+}
+int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now)
+{
+    if(!state||!state->pending_select||state->clip!=MDS_BALLOON_UNSELECT||
+       (uint32_t)(now-state->started)<SHORT_TICKS)return 0;
+    /* Preserve elapsed time if a frame was skipped; VBlank wrap is safe. */
+    uint32_t started=state->started+SHORT_TICKS;
+    mds_gallery_balloon_clan_select(state,started);
+    return 1;
 }
 int mds_gallery_balloon_clan_active(const MdsGalleryBalloonClan *state,uint32_t now)
 {
