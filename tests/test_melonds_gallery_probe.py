@@ -37,6 +37,28 @@ class GalleryProbeTests(unittest.TestCase):
     def test_bottom_only_focus_is_not_gallery(self):
         self.paint(0)
         with self.assertRaisesRegex(ValueError,"proven gallery"):verify(self.before,self.after)
+    def test_strict_native_width_accepts_native_capture(self):
+        self.paint(2)
+        result=verify(self.before,self.after,require_native_width=True)
+        self.assertGreaterEqual(len(result["changed_mii_pane_slots"]),2)
+    def test_strict_native_width_rejects_wide_capture(self):
+        self.paint(2)
+        for path in (self.before,self.after):
+            with Image.open(path) as source:
+                widened=Image.new("RGB",(300,403),"white")
+                widened.paste(source,(0,0))
+                widened.save(path)
+        with self.assertRaisesRegex(ValueError,"not native DS width"):
+            verify(self.before,self.after,require_native_width=True)
+    def test_legacy_wide_capture_still_supported(self):
+        self.paint(2)
+        for path in (self.before,self.after):
+            with Image.open(path) as source:
+                widened=Image.new("RGB",(300,403),"white")
+                widened.paste(source,(0,0))
+                widened.save(path)
+        result=verify(self.before,self.after)
+        self.assertGreaterEqual(len(result["changed_mii_pane_slots"]),2)
     def test_tiny_capture_rejected(self):
         Image.new("RGB",(16,16)).save(self.after)
         with self.assertRaisesRegex(ValueError,"smaller"):verify(self.before,self.after)
