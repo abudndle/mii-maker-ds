@@ -59,6 +59,14 @@ class GalleryProbeTests(unittest.TestCase):
                 widened.save(path)
         result=verify(self.before,self.after)
         self.assertGreaterEqual(len(result["changed_mii_pane_slots"]),2)
+    def test_window_resize_between_captures_is_rejected(self):
+        self.paint(2)
+        with Image.open(self.after) as source:
+            resized=Image.new("RGB",(300,403),"white")
+            resized.paste(source,(0,0))
+            resized.save(self.after)
+        with self.assertRaisesRegex(ValueError,"capture window geometry changed"):
+            verify(self.before,self.after)
     def test_tiny_capture_rejected(self):
         Image.new("RGB",(16,16)).save(self.after)
         with self.assertRaisesRegex(ValueError,"smaller"):verify(self.before,self.after)
