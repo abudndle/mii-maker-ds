@@ -109,6 +109,10 @@ int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now)
 }
 
 static MdsRoomCache gallery_room;
+/* Clip phase is per displayed actor, not shared by all ten Miis.
+ * An actor's offset is deterministic and survives preview-cache refreshes. */
+static MdsRoomAnimation gallery_actor_motion[MDS_ROOM_SLOTS];
+static unsigned gallery_actor_render_local=UINT32_MAX;
 static unsigned gallery_room_attempts[MDS_ROOM_SLOTS];
 static unsigned gallery_motion_generation;
 static uint8_t gallery_room_occupied[MDS_ROOM_SLOTS];
@@ -221,6 +225,10 @@ static void gallery_invalidate_motion_previews(void)
  /* Clip and scene changes begin a new pose cycle for all visible Miis. */
  gallery_motion_generation++;
  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++){
+  /* Negative starting ticks stagger otherwise synchronized original poses.
+   * The source clip and FPS still come from each original MSP1 rig. */
+  mds_room_animation_start(&gallery_actor_motion[i],0,
+                           (uint32_t)(0u-i*7u));
   gallery_room.actor[i].valid=0;
   gallery_room_attempts[i]=0;
  }
@@ -341,6 +349,15 @@ static int preview(const MdsAvatar *a,int mode)
    /* Recompute from clip-local VBlank time; the two original rigs may
     * have different source FPS or frame counts. */
    unsigned frame=mds_motion_frame(&motions[gender].clips[clip],motion_clip_ticks,NULL);
+   if(mode==2&&gallery_actor_render_local<MDS_ROOM_SLOTS){
+    /* The male/female MSP1 catalogs use different clip indices. Keep
+     * the name-resolved gender-specific clip, but take elapsed animation
+     * time from the current room actor's independent phase clock. */
+    MdsRoomAnimation actor=gallery_actor_motion[gallery_actor_render_local];
+    actor.clip=(uint8_t)clip;
+    frame=mds_room_animation_motion_frame(&actor,motion_clip_ticks,
+                                           &motions[gender],NULL);
+   }
    unsigned key=clip*7200+frame;
    if(!motion_cached[gender]||motion_cached_key[gender]!=key){
     /* A failed NitroFS read must remain retryable on a later preview. */
@@ -912,7 +929,9 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
             unfinished=1;
             if(!rendered_one_actor&&gallery_room_attempts[local]<3u){
                 unsigned before=render_cancelled_count;
+                gallery_actor_render_local=local;
                 int ready=preview(&g->miis[slot],2);
+                gallery_actor_render_local=UINT32_MAX;
                 rendered_one_actor=1; /* One costly 3D render per repaint. */
                 preview_cursor=(local+1u)%MDS_ROOM_SLOTS;
                 if(ready){
