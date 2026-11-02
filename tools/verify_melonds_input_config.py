@@ -50,11 +50,21 @@ def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc"),
     try:
         raw = config.read_bytes()
         parsed = tomllib.loads(raw.decode("utf-8"))
-        b = parsed["Instance0"]["Keyboard"]["B"]
-    except KeyError as exc:
-        raise ValueError("emulator's effective B mapping is missing") from exc
     except (OSError, UnicodeError, tomllib.TOMLDecodeError, TypeError) as exc:
         raise ValueError("emulator's effective B mapping is unreadable") from exc
+    # Report only structural categories: no TOML values, runner paths or
+    # original game data may enter the public workflow log. This separates
+    # a Qt startup rewrite that discarded the whole instance from one that
+    # only discarded the keyboard table or the B binding.
+    instance = parsed.get("Instance0")
+    if not isinstance(instance, dict):
+        raise ValueError("emulator's effective Instance0 table is missing")
+    keyboard = instance.get("Keyboard")
+    if not isinstance(keyboard, dict):
+        raise ValueError("emulator's effective Keyboard table is missing")
+    if "B" not in keyboard:
+        raise ValueError("emulator's effective B mapping is missing")
+    b = keyboard["B"]
     if type(b) is not int or b != 90:
         raise ValueError("emulator's effective DS B mapping is not Qt::Key_Z")
     if expected_sha256 is not None and hashlib.sha256(raw).hexdigest() != expected_sha256:
