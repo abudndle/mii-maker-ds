@@ -68,8 +68,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
       echo "FAIL: invalid bounded Edit capture geometry"
       return 1
     fi
-    timeout 12s import -window root -depth 8 \\
-      -crop "${width}x${height}+${x}+${y}" +repage "$destination"
+    timeout 12s import -window root -depth 8 -crop "${width}x${height}+${x}+${y}" +repage "$destination"
   }
 
   sleep 12
