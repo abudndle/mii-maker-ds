@@ -48,6 +48,14 @@ int main(void)
  assert(mds_motion_pose(&m,0,2,base,sizeof base,out,sizeof out));assert(out[56]==128&&out[57]==1&&out[70]==127);assert(!memcmp(out+56+15,base+56+9,3));
  assert(!mds_motion_pose(&m,1,0,base,sizeof base,out,sizeof out));assert(!mds_motion_pose(&m,0,3,base,sizeof base,out,sizeof out));assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,109));assert(!mds_motion_pose(&m,0,0,base,sizeof base,base,sizeof base));
  base[66]=18;assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));base[66]=0;
+ /* A bad final vertex must not leave the output mesh partially updated. */
+ memset(base+56+24,0,12);base[56+24]=127;
+ memset(out,0xa5,sizeof out);
+ word(b+72+48+12,4096u*65536u);
+ fseek(f,0,SEEK_SET);assert(fwrite(b,1,size,f)==size);fflush(f);
+ assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));
+ for(unsigned i=0;i<sizeof out;i++)assert(out[i]==0xa5);
+ word(b+72+48+12,0);
  fclose(f);
  /* Every header/table byte truncated; invalid matrix and non-finite head. */
  for(unsigned n=0;n<72;n++){f=tmpfile();assert(fwrite(b,1,n,f)==n);assert(!mds_motion_open(&m,f));fclose(f);}
