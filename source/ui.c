@@ -835,11 +835,15 @@ static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
 static unsigned walk_room_start=UINT32_MAX;
 static unsigned walk_ticks;
 static unsigned walk_home_remaining;
+static uint32_t walk_last_clock;
+static int walk_clock_valid;
 void mds_ui_room_recall(void)
 {
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         mds_room_walk_tick(&room_walk[local],local,0,1);
     walk_home_remaining=24u;
+    walk_last_clock=animation_clock;
+    walk_clock_valid=1;
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
@@ -919,16 +923,22 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
         walk_ticks=0;
+        walk_clock_valid=0;
         /* A recall requested before the first gallery draw must survive
          * room initialization. Only a real room switch cancels it. */
         if(previous_room_start!=UINT32_MAX)walk_home_remaining=0;
     }
-    walk_ticks++;
+    /* Animation clock is sampled in VBlanks, not gallery redraws. */
+    uint32_t elapsed=walk_clock_valid?(uint32_t)(animation_clock-walk_last_clock):0u;
+    walk_last_clock=animation_clock;
+    walk_clock_valid=1;
+    walk_ticks+=elapsed;
     /* Advance recall for every slot, including temporarily empty slots,
      * so a Mii added during recall begins at its home position. */
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);
-    if(walk_home_remaining)walk_home_remaining--;
+    if(elapsed>=walk_home_remaining)walk_home_remaining=0;
+    else walk_home_remaining-=elapsed;
     /* Composite in fixed original SelectMii pane order. Rendering priority
      * may rotate, but draw order must not: overlapping heads and selection
      * markers otherwise flicker as the preview cursor advances. */
