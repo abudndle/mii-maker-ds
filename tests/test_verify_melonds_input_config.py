@@ -88,6 +88,22 @@ class ConfigOriginTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unreadable"):
             inspect(1234, self.home, self.proc, expected)
 
+    def test_runtime_rewrite_reports_missing_table_without_exposing_values(self):
+        expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
+        cases = (
+            ("RecentROM = []\n", "Instance0 table is missing"),
+            ("[Instance0]\n", "Keyboard table is missing"),
+            ("[Instance0]\nKeyboard = 5\n", "Keyboard table is missing"),
+            ("[Instance0.Keyboard]\nA = 65\n", "B mapping is missing"),
+        )
+        for content, message in cases:
+            with self.subTest(message=message):
+                self.config.write_text(content)
+                with self.assertRaisesRegex(ValueError, message) as cm:
+                    inspect(1234, self.home, self.proc, expected)
+                self.assertNotIn(str(self.home), str(cm.exception))
+                self.assertNotIn(content.strip(), str(cm.exception))
+
     def test_invalid_fingerprint_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "invalid expected config fingerprint"):
             inspect(1234, self.home, self.proc, "not-a-sha")
