@@ -54,6 +54,24 @@ reject(bad, fit, header, "action panes overlap")
 bad = copy.deepcopy(layout)
 bad["panes"].append(copy.deepcopy(bad["panes"][0]))
 reject(bad, fit, header, "ambiguous")
+# A geometrically collision-free fit is not usable if it collapses the
+# touch actions. Edge lengths and true area must be checked separately from
+# the transformed bounding rectangle (which can be large under shear).
+small = copy.deepcopy(fit)
+small["scene_affine_ds"] = [0.2, 0, 25, 0, 0.2, 135.2]
+reject(layout, small, header, "touch target too small")
+needle = copy.deepcopy(fit)
+needle["scene_affine_ds"] = [2, 0, 0, 0, 0.05, 160.55]
+reject(layout, needle, header, "touch target too small")
+sheared = copy.deepcopy(fit)
+sheared["scene_affine_ds"] = [1, 1, 0, 1, 1.0004, 0]
+reject(layout, sheared, header, "touch target too small")
+# A half-size 9x9 touch target is still above the conservative 8px/64px²
+# minimum, and remains a candidate (not a verified original anchor).
+usable = copy.deepcopy(fit)
+usable["scene_affine_ds"] = [0.5, 0, 10, 0, 0.5, 84.5]
+assert check(layout, usable, header, menu)["runtime_anchor_verified"] is False
+
 bad = copy.deepcopy(fit)
 bad["source_sha256"] = "b" * 64
 reject(layout, bad, header, "mismatched")
