@@ -15,9 +15,9 @@ def ds_pixels(path, require_native_width=False):
     w,h=image.size
     if w<256 or h<384:
         raise ValueError("capture smaller than both original 256x192 DS screens")
-    # The private acceptance runner uses native-size 256x384 DS screens.
-    # Refuse wider windows rather than silently sampling their left edge,
-    # which could be toolbar/background pixels rather than the game.
+    # Strict mode is intended for captures already cropped to the native
+    # 256-pixel-wide DS viewport. The legacy runner captures a full window,
+    # so its compatibility mode deliberately retains the historical crop.
     if require_native_width and w!=256:
         raise ValueError(f"capture width {w} is not native DS width 256; crop the emulator viewport first")
     # melonDS screenshots may include the QT menu bar above the DS canvas.
