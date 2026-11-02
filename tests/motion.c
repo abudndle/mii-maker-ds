@@ -42,6 +42,21 @@ int main(void)
  assert(mds_motion_find(&female,catalog.clips[0].name)==1);
  assert(mds_motion_find(&female,catalog.clips[1].name)==0);
  int ended;assert(mds_motion_frame(&m.clips[0],5,&ended)==2&&!ended);assert(mds_motion_frame(&m.clips[0],6,&ended)==0&&!ended);assert(mds_motion_frame(&m.clips[0],UINT32_MAX,NULL)<3);
+ /* Source frame clock must advance at exact 60 Hz tick boundaries for
+  * common 30/60 fps clips and never exceed a one-shot's final frame. */
+ MdsMotionClip clock={0};clock.count=5;clock.fps=30;clock.loop=1;
+ assert(mds_motion_frame(&clock,0,&ended)==0&&!ended);
+ assert(mds_motion_frame(&clock,1,&ended)==0&&!ended);
+ assert(mds_motion_frame(&clock,2,&ended)==1&&!ended);
+ assert(mds_motion_frame(&clock,8,&ended)==4&&!ended);
+ assert(mds_motion_frame(&clock,10,&ended)==0&&!ended);
+ clock.fps=60;
+ assert(mds_motion_frame(&clock,4,&ended)==4&&!ended);
+ assert(mds_motion_frame(&clock,5,&ended)==0&&!ended);
+ clock.loop=0;
+ assert(mds_motion_frame(&clock,4,&ended)==4&&!ended);
+ assert(mds_motion_frame(&clock,5,&ended)==4&&ended);
+ assert(mds_motion_frame(&clock,UINT32_MAX,&ended)==4&&ended);
  m.clips[0].loop=0;assert(mds_motion_frame(&m.clips[0],6,&ended)==2&&ended);m.clips[0].loop=1;
  unsigned char base[92]={0},out[110];memcpy(base,"BOD2",4);word(base+4,3);
  for(unsigned i=0;i<3;i++){base[56+i*12]=128;base[56+i*12+8]=127;}
