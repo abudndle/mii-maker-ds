@@ -8,6 +8,8 @@ import hashlib
 import json
 import subprocess
 import sys
+import os
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,11 +39,30 @@ def make_report(rom, archive, emulator_launched=False):
     }
 
 
+def write_report(report_path, report):
+    """Replace acceptance evidence atomically to avoid partial JSON files."""
+    report_path = Path(report_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=report_path.parent,
+                                         prefix=".private-acceptance-", suffix=".tmp",
+                                         delete=False) as output:
+            temporary = Path(output.name)
+            output.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, report_path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def launch_emulator(command, report, report_path):
     """Persist successful process creation before waiting for emulator exit."""
     process = subprocess.Popen(command, cwd=ROOT)
     report["emulator_launched"] = True
-    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_report(report_path, report)
     exit_code = process.wait()
     if exit_code != 0:
         raise subprocess.CalledProcessError(exit_code, command)
