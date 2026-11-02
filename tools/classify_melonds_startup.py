@@ -30,7 +30,8 @@ SIGNATURES = (
         "already running",
     )),
     ("appimage-runtime", (
-        "appimage",
+        "cannot mount appimage",
+        "appimage extraction failed",
         "fusermount",
         "fuse: device not found",
     )),
