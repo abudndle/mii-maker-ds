@@ -267,7 +267,12 @@ int mds_mii_render_view(const MdsCflArchive*a,const MdsAvatar*m,const void*bytes
   if(!memcmp(p,"BOD3",4)){stride=18;normal_offset=12;}else if(memcmp(p,"BOD2",4))return 0;
   count=word32(p+4);if(count>12000||count%3||size!=56+(size_t)count*stride)return 0;
   float mat[12];memcpy(mat,p+8,48);for(unsigned k=0;k<12;k++)if(!isfinite(mat[k])||fabsf(mat[k])>4096)return 0;
-  if(stride==18)for(unsigned i=0;i<count;i++)for(unsigned k=0;k<3;k++){int32_t v=signed32(p+56+i*18+k*4);if(v< -524288||v>524288)return 0;}
+  for(unsigned i=0;i<count;i++){
+   const uint8_t *vertex=p+56+i*stride;
+   unsigned material=vertex[normal_offset+3],bone=vertex[normal_offset+4];
+   if(material>1||bone>=18)return 0;
+   if(stride==18)for(unsigned k=0;k<3;k++){int32_t v=signed32(vertex+k*4);if(v< -524288||v>524288)return 0;}
+  }
   body_model=p;
  }
  body_height=.85f+(m->value[43]/127.f)*.3f;
