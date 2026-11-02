@@ -23,10 +23,25 @@ class EditRestartRunnerTests(unittest.TestCase):
         # DS keys are sampled at VBlank; a short synthetic X11 key event
         # may be missed even when Qt maps it correctly. Require a held B.
         self.assertIn('timeout 5s xdotool windowfocus --sync "$win" || true\n  # A one-shot xdotool key', s)
-        self.assertIn('xdotool keydown --clearmodifiers z\n  sleep 0.35\n  xdotool keyup --clearmodifiers z', s)
+        self.assertIn('timeout 5s xdotool keydown --clearmodifiers z\n  sleep 0.35\n  timeout 5s xdotool keyup --clearmodifiers z', s)
         self.assertNotIn('xdotool key --clearmodifiers z', s)
         self.assertIn('python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"', s)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav"', s)
+
+    def test_bounded_emulator_capture_and_safe_stage_diagnostics(self):
+        s = SCRIPT.read_text()
+        self.assertIn('timeout 150s xvfb-run', s)
+        self.assertEqual(s.count('timeout 12s import -window "$win"'), 5)
+        self.assertEqual(s.count('timeout 5s xdotool mousemove --window "$win"'), 3)
+        self.assertEqual(s.count('timeout 5s xdotool mousedown 1'), 3)
+        self.assertEqual(s.count('timeout 5s xdotool mouseup 1'), 3)
+        self.assertIn('timeout 15s python3 tools/check_melonds_edit_transition.py', s)
+        for stage in ('launching isolated emulator', 'window ready',
+                      'verifying gallery entry', 'selected ordinary Mii',
+                      'verifying editor transition', 'verifying B return'):
+            self.assertIn('Edit acceptance: ' + stage, s)
+        # Diagnostics must not print the owner archive, raw save or screenshots.
+        self.assertNotIn('cat "$RUNNER_TEMP/melonds-edit-before.sav"', s)
 
     def test_workflow_private_and_encrypted(self):
         w = WORKFLOW.read_text()

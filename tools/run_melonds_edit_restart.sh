@@ -25,7 +25,8 @@ B = 90
 TOML
 cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-edit-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
-xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
+echo "Edit acceptance: launching isolated emulator"
+timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   set -euo pipefail
   "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
   emu_pid=$!
@@ -41,48 +42,53 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     sleep 1
   done
   test -n "$win"
+  echo "Edit acceptance: window ready"
   sleep 12
-  import -window "$win" -depth 8 "$MELONDS_EDIT_HOME"
+  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_HOME"
   timeout 5s xdotool windowfocus --sync "$win" || true
-  xdotool mousemove --window "$win" 120 232
-  xdotool mousedown 1
+  timeout 5s xdotool mousemove --window "$win" 120 232
+  timeout 5s xdotool mousedown 1
   sleep 0.45
-  xdotool mouseup 1
+  timeout 5s xdotool mouseup 1
   sleep 15
-  import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
-  python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_GALLERY"
-  capture_height="$(identify -format "%h" "$MELONDS_EDIT_GALLERY")"
+  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
+  echo "Edit acceptance: verifying gallery entry"
+  timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_GALLERY"
+  capture_height="$(timeout 5s identify -format "%h" "$MELONDS_EDIT_GALLERY")"
   touch_origin=$((capture_height-192))
   # Select an ordinary, non-Personal saved Mii.
-  xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
-  xdotool mousedown 1
+  timeout 5s xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
+  timeout 5s xdotool mousedown 1
   sleep 0.25
-  xdotool mouseup 1
+  timeout 5s xdotool mouseup 1
   sleep 4
   # Refresh the baseline AFTER selecting slot 1. Otherwise a selection-only
   # repaint could masquerade as a successful Edit transition.
-  import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
+  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
+  echo "Edit acceptance: selected ordinary Mii"
   # Actual touchscreen Edit strip (172..247,168..190).
-  xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
-  xdotool mousedown 1
+  timeout 5s xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
+  timeout 5s xdotool mousedown 1
   sleep 0.35
-  xdotool mouseup 1
+  timeout 5s xdotool mouseup 1
   sleep 6
   kill -0 "$emu_pid"
-  import -window "$win" -depth 8 "$MELONDS_EDIT_IMAGE"
-  python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
+  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_IMAGE"
+  echo "Edit acceptance: verifying editor transition"
+  timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
   # No draft changes: B must leave Edit without a cartridge mutation.
   timeout 5s xdotool windowfocus --sync "$win" || true
   # A one-shot xdotool key can last less than a DS VBlank and be missed.
   # Hold the explicitly mapped B key across multiple 60 Hz samples.
-  xdotool keydown --clearmodifiers z
+  timeout 5s xdotool keydown --clearmodifiers z
   sleep 0.35
-  xdotool keyup --clearmodifiers z
+  timeout 5s xdotool keyup --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
-  import -window "$win" -depth 8 "$MELONDS_EDIT_RETURN"
-  python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"
-  python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_RETURN" "$MELONDS_EDIT_IMAGE"
+  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_RETURN"
+  echo "Edit acceptance: verifying B return"
+  timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"
+  timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_RETURN" "$MELONDS_EDIT_IMAGE"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_EDIT_IMAGE"
 cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav" || {
