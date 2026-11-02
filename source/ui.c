@@ -834,12 +834,12 @@ void mds_ui_home(int focus,const char *notice)
 static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
 static unsigned walk_room_start=UINT32_MAX;
 static unsigned walk_ticks;
-static unsigned walk_home_until;
+static unsigned walk_home_remaining;
 void mds_ui_room_recall(void)
 {
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         mds_room_walk_tick(&room_walk[local],local,0,1);
-    walk_home_until=walk_ticks+24u;
+    walk_home_remaining=24u;
 }
 void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,const char *notice)
 {
@@ -918,11 +918,12 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
         walk_ticks=0;
-        walk_home_until=0;
+        walk_home_remaining=0;
     }
     walk_ticks++;
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
-        if(g->used[start+local])mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_ticks<walk_home_until);
+        if(g->used[start+local])mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);
+    if(walk_home_remaining)walk_home_remaining--;
     /* Composite in fixed original SelectMii pane order. Rendering priority
      * may rotate, but draw order must not: overlapping heads and selection
      * markers otherwise flicker as the preview cursor advances. */
