@@ -36,14 +36,12 @@ export MELONDS_COPY_GALLERY="$RUNNER_TEMP/melonds-copy-gallery.png"
 export MELONDS_COPY_EDIT_GALLERY="$RUNNER_TEMP/melonds-copy-edit-gallery.png"
 export MELONDS_COPY_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
 export MELONDS_COPY_EDIT_RETURN="$RUNNER_TEMP/melonds-copy-edit-return.png"
+# Keep the exact clean-HOME startup contract that passed real Copy in #214.
+# A minimal injected melonDS.toml made subsequent second-process launches
+# abort before the first frame; use the emulator's built-in Z/B mapping and
+# hold the key across multiple VBlanks rather than injecting a partial TOML.
 export HOME="$RUNNER_TEMP/melonds-home-restart"
-export XDG_CONFIG_HOME="$HOME/.config"
-mkdir -p "$XDG_CONFIG_HOME/melonDS"
-# Explicit Qt::Key_Z -> DS B, held across several VBlanks for cancellation.
-cat >"$XDG_CONFIG_HOME/melonDS/melonDS.toml" <<'TOML'
-[Instance0.Keyboard]
-B = 90
-TOML
+mkdir -p "$HOME"
 # Never upload or log the pre-copy save image.
 cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1

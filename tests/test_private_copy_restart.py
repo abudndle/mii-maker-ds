@@ -74,8 +74,12 @@ class CopyRestartRunnerTests(unittest.TestCase):
 
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
-        self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
-        self.assertIn('[Instance0.Keyboard]\nB = 90\nTOML', s)
+        # The original successful Copy process used a clean HOME and
+        # emulator defaults. Injecting a partial TOML preceded process-abort.
+        self.assertIn('export HOME="$RUNNER_TEMP/melonds-home-restart"', s)
+        self.assertIn('mkdir -p "$HOME"', s)
+        self.assertNotIn('export XDG_CONFIG_HOME=', s)
+        self.assertNotIn('[Instance0.Keyboard]', s)
         self.assertIn('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"', s)
