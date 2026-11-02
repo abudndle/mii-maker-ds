@@ -197,7 +197,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   if ! python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"; then
     echo "Edit acceptance: B not observed; focusing game surface and retrying once"
     # A physical XTest click on the non-interactive upper DS display gives
-    # Qt's screen panel focus without modifying the Mii or touching an
+    # the Qt screen panel focus without modifying the Mii or touching an
     # editor slider. Do not send an XSendEvent directly to the window.
     timeout 5s xdotool mousemove --window "$win" 128 65
     timeout 5s xdotool mousedown 1
