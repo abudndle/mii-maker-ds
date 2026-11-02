@@ -122,16 +122,16 @@ def check(layout, candidate, header, menu_source):
                 transformed[0] + transformed[2] > 256.01 or
                 transformed[1] + transformed[3] > 192.01):
             raise ValueError("action outside DS screen: " + name)
+        if any(_overlap(transformed, target) for target in protected):
+            raise ValueError("action overlaps gallery controls: " + name)
+        if any(_overlap(transformed, prior) for prior in result.values()):
+            raise ValueError("action panes overlap: " + name)
         touch = ACTION_TOUCH_REGIONS[name]
         if (transformed[0] < touch[0] - 0.01 or
                 transformed[1] < touch[1] - 0.01 or
                 transformed[0] + transformed[2] > touch[0] + touch[2] + 0.01 or
                 transformed[1] + transformed[3] > touch[1] + touch[3] + 0.01):
             raise ValueError("action outside live touch region: " + name)
-        if any(_overlap(transformed, target) for target in protected):
-            raise ValueError("action overlaps gallery controls: " + name)
-        if any(_overlap(transformed, prior) for prior in result.values()):
-            raise ValueError("action panes overlap: " + name)
         result[name] = transformed
     return {"source_sha256": sha, "runtime_anchor_verified": False,
             "action_bounds_ds": {k: [round(v, 4) for v in rect]
