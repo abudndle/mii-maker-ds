@@ -55,6 +55,23 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertNotIn('import -window "$win"', s)
 
 
+    def test_second_launch_reaps_orphans_and_classifies_early_exit(self):
+        s = self.script
+        # The previous private run lost the second Qt window before the
+        # first Home capture. Do not assume a briefly visible XID stays live.
+        self.assertIn('if pgrep -x melonDS >/dev/null 2>&1; then', s)
+        self.assertIn('pkill -TERM -x melonDS 2>/dev/null || true', s)
+        self.assertIn('pkill -KILL -x melonDS 2>/dev/null || true', s)
+        self.assertIn('prior melonDS process survived cleanup; refusing Copy test', s)
+        self.assertLess(s.index('pkill -TERM -x melonDS'),
+                        s.index('export MELONDS_APP="$appimage"'))
+        self.assertNotIn('pkill -f', s)
+        self.assertNotIn('killall', s)
+        self.assertIn('if ! kill -0 "$emu_pid" 2>/dev/null; then\n    echo "FAIL: restarted emulator launcher exited before Home capture"', s)
+        self.assertEqual(s.count('python3 tools/classify_melonds_startup.py "$MELONDS_COPY_LOG"'), 2)
+        self.assertLess(s.index('restarted emulator launcher exited before Home capture'),
+                        s.index('Copy acceptance: capturing reopened Home'))
+
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
         self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
