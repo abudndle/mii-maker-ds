@@ -1,6 +1,7 @@
 import hashlib
 import json
 import subprocess
+from unittest import mock
 import sys
 import tempfile
 import unittest
@@ -82,6 +83,16 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")),
                              {"emulator_launched": True, "gameplay_verified": False})
             self.assertEqual(list(path.parent.glob("*.tmp")), [])
+
+    def test_atomic_report_failure_preserves_existing_report(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "build" / "private-acceptance-report.json"
+            write_report(path, {"status": "previous"})
+            with mock.patch("private_rom_acceptance.os.replace", side_effect=OSError("synthetic failure")):
+                with self.assertRaises(OSError):
+                    write_report(path, {"status": "new"})
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"status": "previous"})
+            self.assertEqual(list(path.parent.glob(".private-acceptance-*.tmp")), [])
 
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
