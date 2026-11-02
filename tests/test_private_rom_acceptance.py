@@ -1,10 +1,12 @@
 import hashlib
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from private_rom_acceptance import commands, make_report, ROOT
+from private_rom_acceptance import commands, make_report, launch_emulator, ROOT
 
 
 class AcceptanceTests(unittest.TestCase):
@@ -43,6 +45,25 @@ class AcceptanceTests(unittest.TestCase):
             rom.symlink_to(archive)
             with self.assertRaises(ValueError):
                 make_report(rom, archive)
+
+    def test_emulator_start_recorded_even_if_exit_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "report.json"
+            report = {"emulator_launched": False, "gameplay_verified": False}
+            with self.assertRaises(subprocess.CalledProcessError):
+                launch_emulator([sys.executable, "-c", "import sys; sys.exit(7)"], report, path)
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertTrue(saved["emulator_launched"])
+            self.assertFalse(saved["gameplay_verified"])
+
+    def test_failed_process_creation_does_not_mark_launch(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "report.json"
+            report = {"emulator_launched": False, "gameplay_verified": False}
+            with self.assertRaises(OSError):
+                launch_emulator([str(Path(d) / "nonexistent-emulator")], report, path)
+            self.assertFalse(report["emulator_launched"])
+            self.assertFalse(path.exists())
 
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
