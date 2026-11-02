@@ -8,7 +8,7 @@
 #include <string.h>
 int main(int argc,char **argv)
 {
- if(argc<2||argc>3||(argc==3&&strcmp(argv[2],"--legacy-64k"))){fprintf(stderr,"usage: make_gallery_fixture OUT.sav [--legacy-64k]\n");return 2;}
+ if(argc<2||argc>3||(argc==3&&strcmp(argv[2],"--legacy-64k")&&strcmp(argv[2],"--received"))){fprintf(stderr,"usage: make_gallery_fixture OUT.sav [--legacy-64k|--received]\n");return 2;}
  static uint8_t bytes[MDS_SAVE_SIZE];
  MdsGallery gallery;
  mds_gallery_new(&gallery);
@@ -27,6 +27,12 @@ int main(int argc,char **argv)
   a.value[45]=(uint8_t)(i%12u);
   a.value[46]=(uint8_t)(i==0u);
   a.value[51]=(uint8_t)(i==0u);
+  /* Received-copy acceptance uses an explicitly permitted, read-only
+   * synthetic source in slot 1. The default Favorite/Copy fixture is unchanged. */
+  if(argc==3&&!strcmp(argv[2],"--received")&&i==1u){
+   a.value[61]=1; /* received, not special */
+   a.value[48]=1; /* editable COPY permitted, original remains locked */
+  }
   if(!mds_gallery_store(&gallery,i,&a)){
    fputs("synthetic Mii record validation failed\n",stderr);return 1;
   }
@@ -35,7 +41,7 @@ int main(int argc,char **argv)
   * melonDS generally chooses a save chip from an existing .sav file size;
   * a 64 KiB legacy file can select a different emulated save type.
   * Keep --legacy-64k for separate dual-bank host regression testing. */
- size_t length=argc==3?MDS_SAVE_SIZE:MDS_COMPACT_SIZE;
+ size_t length=argc==3&&!strcmp(argv[2],"--legacy-64k")?MDS_SAVE_SIZE:MDS_COMPACT_SIZE;
  if(length==MDS_COMPACT_SIZE){
   if(!mds_compact_encode(&gallery,bytes,MDS_COMPACT_SIZE)){
    fputs("synthetic 8K EEPROM encode failed\n",stderr);return 1;
@@ -60,6 +66,11 @@ int main(int argc,char **argv)
  }
  if(total!=10||personal!=1||!restored.miis[0].value[51]){
   fputs("synthetic saved characters or gold-crown ownership invalid\n",stderr);return 1;
+ }
+ if(argc==3&&!strcmp(argv[2],"--received")&&
+    (!restored.used[1]||restored.miis[1].value[61]!=1||
+     !restored.miis[1].value[48]||restored.miis[1].value[51])){
+  fputs("synthetic received-Mii status lost in save codec\n",stderr);return 1;
  }
  FILE *out=fopen(argv[1],"wb");
  if(!out){perror("fixture destination");return 1;}
