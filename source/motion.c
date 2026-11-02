@@ -64,6 +64,12 @@ int mds_motion_pose(MdsMotion*m,unsigned clip,unsigned frame,const void*base,siz
  if(!m||!m->file||clip>=m->count||frame>=m->clips[clip].count||!base||!out||base==out||size<56)return 0;
  const uint8_t*b=base;unsigned vertices=word(b+4);
  if(memcmp(b,"BOD2",4)||!vertices||vertices>12000||vertices%3||size!=56+(size_t)vertices*12||capacity<56+(size_t)vertices*18)return 0;
+ /* The output expands each BOD2 vertex from 12 to 18 bytes. Reject even
+  * partial aliasing: writing a posed vertex could corrupt a later input. */
+ size_t output_size=56+(size_t)vertices*18;
+ uintptr_t input_addr=(uintptr_t)base,output_addr=(uintptr_t)out;
+ if((output_addr>=input_addr && output_addr-input_addr<size)||
+    (output_addr<input_addr && input_addr-output_addr<output_size))return 0;
  uint8_t bytes[MDS_MOTION_FRAME_BYTES];
  uint32_t offset=m->clips[clip].offset+frame*MDS_MOTION_FRAME_BYTES;
  if(fseek(m->file,(long)offset,SEEK_SET)||fread(bytes,1,sizeof bytes,m->file)!=sizeof bytes)return 0;
