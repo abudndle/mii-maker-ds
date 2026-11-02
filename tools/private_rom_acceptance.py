@@ -98,8 +98,7 @@ def main():
         raise ValueError("private ROM build did not produce a valid ROM")
     report = make_report(rom, args.archive, emulator_launched=False)
     report_path = ROOT / "build" / "private-acceptance-report.json"
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_report(report_path, report)
     print("PASS: private ROM build and packaged resource acceptance checks completed")
     if args.emulator:
         emulator_command = commands(args.archive, docker=args.docker, emulator=args.emulator)[1]
