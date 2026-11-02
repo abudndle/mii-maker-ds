@@ -87,6 +87,12 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('tomllib.loads(pathlib.Path(sys.argv[1]).read_text())', s)
         self.assertIn('cfg["Instance0"]["Keyboard"]["B"] == 90', s)
         self.assertIn('python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"', s)
+        # The Qt runtime may rewrite the prepared B config on startup.
+        # Compare a private-safe fingerprint before trusting any B input.
+        self.assertIn('export MELONDS_B_CONFIG_SHA="$(sha256sum', s)
+        self.assertIn('--expected-sha256 "$MELONDS_B_CONFIG_SHA"', s)
+        self.assertLess(s.index('export MELONDS_B_CONFIG_SHA='),
+                        s.index('xvfb-run -a'))
         self.assertIn('xdotool getwindowpid "$win"', s)
         self.assertNotIn('qt_pid="$(pgrep -n -x melonDS', s)
         self.assertIn('[ ! -r "/proc/$qt_pid/environ" ]', s)

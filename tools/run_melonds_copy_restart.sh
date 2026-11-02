@@ -65,6 +65,10 @@ cfg = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
 assert cfg["Instance0"]["Keyboard"]["B"] == 90
 print("PASS: isolated melonDS DS B mapping configured (Qt::Key_Z)")
 PY
+# Fingerprint only the synthetic, private-runner keyboard config. The actual
+# Qt process may rewrite or migrate it at startup. Detect that mutation
+# without logging HOME, config contents, or private resource paths.
+export MELONDS_B_CONFIG_SHA="$(sha256sum "$HOME/.config/melonDS/melonDS.toml" | cut -d " " -f 1)"
 # Never upload or log the pre-copy save image.
 cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
@@ -139,7 +143,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     echo "FAIL: visible melonDS window has no readable owner PID"
     exit 1
   fi
-  python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"
+  python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME" --expected-sha256 "$MELONDS_B_CONFIG_SHA"
   sleep 12
   if ! kill -0 "$emu_pid" 2>/dev/null; then
     echo "FAIL: restarted emulator launcher exited before Home capture"

@@ -1,4 +1,5 @@
 """Asset-free tests for melonDS 1.1's actual effective config resolution."""
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -62,6 +63,22 @@ class ConfigOriginTests(unittest.TestCase):
         self.config.write_text("[Instance0.Keyboard\nB = 90\n")
         with self.assertRaisesRegex(ValueError, "unreadable"):
             inspect(1234, self.home, self.proc)
+
+    def test_prelaunch_fingerprint_detects_emulator_rewrite(self):
+        expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
+        self.assertEqual(inspect(1234, self.home, self.proc, expected),
+                         "isolated-home")
+        self.config.write_text("[Instance0.Keyboard]\nA = 90\n")
+        with self.assertRaisesRegex(ValueError, "changed isolated B config"):
+            inspect(1234, self.home, self.proc, expected)
+        # No fingerprint: report the missing mapping distinctly from
+        # malformed TOML, without printing the configuration path.
+        with self.assertRaisesRegex(ValueError, "effective B mapping is missing"):
+            inspect(1234, self.home, self.proc)
+
+    def test_invalid_fingerprint_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "invalid expected config fingerprint"):
+            inspect(1234, self.home, self.proc, "not-a-sha")
 
     def test_invalid_pid_rejected(self):
         with self.assertRaisesRegex(ValueError, "invalid emulator PID"):
