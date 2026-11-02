@@ -43,7 +43,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   test -n "$win"
   sleep 12
   import -window "$win" -depth 8 "$MELONDS_EDIT_HOME"
-  xdotool windowfocus --sync "$win" || true
+  timeout 5s xdotool windowfocus --sync "$win" || true
   xdotool mousemove --window "$win" 120 232
   xdotool mousedown 1
   sleep 0.45
@@ -72,7 +72,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   import -window "$win" -depth 8 "$MELONDS_EDIT_IMAGE"
   python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
   # No draft changes: B must leave Edit without a cartridge mutation.
-  xdotool windowfocus --sync "$win" || true
+  timeout 5s xdotool windowfocus --sync "$win" || true
   xdotool key --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
