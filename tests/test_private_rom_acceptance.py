@@ -32,6 +32,36 @@ class AcceptanceTests(unittest.TestCase):
             self.assertGreater(len(data), 1024 * 1024)
             self.assertEqual(sha256_file(sample), hashlib.sha256(data).hexdigest())
 
+    def test_hash_rejects_archive_modified_while_reading(self):
+        with tempfile.TemporaryDirectory() as d:
+            archive = Path(d) / "synthetic-archive.bin"
+            archive.write_bytes(b"A" * (2 * 1024 * 1024))
+            original_open = Path.open
+            class MutatingReader:
+                def __init__(self, wrapped):
+                    self.wrapped = wrapped
+                    self.changed = False
+                def __enter__(self):
+                    self.wrapped.__enter__()
+                    return self
+                def __exit__(self, *args):
+                    return self.wrapped.__exit__(*args)
+                def fileno(self):
+                    return self.wrapped.fileno()
+                def read(self, size):
+                    data = self.wrapped.read(size)
+                    if not self.changed:
+                        self.changed = True
+                        with original_open(archive, "ab") as output:
+                            output.write(b"changed")
+                    return data
+            def patched_open(path, *args, **kwargs):
+                opened = original_open(path, *args, **kwargs)
+                return MutatingReader(opened) if Path(path) == archive else opened
+            with mock.patch.object(Path, "open", patched_open):
+                with self.assertRaisesRegex(ValueError, "changed while hashing"):
+                    sha256_file(archive)
+
     def test_missing_rom_evidence_fails(self):
         with tempfile.TemporaryDirectory() as d:
             missing = Path(d) / "missing.nds"
