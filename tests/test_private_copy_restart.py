@@ -149,6 +149,30 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('melonds-edit.png.gpg', self.workflow)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-postcopy.sav"', self.workflow)
 
+    def test_edit_after_copy_returns_to_occupied_room_before_edit(self):
+        # The Copy implementation selects slot 10 and changes page to 1.
+        # Without a room-tab tap, x=82,y=71 means EMPTY slot 11; the next
+        # Edit tap opens Create/Gender, not the existing Mii editor.
+        main = (ROOT / "source/main.c").read_text()
+        menu = (ROOT / "source/menu_generated.h").read_text()
+        self.assertIn('if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;', main)
+        self.assertIn('page=(unsigned)room;', main)
+        self.assertIn('{9,2,22,21,0}', menu.split('gallery_room_hits[]=', 1)[1])
+        self.assertIn('{64,49,42,46,1}', menu.split('gallery_hits[]=', 1)[1])
+        s = self.script
+        copy = s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"')
+        room = s.index('xdotool mousemove --window "$win" 20 "$((touch_origin+12))"', copy)
+        slot = s.index('xdotool mousemove --window "$win" 82 "$((touch_origin+71))"', room)
+        baseline = s.index('capture_copy_edit "$MELONDS_COPY_EDIT_GALLERY"', slot)
+        probe = s.index('python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_GALLERY"', baseline)
+        edit = s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', probe)
+        self.assertLess(copy, room)
+        self.assertLess(room, slot)
+        self.assertLess(slot, baseline)
+        self.assertLess(baseline, probe)
+        self.assertLess(probe, edit)
+        self.assertIn('Edit acceptance: selecting occupied ordinary Mii in room one', s)
+
     def test_b_return_retries_render_without_a_second_keypress(self):
         s = self.script
         self.assertIn("sleep 0.12", s)
