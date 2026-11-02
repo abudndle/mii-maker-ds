@@ -7,7 +7,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from private_balloon_art import ICONS, SOURCE, derived_icons
+from private_balloon_art import ICONS, GALLERY_SPRITES, SOURCE, derived_icons
 from restore_asset_zip import REQUIRED, validate
 
 
@@ -55,6 +55,45 @@ with tempfile.TemporaryDirectory() as td:
     rejects(path, "size")
     fixture(path, duplicate="IconCopyB")
     rejects(path, "duplicate")
+    # The owner's ZIP may contain source-converted Select gallery textures
+    # but lack the six separate NitroFS sprite wrappers.
+    with ZipFile(path, "w") as z:
+        for name, (width, height) in GALLERY_SPRITES.items():
+            z.writestr(SOURCE + name + ".bclim.rgb555",
+                       bytes([0x80, 0x91]) * (width * height))
+    with ZipFile(path) as z:
+        gallery = derived_icons(z)
+    assert len(gallery) == 6
+    for name, (width, height) in GALLERY_SPRITES.items():
+        data = gallery[f"art/Select/{name}.bin"]
+        assert struct.unpack("<HH", data[:4]) == (width, height)
+        assert len(data) == 4 + width * height * 2
+    # A partial original gallery set must not silently pass or be replaced
+    # with fabricated art.
+    with ZipFile(path, "w") as z:
+        z.writestr(SOURCE + "BtnArrow.bclim.rgb555",
+                   bytes([0x80, 0x91]) * (12 * 18))
+    rejects(path, "incomplete original Select gallery")
+    with ZipFile(path, "w") as z:
+        for name, (width, height) in GALLERY_SPRITES.items():
+            pixels = bytes([0x80, 0x91]) * (width * height)
+            z.writestr(SOURCE + name + ".bclim.rgb555",
+                       pixels[:-2] if name == "BtnScrollShadow" else pixels)
+    rejects(path, "gallery sprite size")
+    # Prepacked exact originals are accepted without duplicate NitroFS
+    # destinations; mismatching prepacked bytes are rejected.
+    with ZipFile(path, "w") as z:
+        for name, (width, height) in GALLERY_SPRITES.items():
+            pixels = bytes([0x80, 0x91]) * (width * height)
+            z.writestr(SOURCE + name + ".bclim.rgb555", pixels)
+            if name == "BtnArrow":
+                z.writestr("nitrofiles/art/Select/BtnArrow.bin",
+                           struct.pack("<HH", width, height) + pixels)
+    with ZipFile(path) as z:
+        assert len(derived_icons(z)) == 5
+    with ZipFile(path, "a") as z:
+        z.writestr("nitrofiles/art/Select/BtnMiiB.bin", b"wrong")
+    rejects(path, "prepacked original gallery sprite mismatch")
     # Full private restore adds only derived original icons to local NitroFS.
     with ZipFile(path, "w") as z:
         for required in REQUIRED:
