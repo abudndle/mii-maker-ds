@@ -51,6 +51,19 @@ reject(bad, fit, header, "outside DS screen")
 bad = copy.deepcopy(layout)
 bad["panes"][2]["ds_bounds"] = [102, 169, 18, 18]
 reject(bad, fit, header, "action panes overlap")
+# The original balloon icon is not actionable merely because it avoids
+# room boxes. It must also stay inside its own provisional runtime hitbox.
+# Otherwise Favorite can visually land in the inert gap or Copy region.
+bad = copy.deepcopy(layout)
+bad["panes"][0]["ds_bounds"] = [70, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
+bad = copy.deepcopy(layout)
+bad["panes"][0]["ds_bounds"] = [100, 169, 18, 18]
+bad["panes"][1]["ds_bounds"] = [23, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
+bad = copy.deepcopy(layout)
+bad["panes"][2]["ds_bounds"] = [158, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
 bad = copy.deepcopy(layout)
 bad["panes"].append(copy.deepcopy(bad["panes"][0]))
 reject(bad, fit, header, "ambiguous")
@@ -66,10 +79,15 @@ reject(layout, needle, header, "touch target too small")
 sheared = copy.deepcopy(fit)
 sheared["scene_affine_ds"] = [1, 1, 0, 1, 1.0004, 0]
 reject(layout, sheared, header, "touch target too small")
-# A half-size 9x9 touch target is still above the conservative 8px/64px²
-# minimum, and remains a candidate (not a verified original anchor).
+# A half-size icon can meet the size threshold yet fail to align with
+# the three live action strips; all three icons must remain tappable.
+half = copy.deepcopy(fit)
+half["scene_affine_ds"] = [0.5, 0, 10, 0, 0.5, 84.5]
+reject(layout, half, header, "outside live touch region")
+# A modest 90% fit keeps all three icons in their own strips and remains
+# a candidate only (not a verified original runtime anchor).
 usable = copy.deepcopy(fit)
-usable["scene_affine_ds"] = [0.5, 0, 10, 0, 0.5, 84.5]
+usable["scene_affine_ds"] = [0.9, 0, 10, 0, 0.9, 16.9]
 assert check(layout, usable, header, menu)["runtime_anchor_verified"] is False
 
 bad = copy.deepcopy(fit)
@@ -91,6 +109,12 @@ except ValueError as exc:
     assert "room arrow source bounds changed" in str(exc)
 else:
     raise AssertionError("accepted stale room-arrow collision bounds")
+try:
+    check(layout, fit, header, menu.replace("x<84", "x<85"))
+except ValueError as exc:
+    assert "gallery action touch source bounds changed" in str(exc)
+else:
+    raise AssertionError("accepted stale Favorite hitbox collision model")
 with tempfile.TemporaryDirectory() as tmp:
     temp = Path(tmp)
     source, candidate, output = (temp / n for n in ("layout.json", "fit.json", "checked.json"))
