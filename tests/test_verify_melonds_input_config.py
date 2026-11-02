@@ -68,7 +68,7 @@ class ConfigOriginTests(unittest.TestCase):
         expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
         self.assertEqual(inspect(1234, self.home, self.proc, expected),
                          "isolated-home")
-        self.config.write_text("[Instance0.Keyboard]\\nA = 90\\n")
+        self.config.write_text("[Instance0.Keyboard]\nA = 90\n")
         with self.assertRaisesRegex(ValueError, "changed isolated B config"):
             inspect(1234, self.home, self.proc, expected)
         # No fingerprint: report the missing mapping distinctly from
