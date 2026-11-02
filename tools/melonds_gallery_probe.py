@@ -9,12 +9,17 @@ import json
 from pathlib import Path
 from PIL import Image
 
-def ds_pixels(path):
+def ds_pixels(path, require_native_width=False):
     with Image.open(path) as opened:
         image = opened.convert("RGB")
     w,h=image.size
     if w<256 or h<384:
         raise ValueError("capture smaller than both original 256x192 DS screens")
+    # The private acceptance runner uses native-size 256x384 DS screens.
+    # Refuse wider windows rather than silently sampling their left edge,
+    # which could be toolbar/background pixels rather than the game.
+    if require_native_width and w!=256:
+        raise ValueError(f"capture width {w} is not native DS width 256; crop the emulator viewport first")
     # melonDS screenshots may include the QT menu bar above the DS canvas.
     return image.crop((0,h-384,256,h))
 
@@ -29,8 +34,8 @@ def different(a,b,box,threshold=28):
                 count+=1
     return count
 
-def verify(home_path,gallery_path,minimum_actors=2):
-    home=ds_pixels(home_path);gallery=ds_pixels(gallery_path)
+def verify(home_path,gallery_path,minimum_actors=2,require_native_width=False):
+    home=ds_pixels(home_path,require_native_width);gallery=ds_pixels(gallery_path,require_native_width)
     if home.tobytes()==gallery.tobytes():
         raise ValueError("gallery capture is identical to home; the input did not reach the game")
     top=different(home,gallery,(0,0,256,192))
@@ -56,9 +61,10 @@ def main():
     p.add_argument("home",type=Path)
     p.add_argument("gallery",type=Path)
     p.add_argument("--report",type=Path)
+    p.add_argument("--require-native-width",action="store_true",help="reject captures wider than 256 pixels; opt in only for native viewport screenshots")
     a=p.parse_args()
     try:
-        result=verify(a.home,a.gallery)
+        result=verify(a.home,a.gallery,require_native_width=a.require_native_width)
         if a.report:
             a.report.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n",encoding="utf8")
     except (OSError,ValueError) as exc:
