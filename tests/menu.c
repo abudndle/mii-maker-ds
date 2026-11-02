@@ -6,6 +6,15 @@ int main(void){assert(mds_home_touch(100,25)==MDS_HOME_VIEW);assert(mds_home_tou
 assert(mds_home_focus_step(INT_MIN,INT_MIN)==0);
 assert(mds_home_focus_step(INT_MAX,INT_MIN)==3);
 assert(mds_gallery_slot_step(0,0,-1)==9);assert(mds_gallery_slot_step(0,9,1)==0);assert(mds_gallery_slot_step(4,42,1)==43);assert(mds_gallery_slot_step(4,49,1)==40);assert(mds_gallery_slot_step(9,99,1)==90);assert(mds_gallery_slot_step(2,99,1)==21);assert(mds_gallery_slot_step(10,0,1)==-1);assert(mds_gallery_slot_step(0,0,0)==-1);
+/* Physical shoulder paging during a drag must not double-page on the
+ * following held-stylus VBlank when the stylus is over an arrow. */
+assert(mds_gallery_drag_arrow_latch_after_page(0,245,90,5)==0);
+assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,5)==1);
+assert(mds_gallery_drag_arrow_latch_after_page(1,5,90,5)==-1);
+assert(mds_gallery_drag_arrow_latch_after_page(1,120,90,5)==0);
+assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,9)==0);
+assert(mds_gallery_drag_arrow_latch_after_page(1,5,90,0)==0);
+assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,10)==0);
 assert(mds_gallery_page_step(0,4,1)==14);
 assert(mds_gallery_page_step(4,47,1)==57);
 assert(mds_gallery_page_step(4,47,-1)==37);
