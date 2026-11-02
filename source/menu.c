@@ -69,7 +69,7 @@ void mds_gallery_action_press_hold(MdsGalleryActionPress *gesture,int x,int y)
 {
  if(gesture&&gesture->pressed!=MDS_GALLERY_ACTION_NONE&&
     mds_gallery_action_touch(x,y)!=gesture->pressed)
-  gesture->pressed=MDS_GALLERY_ACTION_NONE;
+  mds_gallery_action_press_reset(gesture);
 }
 MdsGalleryTouchAction mds_gallery_action_press_release(
     MdsGalleryActionPress *gesture,int x,int y)
