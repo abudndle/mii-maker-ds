@@ -28,6 +28,9 @@ void mds_room_animation_start(MdsRoomAnimation *,unsigned clip,uint32_t tick);
 unsigned mds_room_animation_frame(const MdsRoomAnimation *,unsigned ticks,const uint32_t *counts,const uint8_t *fps,const uint8_t *loops,unsigned clip_count,int *ended);
 /* Resolve a private original MSP1 clip directly without reformatting its table. */
 unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *,uint32_t ticks,const MdsMotion *,int *ended);
+/* Gallery-only playback: stagger looping idle poses; start all one-shot
+ * gestures at their first frame when the selected clip begins. */
+unsigned mds_room_animation_gallery_frame(const MdsRoomAnimation *,uint32_t ticks,const MdsMotion *,int *ended);
 unsigned mds_room_start(unsigned selected);
 /* Source: Select.arc.files/blyt/SelectMii, 320x240 canvas to DS 256x192. */
 int mds_room_position(unsigned local,int *x,int *y);

@@ -253,6 +253,24 @@ int main(void)
                                          &animation_ended)==0&&animation_ended);
  assert(mds_room_animation_motion_frame(&animation[0],1u,NULL,
                                          &animation_ended)==0&&animation_ended);
+ /* All ten visible Miis should see the beginning of a one-shot gesture.
+  * Looping idle clips retain distinct original-body phase offsets. */
+ for(unsigned local=0;local<MDS_ROOM_SLOTS;local++){
+  mds_room_animation_start(&animation[local],1,(uint32_t)(0u-local*7u));
+  assert(mds_room_animation_gallery_frame(&animation[local],0u,&original,
+                                          &animation_ended)==0&&!animation_ended);
+  assert(mds_room_animation_gallery_frame(&animation[local],4u,&original,
+                                          &animation_ended)==4&&!animation_ended);
+  assert(mds_room_animation_gallery_frame(&animation[local],9u,&original,
+                                          &animation_ended)==8&&animation_ended);
+ }
+ mds_room_animation_start(&animation[1],0,(uint32_t)(0u-7u));
+ assert(mds_room_animation_gallery_frame(&animation[1],0u,&original,
+                                         &animation_ended)==3&&!animation_ended);
+ assert(mds_room_animation_gallery_frame(NULL,0u,&original,
+                                         &animation_ended)==0&&animation_ended);
+ assert(mds_room_animation_gallery_frame(&animation[0],0u,NULL,
+                                         &animation_ended)==0&&animation_ended);
  fclose(original.file);
  /* Walking stays inside a small bounded area and resets on demand. */
  MdsRoomWalk walks[MDS_ROOM_SLOTS]={0};

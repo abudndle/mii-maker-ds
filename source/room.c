@@ -135,6 +135,25 @@ unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *state,uint32_t 
                          (uint32_t)(ticks-state->start_tick),ended);
 }
 
+unsigned mds_room_animation_gallery_frame(const MdsRoomAnimation *state,uint32_t ticks,
+ const MdsMotion *motion,int *ended)
+{
+ if(ended)*ended=0;
+ if(!state||!state->playing||!motion||!motion->file||
+    !motion->count||motion->count>MDS_MOTION_CLIPS||
+    state->clip>=motion->count){
+  if(ended)*ended=1;
+  return 0;
+ }
+ /* Stagger only cyclic idle clips. Applying the same slot offsets to a
+  * short one-shot gesture can make later Miis skip directly to its end. */
+ if(motion->clips[state->clip].loop)
+  return mds_room_animation_motion_frame(state,ticks,motion,ended);
+ MdsRoomAnimation synced=*state;
+ synced.start_tick=0;
+ return mds_room_animation_motion_frame(&synced,ticks,motion,ended);
+}
+
 void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home)
 {
  if(!walk||local>=MDS_ROOM_SLOTS)return;

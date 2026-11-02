@@ -54,7 +54,7 @@ require("mds_ui_motion_step(int direction)" in header and
         "public UI control declarations missing")
 require("gallery_actor_render_local=local;" in ui and
         "gallery_actor_render_local=UINT32_MAX;" in ui and
-        "mds_room_animation_motion_frame(&actor,motion_clip_ticks" in ui,
+        "mds_room_animation_gallery_frame(&actor,motion_clip_ticks" in ui,
         "the room gallery must use independent actor clocks for original motion frames")
 require("actor.clip=(uint8_t)clip;" in ui and
         "gallery_female_by_male[motion_clip]" in ui,
