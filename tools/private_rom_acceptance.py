@@ -43,17 +43,23 @@ def main():
         parser.error("private resource archive not found")
     if args.emulator and not Path(args.emulator).is_file():
         parser.error("emulator executable not found; provide an existing melonDS executable path")
-    for command in commands(args.archive, docker=args.docker, emulator=args.emulator):
-        print("+", " ".join(command), flush=True)
-        subprocess.run(command, cwd=ROOT, check=True)
+    build_command = commands(args.archive, docker=args.docker)[0]
+    print("+", " ".join(build_command), flush=True)
+    subprocess.run(build_command, cwd=ROOT, check=True)
     rom = ROOT / "mii-ds.nds"
     if rom.is_symlink() or not rom.is_file() or rom.stat().st_size == 0:
         raise ValueError("private ROM build did not produce a valid ROM")
-    report = make_report(rom, args.archive, emulator_launched=bool(args.emulator))
+    report = make_report(rom, args.archive, emulator_launched=False)
     report_path = ROOT / "build" / "private-acceptance-report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("PASS: private ROM build and packaged resource acceptance checks completed")
+    if args.emulator:
+        emulator_command = commands(args.archive, docker=args.docker, emulator=args.emulator)[1]
+        print("+", " ".join(emulator_command), flush=True)
+        subprocess.run(emulator_command, cwd=ROOT, check=True)
+        report["emulator_launched"] = True
+        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.emulator:
         print("NOTE: emulator was launched; manual gameplay and save-persistence acceptance remain required")
     else:
