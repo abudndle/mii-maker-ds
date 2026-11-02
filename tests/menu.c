@@ -78,6 +78,16 @@ assert(mds_gallery_drag_release_destination(-1,0)==-1);
 assert(mds_gallery_drag_release_destination(52,1)==-1);
 assert(mds_gallery_drag_release_destination(52,2)==-1);
 assert(mds_gallery_drag_release_destination(52,-1)==-1);
+/* Leaving a balloon while held must clear its saved target as well as the
+ * visual action, so a stale bound slot cannot be replayed on release. */
+MdsGalleryActionPress abandoned={0};
+mds_gallery_action_press_begin(&abandoned,MDS_GALLERY_ACTION_FAVORITE);
+mds_gallery_action_press_bind_slot(&abandoned,47);
+assert(abandoned.target_slot==47);
+mds_gallery_action_press_hold(&abandoned,120,178);
+assert(abandoned.pressed==MDS_GALLERY_ACTION_NONE);
+assert(abandoned.target_slot==-1);
+assert(mds_gallery_action_press_release_for_slot(&abandoned,24,178,47,1)==MDS_GALLERY_ACTION_NONE);
 /* Both an ongoing drag and its release event suppress physical actions. */
 assert(!mds_gallery_drag_blocks_actions(0,0));
 assert(mds_gallery_drag_blocks_actions(0,1));
