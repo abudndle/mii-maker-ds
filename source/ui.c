@@ -923,7 +923,12 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
         walk_ticks=0;
-        walk_clock_valid=0;
+        /* Rebase the clock on a room switch; retain the recall clock
+         * if A was pressed before the very first room presentation. */
+        if(previous_room_start!=UINT32_MAX||!walk_clock_valid){
+            walk_last_clock=animation_clock;
+            walk_clock_valid=1;
+        }
         /* A recall requested before the first gallery draw must survive
          * room initialization. Only a real room switch cancels it. */
         if(previous_room_start!=UINT32_MAX)walk_home_remaining=0;
