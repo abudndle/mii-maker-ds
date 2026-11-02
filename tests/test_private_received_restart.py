@@ -33,6 +33,7 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('tap 128 "$((touch_origin+87))"', s)
         self.assertIn('tools/check_melonds_confirm_modal.py', s)
         self.assertIn('tools/check_melonds_edit_transition.py', s)
+        self.assertEqual(s.count('tools/check_melonds_modal_dismissal.py'), 2)
 
     def test_exact_cancel_and_confirm_save_gates(self):
         s = SCRIPT.read_text()
@@ -50,8 +51,8 @@ class ReceivedRunnerTests(unittest.TestCase):
         # A transient dropped No touch must not fail a real private run, but
         # only an unchanged modal AND byte-identical EEPROM authorize retry.
         self.assertEqual(s.count('tap 128 "$((touch_origin+127))"'), 2)
-        retry = s[s.index('if ! timeout 15s python3 tools/check_melonds_confirm_modal.py '
-                          '"$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"'):
+        retry = s[s.index('if ! timeout 15s python3 tools/check_melonds_modal_dismissal.py '
+                          '"$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"'):
                   s.index('timeout 15s python3 tools/melonds_gallery_probe.py '
                           '"$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"')]
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"', retry)
@@ -60,8 +61,8 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('win="$candidate"', retry)
         self.assertIn('tap 128 "$((touch_origin+127))"', retry)
         self.assertIn('capture_received "$MELONDS_RECEIVED_CANCEL"', retry)
-        self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_confirm_modal.py', retry)
-        self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_confirm_modal.py', retry)
+        self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
 
     def test_received_editor_b_return_is_persistently_read_only(self):
         s = SCRIPT.read_text()
