@@ -69,12 +69,13 @@ with tempfile.TemporaryDirectory() as temp:
         struct.pack_into("<f", bad, 8, value)
         rejects(path, bad)
 
-wide = wide_mesh()
-path.write_bytes(wide)
-assert inspect(path) == (3, 1)
-# Wide coordinates are accepted in BOD3 and the 18-byte vertex layout is enforced.
-bad = bytearray(wide)
-bad[56 + 16] = 18
-rejects(path, bad)
-rejects(path, wide[:-1])
+    wide = wide_mesh()
+    path.write_bytes(wide)
+    assert inspect(path) == (3, 1)
+    # Wide coordinates are accepted in BOD3 and the 18-byte vertex layout is enforced.
+    bad = bytearray(wide)
+    bad[56 + 16] = 18
+    rejects(path, bad)
+    rejects(path, wide[:-1])
+
 print("PASS: original Mii body validator accepts BOD2/BOD3 and rejects corrupt meshes")
