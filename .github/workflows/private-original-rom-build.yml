@@ -1,13 +1,22 @@
 name: Private original-resource Mii Maker DS build
 on:
+  # Run the expensive private-ROM acceptance on trusted default-branch source,
+  # once daily, or by explicit owner request. Never on untrusted PR code.
+  schedule:
+    - cron: '30 14 * * *'
   push:
     branches:
+      - main
       - milestone/github-real-nds-private-build-20261031
       - milestone/melonds-private-boot-20261101
       - milestone/saved-mii-rooms-transfer-crown-20261101
       - milestone/real-gallery-acceptance-20261101
       - milestone/gallery-eeprom-fixture-20261101
   workflow_dispatch:
+# Keep only one resource-heavy build per ref. New merges supersede old ROMs.
+concurrency:
+  group: private-original-rom-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
