@@ -33,4 +33,27 @@ int main(void){MdsAvatar a,b,guard;uint8_t packet[MDS_PACKET],copy[MDS_PACKET];m
   }
  }
  assert(!mds_service_available(MDS_DS,MDS_CAMERA,15));assert(mds_service_available(MDS_DSI,MDS_CAMERA,1));for(int s=0;s<4;s++)assert(!mds_service_available(MDS_DSI,(MdsService)s,0));
+ /* Reject aliases in both directions without corrupting live records.
+  * The extra packet-sized padding makes each overlap in-bounds. */
+ static struct {uint8_t prefix[MDS_PACKET];MdsAvatar avatar;uint8_t suffix[MDS_PACKET];} aliased;
+ mds_new(&aliased.avatar);guard=aliased.avatar;
+ assert(!mds_encode(&aliased.avatar,(uint8_t *)&aliased.avatar,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ uint8_t *before=aliased.prefix+MDS_PACKET-1u;
+ assert(!mds_encode(&aliased.avatar,before,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ uint8_t *after=(uint8_t *)&aliased.avatar+sizeof aliased.avatar-1u;
+ assert(!mds_encode(&aliased.avatar,after,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ mds_new(&a);assert(mds_encode(&a,packet,sizeof packet));
+ memcpy((uint8_t *)&aliased.avatar,packet,sizeof packet);guard=aliased.avatar;
+ assert(!mds_decode(&aliased.avatar,(const uint8_t *)&aliased.avatar,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ memcpy(before,packet,sizeof packet);guard=aliased.avatar;
+ assert(!mds_decode(&aliased.avatar,before,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ memcpy(after,packet,sizeof packet);guard=aliased.avatar;
+ assert(!mds_decode(&aliased.avatar,after,MDS_PACKET));
+ assert(!memcmp(&aliased.avatar,&guard,sizeof guard));
+ assert(mds_decode(&b,packet,sizeof packet));assert(!memcmp(&a,&b,sizeof a));
  mds_new(&a);assert(mds_write(&a,"/tmp/mds-core-test.dat"));assert(mds_read(&b,"/tmp/mds-core-test.dat"));assert(!memcmp(&a,&b,sizeof a));remove("/tmp/mds-core-test.dat");puts("PASS: fields, roundtrip, corruption, truncation, validation, DSi gating, file IO");}
