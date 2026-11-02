@@ -52,7 +52,12 @@ with tempfile.TemporaryDirectory(prefix="mii-private-build-") as work:
         validation_calls.append(dest)
         return 0
 
-    with patch.object(runner, "run", side_effect=capture), \
+    def capture_with_new_rom(*command):
+        capture(*command)
+        if command and str(command[0]) == "make":
+            fake_rom.write_bytes(b"new synthetic ROM after make")
+
+    with patch.object(runner, "run", side_effect=capture_with_new_rom), \
          patch.object(runner, "validate", side_effect=validate), \
          patch.object(runner, "ROM", fake_rom):
         runner.build(archive, jobs=3, no_cache=True)

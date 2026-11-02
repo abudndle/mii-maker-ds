@@ -15,6 +15,7 @@ from pathlib import Path
 
 from restore_asset_zip import validate
 from private_validation_cache import cache_hit, cache_store
+from private_rom_freshness import clear_old_rom, require_new_rom
 
 ROOT = Path(__file__).resolve().parents[1]
 ROM = ROOT / "mii-ds.nds"
@@ -64,9 +65,9 @@ def build(archive: Path, validate_only=False, jobs=2, no_cache=False) -> None:
     # all male/female original poses and four discrete camera angles.
     run(sys.executable, "tools/test_original_render.py", "--asset-zip", archive)
     run(sys.executable, "tools/build_preflight.py")
+    clear_old_rom(ROM)
     run("make", "-j" + str(jobs))
-    if not ROM.is_file() or not ROM.stat().st_size:
-        raise ValueError("BlocksDS did not produce mii-ds.nds")
+    require_new_rom(ROM)
 
     # Release gate: verify both native binaries and every packed original
     # resource before treating the newly built ROM as usable.

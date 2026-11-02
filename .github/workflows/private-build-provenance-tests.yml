@@ -13,3 +13,6 @@ jobs:
           python-version: '3.11'
       - name: Test provenance without original Nintendo assets
         run: python3 -m unittest discover -s tests -p test_private_build_provenance.py -v
+
+      - name: Reject stale private ROM outputs (synthetic fixtures)
+        run: python3 -m unittest discover -s tests -p test_private_rom_freshness.py -v

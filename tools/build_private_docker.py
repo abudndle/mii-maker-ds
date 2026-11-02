@@ -16,6 +16,7 @@ import sys
 
 from build_private import ROOT, ROM, check_zip, run
 from restore_asset_zip import validate
+from private_rom_freshness import clear_old_rom, require_new_rom
 
 IMAGE = "skylyrac/blocksds:slim-latest"
 
@@ -66,10 +67,10 @@ def build(archive, jobs=2, validate_only=False, image=IMAGE, no_cache=False):
         print("NOTE: host C compiler unavailable; original renderer host check skipped")
     # Makefile SDK_STAGE avoids Python-dependent host preflight in slim container.
     print("+ BlocksDS compiler stage inside offline Docker container", flush=True)
+    clear_old_rom(ROM)
     subprocess.run(cmd, cwd=ROOT, check=True)
     run(sys.executable, "tools/fix_nds_regions.py", ROM)
-    if not ROM.is_file() or not ROM.stat().st_size:
-        raise ValueError("BlocksDS did not produce mii-ds.nds")
+    require_new_rom(ROM)
     for extra in [
         ("tests/rom_regions.py",),
         ("tests/rom_nitrofs_assets.py", ROM),
