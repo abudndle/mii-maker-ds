@@ -36,7 +36,7 @@ int main(void)
   * catches off-by-one errors at the final source row/column. */
  for(unsigned i=0;i<MDS_ROOM_SOURCE*MDS_ROOM_SOURCE;i++)rendered[i]=0;
  rendered[0]=0x801fu;
- rendered[(MDS_ROOM_SOURCE-1u)*MDS_ROOM_SOURCE+(MDS_ROOM_SOURCE-1u)]=0xfc00u;
+ rendered[((MDS_ROOM_H-1u)*MDS_ROOM_SOURCE/MDS_ROOM_H)*MDS_ROOM_SOURCE+((MDS_ROOM_W-1u)*MDS_ROOM_SOURCE/MDS_ROOM_W)]=0xfc00u;
  assert(mds_room_capture(&cache,19,5,&a,rendered));
  assert(cache.actor[5].pixels[0]==0x801fu);
  assert(cache.actor[5].pixels[(MDS_ROOM_H-1u)*MDS_ROOM_W+(MDS_ROOM_W-1u)]==0xfc00u);
