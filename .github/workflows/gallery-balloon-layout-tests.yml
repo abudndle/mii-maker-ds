@@ -4,16 +4,22 @@ on:
     paths:
       - 'tools/extract_balloon_layout.py'
       - 'tools/calibrate_balloon_scene.py'
+      - 'tools/check_gallery_anchor.py'
+      - 'source/menu_generated.h'
       - 'tests/test_extract_balloon_layout.py'
       - 'tests/test_calibrate_balloon_scene.py'
+      - 'tests/test_check_gallery_anchor.py'
       - '.github/workflows/gallery-balloon-layout-tests.yml'
   push:
     branches: [main]
     paths:
       - 'tools/extract_balloon_layout.py'
       - 'tools/calibrate_balloon_scene.py'
+      - 'tools/check_gallery_anchor.py'
+      - 'source/menu_generated.h'
       - 'tests/test_extract_balloon_layout.py'
       - 'tests/test_calibrate_balloon_scene.py'
+      - 'tests/test_check_gallery_anchor.py'
       - '.github/workflows/gallery-balloon-layout-tests.yml'
   workflow_dispatch:
 permissions:
@@ -27,3 +33,5 @@ jobs:
         run: python3 tests/test_extract_balloon_layout.py
       - name: Fit and reject synthetic runtime scene anchors
         run: python3 tests/test_calibrate_balloon_scene.py
+      - name: Reject balloon action collisions with room tabs, boxes and arrows
+        run: python3 tests/test_check_gallery_anchor.py
