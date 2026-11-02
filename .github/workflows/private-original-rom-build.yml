@@ -178,6 +178,11 @@ jobs:
               --output melonds-gallery-ten.png.gpg --encrypt "$RUNNER_TEMP/melonds-gallery-ten.png"
             test -s melonds-gallery-ten.png.gpg
           fi
+          if [ -s "$RUNNER_TEMP/melonds-favorite.png" ]; then
+            gpg --batch --yes --trust-model always --recipient "$fingerprint" \
+              --output melonds-favorite.png.gpg --encrypt "$RUNNER_TEMP/melonds-favorite.png"
+            test -s melonds-favorite.png.gpg
+          fi
           echo "PASS: private ROM and emulator framebuffer encrypted before artifact upload."
       - name: Upload encrypted ROM and diagnostic screenshots (owner private key required)
         if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
@@ -188,6 +193,7 @@ jobs:
             mii-ds.nds.gpg
             melonds-boot.png.gpg
             melonds-gallery-ten.png.gpg
+            melonds-favorite.png.gpg
           retention-days: 7
           if-no-files-found: error
       - name: Reject unverified emulator gameplay after retaining encrypted diagnostics
@@ -200,6 +206,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.sav mii-ds.nds.gpg melonds-boot.png.gpg melonds-gallery-ten.png.gpg
-          rm -f "$RUNNER_TEMP/melonds-boot.png" "$RUNNER_TEMP/melonds-gallery-ten.png" "$RUNNER_TEMP/melonds-boot.log"
+          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.sav mii-ds.nds.gpg melonds-boot.png.gpg melonds-gallery-ten.png.gpg melonds-favorite.png.gpg
+          rm -f "$RUNNER_TEMP/melonds-boot.png" "$RUNNER_TEMP/melonds-gallery-ten.png" "$RUNNER_TEMP/melonds-favorite.png" "$RUNNER_TEMP/melonds-boot.log"
+          rm -f "$RUNNER_TEMP/melonds-favorite-before.sav" "$RUNNER_TEMP/melonds-favorite-save.json" "$RUNNER_TEMP/melonds-favorite-metadata.json"
           rm -rf nitrofiles assets/ui
