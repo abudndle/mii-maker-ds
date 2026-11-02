@@ -40,6 +40,14 @@ int main(void){
  assert((size_t)((uint8_t *)&a+sizeof a-(uint8_t *)&a.miis[0])>=MDS_COMPACT_SIZE);
  assert(!mds_compact_encode(&a,(uint8_t *)&a.miis[0],MDS_COMPACT_SIZE));
  assert(!memcmp(&a,&b,sizeof a));
+ /* The opposite overlap direction (output starts just before gallery)
+  * must also be rejected without modifying the live save records. */
+ static struct {uint8_t prefix[MDS_COMPACT_SIZE];MdsGallery gallery;} overlap;
+ mds_gallery_new(&overlap.gallery);
+ b=overlap.gallery;
+ assert(!mds_compact_encode(&overlap.gallery,
+        overlap.prefix+MDS_COMPACT_SIZE-1u,MDS_COMPACT_SIZE));
+ assert(!memcmp(&overlap.gallery,&b,sizeof b));
  assert(mds_compact_encode(&a,image,sizeof image));
  assert(!memcmp(&a,&b,sizeof a));
  puts("PASS: 100 compact slots, all fields, Unicode round trip, limits, invalid UTF-8, corruption, truncation and overlapping output");
