@@ -74,12 +74,17 @@ class CopyRestartRunnerTests(unittest.TestCase):
 
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
-        # The original successful Copy process used a clean HOME and
-        # emulator defaults. Injecting a partial TOML preceded process-abort.
+        # The real main-run Edit screenshot stayed unchanged after z/B:
+        # melonDS 1.1 uses -1 for unconfigured keyboard bindings. Bind B
+        # explicitly without the XDG_CONFIG_HOME override that preceded
+        # earlier launcher aborts. The trusted ROM run still decides success.
         self.assertIn('export HOME="$RUNNER_TEMP/melonds-home-restart"', s)
-        self.assertIn('mkdir -p "$HOME"', s)
+        self.assertIn('mkdir -p "$HOME/.config/melonDS"', s)
+        self.assertIn('cat >"$HOME/.config/melonDS/melonDS.toml"', s)
+        self.assertIn('[Instance0.Keyboard]\\nB = 90\\nTOML', s)
+        self.assertIn('tomllib.loads(pathlib.Path(sys.argv[1]).read_text())', s)
+        self.assertIn('cfg["Instance0"]["Keyboard"]["B"] == 90', s)
         self.assertNotIn('export XDG_CONFIG_HOME=', s)
-        self.assertNotIn('[Instance0.Keyboard]', s)
         self.assertIn('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"', s)
