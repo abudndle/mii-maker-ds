@@ -20,6 +20,7 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(report["private_rom_sha256"], hashlib.sha256(rom.read_bytes()).hexdigest())
             self.assertEqual(report["archive_sha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
             self.assertEqual(report["private_rom_bytes"], len(b"synthetic rom"))
+            self.assertEqual(report["archive_bytes"], len(b"synthetic resources"))
             self.assertTrue(report["emulator_launched"])
             self.assertFalse(report["gameplay_verified"])
 
