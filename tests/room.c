@@ -40,6 +40,19 @@ int main(void)
  assert(mds_room_capture(&cache,19,5,&a,rendered));
  assert(cache.actor[5].pixels[0]==0x801fu);
  assert(cache.actor[5].pixels[(MDS_ROOM_H-1u)*MDS_ROOM_W+(MDS_ROOM_W-1u)]==0xfc00u);
+ /* Verify every destination pixel uses the documented nearest-neighbor
+  * source coordinate, not just the two image corners. */
+ for(unsigned sy=0;sy<MDS_ROOM_SOURCE;sy++)
+  for(unsigned sx=0;sx<MDS_ROOM_SOURCE;sx++)
+   rendered[sy*MDS_ROOM_SOURCE+sx]=(uint16_t)(0x8000u+sy*MDS_ROOM_SOURCE+sx);
+ assert(mds_room_capture(&cache,19,6,&a,rendered));
+ for(unsigned dy=0;dy<MDS_ROOM_H;dy++)
+  for(unsigned dx=0;dx<MDS_ROOM_W;dx++){
+   unsigned source_y=dy*MDS_ROOM_SOURCE/MDS_ROOM_H;
+   unsigned source_x=dx*MDS_ROOM_SOURCE/MDS_ROOM_W;
+   uint16_t expected=(uint16_t)(0x8000u+source_y*MDS_ROOM_SOURCE+source_x);
+   assert(cache.actor[6].pixels[dy*MDS_ROOM_W+dx]==expected);
+  }
  /* Room cache identity is based on appearance, not slot selection. */
  assert(mds_room_matches(&cache,10,0,&a));
  assert(!mds_room_matches(&cache,9,0,&a));
