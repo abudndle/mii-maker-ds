@@ -27,27 +27,12 @@ if pgrep -x melonDS >/dev/null 2>&1; then
     exit 1
   fi
 fi
-# Extract the verified AppImage once and launch AppRun directly for the
-# third emulator process. The AppImage --appimage-extract-and-run wrapper
-# has intermittently exited with status 127 before the first Edit capture,
-# even though the preceding Favorite and Copy processes succeeded. Keep
-# this extraction in the trusted runner and never upload extracted files.
-edit_appdir="$RUNNER_TEMP/melonds-1.1/edit-apprun"
-mkdir -p "$edit_appdir"
-(
-  cd "$edit_appdir"
-  timeout 60s "$appimage" --appimage-extract >/dev/null
-)
-test -x "$edit_appdir/squashfs-root/AppRun"
-# The AppImage runtime normally exports these four values before calling
-# AppRun. A manually extracted AppRun without the original launch contract
-# can initialize a window but abort later when Qt or the single-instance
-# handler resolves its executable. Never print the owner-private paths.
-export APPIMAGE="$appimage"
-export APPDIR="$edit_appdir/squashfs-root"
-export ARGV0="$appimage"
-export OWD="$PWD"
-export MELONDS_APP="$APPDIR/AppRun"
+# Use the same SHA-256-verified AppImage runtime as the two successful
+# private Favorite and Copy processes. Directly extracted AppRun repeatedly
+# aborted (status 134) after showing a window, even with APPIMAGE/ARGV0/OWD
+# restored. The earlier wrapper status 127 predated the exact-name stale
+# emulator reaper above; keep the cleanup and fail closed on any exit.
+export MELONDS_APP="$appimage"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
 export MELONDS_EDIT_LOG="$RUNNER_TEMP/melonds-edit.log"
@@ -72,7 +57,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # Give the AppImage and its extracted melonDS child a dedicated process
   # group. Killing only the AppImage wrapper can orphan the actual Qt
   # emulator, leaving a stale window or forwarding a later ROM launch to it.
-  setsid -w "$MELONDS_APP" "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
+  setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
   emu_pid=$!
   cleanup_emulator() {
     kill -- "-$emu_pid" 2>/dev/null || true

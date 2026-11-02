@@ -43,19 +43,12 @@ class EditRestartRunnerTests(unittest.TestCase):
 
     def test_third_process_uses_touch_edit_and_byte_exact_rollback(self):
         s = SCRIPT.read_text()
-        self.assertIn('timeout 60s "$appimage" --appimage-extract >/dev/null', s)
-        self.assertIn('test -x "$edit_appdir/squashfs-root/AppRun"', s)
-        self.assertIn('export APPDIR="$edit_appdir/squashfs-root"', s)
-        # A directly extracted AppRun must receive the same launch metadata
-        # that the verified AppImage runtime would normally supply.
-        self.assertIn('export APPIMAGE="$appimage"', s)
-        self.assertIn('export ARGV0="$appimage"', s)
-        self.assertIn('export OWD="$PWD"', s)
-        self.assertLess(s.index('export APPIMAGE="$appimage"'),
-                        s.index('setsid -w "$MELONDS_APP" "$MELONDS_ROM"'))
-        self.assertIn('export MELONDS_APP="$APPDIR/AppRun"', s)
-        self.assertIn('setsid -w "$MELONDS_APP" "$MELONDS_ROM"', s)
-        self.assertNotIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run', s)
+        # The first two real private emulator stages use the AppImage runtime.
+        # Direct AppRun aborted with status 134 even after restoring its env.
+        self.assertIn('export MELONDS_APP="$appimage"', s)
+        self.assertIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', s)
+        self.assertNotIn('export MELONDS_APP="$APPDIR/AppRun"', s)
+        self.assertNotIn('timeout 60s "$appimage" --appimage-extract', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py', s)
         self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
@@ -101,7 +94,7 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn("pkill -KILL -x melonDS 2>/dev/null || true", s)
         self.assertIn("previous melonDS process survived cleanup; refusing Edit test", s)
         self.assertLess(s.index("pkill -TERM -x melonDS"),
-                        s.index('timeout 60s "$appimage" --appimage-extract'))
+                        s.index('export MELONDS_APP="$appimage"'))
         self.assertNotIn("pkill -f", s)
         self.assertNotIn("killall", s)
 
@@ -111,10 +104,7 @@ class EditRestartRunnerTests(unittest.TestCase):
         for name in ("run_melonds_headless.sh", "run_melonds_copy_restart.sh",
                      "run_melonds_edit_restart.sh"):
             script = (ROOT / "tools" / name).read_text()
-            if name == "run_melonds_edit_restart.sh":
-                self.assertIn('setsid -w "$MELONDS_APP" "$MELONDS_ROM"', script)
-            else:
-                self.assertIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', script)
+            self.assertIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', script)
             self.assertIn('kill -- "-$emu_pid" 2>/dev/null || true', script)
             self.assertIn('wait "$emu_pid" 2>/dev/null || true', script)
             self.assertIn('trap cleanup_emulator EXIT', script)
