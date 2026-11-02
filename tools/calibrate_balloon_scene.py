@@ -104,7 +104,12 @@ def calibrate(layout, measurements, max_error=2.0):
         if (not isinstance(rect, list) or len(rect) != 4 or
                 any(not isinstance(v, (int, float)) or isinstance(v, bool) or
                     not math.isfinite(v) for v in rect) or
-                rect[2] <= 0 or rect[3] <= 0):
+                rect[2] <= 0 or rect[3] <= 0 or
+                # Unanchored CLYT coordinates are screen-scale, not astronomical.
+                # Huge but finite values overflow covariance/normal equations
+                # and can silently produce NaN affine candidates.
+                max(abs(rect[0]), abs(rect[1]), abs(rect[2]), abs(rect[3]),
+                    abs(rect[0] + rect[2]), abs(rect[1] + rect[3])) > 1_000_000):
             raise ValueError("invalid source pane bounds")
         source.append((rect[0] + rect[2] / 2, rect[1] + rect[3] / 2))
         target.append((x, y))
