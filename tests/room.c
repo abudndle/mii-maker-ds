@@ -131,6 +131,23 @@ int main(void)
   assert(repeated.dx>=-8&&repeated.dx<=8);
   assert(repeated.dy>=-8&&repeated.dy<=8);
  }
+ /* Verify the bounded 768-VBlank accumulator used by the gallery
+  * produces exactly the same actor poses as an unbounded elapsed clock. */
+ const unsigned deltas[]={1u,11u,12u,767u,768u,769u,UINT_MAX};
+ unsigned bounded=0u;
+ unsigned long long total=0u;
+ for(unsigned step=0;step<sizeof deltas/sizeof deltas[0];step++){
+  unsigned delta=deltas[step];
+  bounded=((bounded%768u)+(delta%768u))%768u;
+  total+=(unsigned long long)delta;
+  assert(bounded==(unsigned)(total%768u));
+  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
+   MdsRoomWalk actual={0},expected={0};
+   mds_room_walk_tick(&actual,slot,bounded,0);
+   mds_room_walk_tick(&expected,slot,(unsigned)(total%768u),0);
+   assert(actual.dx==expected.dx&&actual.dy==expected.dy&&actual.phase==expected.phase);
+  }
+ }
  assert(walks[0].phase!=walks[1].phase);
  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
   mds_room_walk_tick(&walks[slot],slot,768,1);
