@@ -51,6 +51,9 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   sleep 0.25
   xdotool mouseup 1
   sleep 4
+  # Refresh the baseline AFTER selecting slot 1. Otherwise a selection-only
+  # repaint could masquerade as a successful Edit transition.
+  import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
   # Actual touchscreen Edit strip (172..247,168..190).
   xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
   xdotool mousedown 1
@@ -66,6 +69,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   kill -0 "$emu_pid"
   import -window "$win" -depth 8 "$MELONDS_EDIT_RETURN"
   python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"
+  python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_RETURN" "$MELONDS_EDIT_IMAGE"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_EDIT_IMAGE"
 cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav" || {
