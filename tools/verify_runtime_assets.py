@@ -89,6 +89,11 @@ def verify(archive, root=ROOT):
         names = {}
         for info in z.infolist():
             if info.filename.startswith("nitrofiles/") and not info.is_dir():
+                # ZIP Unix mode can encode a symlink as a regular-looking entry.
+                # NitroFS files must be byte payloads, never archive symlinks.
+                unix_type = (info.external_attr >> 16) & 0o170000
+                if unix_type == 0o120000:
+                    raise ValueError("Unsafe symlinked private NitroFS archive entry")
                 name = info.filename[len("nitrofiles/"):]
                 if (not name or name.startswith("/") or "\\" in name or
                         any(part in ("", ".", "..") for part in name.split("/")) or
