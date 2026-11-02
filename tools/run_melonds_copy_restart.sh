@@ -53,7 +53,12 @@ if [ -n "${XDG_CONFIG_HOME:-}" ]; then
 fi
 unset XDG_CONFIG_HOME
 mkdir -p "$HOME/.config/melonDS"
+# The trusted Qt 1.1 process previously rewrote the implicit-parent-only
+# TOML and dropped Instance0 entirely before accepting Copy. Materialize the
+# parent table explicitly so older toml11 builds cannot treat the instance
+# as an unresolved implicit table during startup and ROM-menu persistence.
 cat >"$HOME/.config/melonDS/melonDS.toml" <<'TOML'
+[Instance0]
 [Instance0.Keyboard]
 B = 90
 TOML
