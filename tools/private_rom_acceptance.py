@@ -55,6 +55,13 @@ def write_report(report_path, report):
             output.flush()
             os.fsync(output.fileno())
         os.replace(temporary, report_path)
+        # Persist the directory entry when the platform supports directory fsync.
+        if hasattr(os, "O_DIRECTORY"):
+            directory_fd = os.open(report_path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
