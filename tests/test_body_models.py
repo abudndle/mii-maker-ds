@@ -76,6 +76,12 @@ with tempfile.TemporaryDirectory() as temp:
     bad = bytearray(wide)
     bad[56 + 16] = 18
     rejects(path, bad)
+    bad = bytearray(wide)
+    bad[56 + 15] = 2
+    rejects(path, bad)
+    bad = bytearray(wide)
+    struct.pack_into('<i', bad, 56, 524289)
+    rejects(path, bad)
     rejects(path, wide[:-1])
 
 print("PASS: original Mii body validator accepts BOD2/BOD3 and rejects corrupt meshes")
