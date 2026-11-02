@@ -37,6 +37,16 @@ def make_report(rom, archive, emulator_launched=False):
     }
 
 
+def launch_emulator(command, report, report_path):
+    """Persist successful process creation before waiting for emulator exit."""
+    process = subprocess.Popen(command, cwd=ROOT)
+    report["emulator_launched"] = True
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    exit_code = process.wait()
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, command)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
@@ -64,12 +74,7 @@ def main():
     if args.emulator:
         emulator_command = commands(args.archive, docker=args.docker, emulator=args.emulator)[1]
         print("+", " ".join(emulator_command), flush=True)
-        process = subprocess.Popen(emulator_command, cwd=ROOT)
-        report["emulator_launched"] = True
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        exit_code = process.wait()
-        if exit_code != 0:
-            raise subprocess.CalledProcessError(exit_code, emulator_command)
+        launch_emulator(emulator_command, report, report_path)
     if args.emulator:
         print("NOTE: emulator process started and exited successfully; manual gameplay and save-persistence acceptance remain required")
     else:
