@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <limits.h>
 #include "menu.h"
 
 /* A queued release must not mutate a different saved Mii, even if the
