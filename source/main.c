@@ -286,7 +286,15 @@ int main(void)
                     /* Shoulder buttons browse destination rooms while the
                      * selected Mii remains attached to the stylus. */
                     int next=mds_gallery_page_step(page,gallery_drag.source,direction);
-                    if(next>=0){page=(unsigned)next/10;mds_ui_gallery_navigation(direction,animation_vblanks);drawn_screen=-1;}
+                    if(next>=0){
+                        page=(unsigned)next/10;
+                        /* L/R already paged this drag: consume the held
+                         * stylus arrow until it leaves and re-enters. */
+                        gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(
+                            (input.held&KEY_TOUCH)!=0,live_touch_x,live_touch_y,page);
+                        mds_ui_gallery_navigation(direction,animation_vblanks);
+                        drawn_screen=-1;
+                    }
                     else mds_ui_gallery_invalid(direction);
                 }else{
                     int next=mds_gallery_page_step(page,editor.slot,direction);
