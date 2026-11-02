@@ -128,7 +128,19 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   tap 210 "$((touch_origin+179))" # Edit -> copy-before-edit modal
   sleep 5
   capture_received "$MELONDS_RECEIVED_MODAL"
-  timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
+  if ! timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"; then
+    # The first Qt touch may be lost. Never retry if the cartridge changed.
+    cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
+      echo "FAIL: received Edit retry blocked by unexpected EEPROM mutation"
+      exit 1
+    }
+    kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before Edit retry"; exit 1; }
+    echo "Received acceptance: retrying unobserved Edit modal once"
+    tap 210 "$((touch_origin+179))"
+    sleep 5
+    capture_received "$MELONDS_RECEIVED_MODAL"
+    timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
+  fi
   echo "Received acceptance: rejecting copy-to-edit via original No pane"
   tap 128 "$((touch_origin+127))"
   sleep 5
