@@ -152,8 +152,8 @@ class CopyRestartRunnerTests(unittest.TestCase):
     def test_b_return_retries_render_without_a_second_keypress(self):
         s = self.script
         self.assertIn("sleep 0.12", s)
-        self.assertNotIn("sleep 0.35\\n  xdotool keyup --clearmodifiers z", s)
-        self.assertNotIn("sleep 0.6\\n    xdotool keyup --clearmodifiers z", s)
+        self.assertNotIn("sleep 0.35\n  xdotool keyup --clearmodifiers z", s)
+        self.assertNotIn("sleep 0.6\n    xdotool keyup --clearmodifiers z", s)
         settle = s.split('echo "Edit acceptance: gallery actors not ready; waiting for redraw"', 1)[1]
         settle = settle.split('echo "Edit acceptance: returned to gallery"', 1)[0]
         self.assertIn('sleep 10', settle)
