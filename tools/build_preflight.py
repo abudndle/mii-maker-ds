@@ -18,6 +18,8 @@ def check(root: Path, sdk: Path, toolchain: Path) -> list[str]:
     for label, path in paths.items():
         if not path.is_file():
             missing.append(f'{label}: {path}')
+        elif path.is_symlink():
+            missing.append(f'{label} must be a regular private file, not a symlink: {path}')
         elif path.stat().st_size == 0:
             missing.append(f'{label} is empty: {path}')
     arm_gcc = [toolchain / 'toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-gcc',
