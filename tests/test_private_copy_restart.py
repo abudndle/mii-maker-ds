@@ -72,6 +72,17 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertLess(s.index('restarted emulator launcher exited before Home capture'),
                         s.index('Copy acceptance: capturing reopened Home'))
 
+    def test_prelaunch_toml_declares_instance_parent_before_keyboard(self):
+        # The latest trusted Qt 1.1 process saved a TOML with no Instance0
+        # after receiving an implicit-parent-only synthetic configuration.
+        # Require an explicit table and preserve the B binding before launch.
+        s = self.script
+        self.assertIn("[Instance0]\n[Instance0.Keyboard]\nB = 90", s)
+        self.assertLess(s.index("[Instance0]\n[Instance0.Keyboard]"),
+                        s.index('export MELONDS_B_CONFIG_SHA='))
+        self.assertLess(s.index('export MELONDS_B_CONFIG_SHA='),
+                        s.index("xvfb-run -a"))
+
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
         # The real main-run Edit screenshot stayed unchanged after z/B:
