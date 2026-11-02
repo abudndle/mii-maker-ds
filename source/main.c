@@ -295,8 +295,10 @@ int main(void)
             if(down&KEY_START){if(mds_ui_motion_auto())drawn_screen=-1;}
             /* Physical L/R and original touchscreen arrows can page through
              * destination rooms while a grabbed Mii stays attached. */
-            if(down&(KEY_L|KEY_R)){
-                int direction=(down&KEY_L)?-1:1;
+            int shoulder_direction=mds_gallery_shoulder_direction(
+                (down&KEY_L)!=0,(down&KEY_R)!=0);
+            if(shoulder_direction){
+                int direction=shoulder_direction;
                 if(gallery_drag.source>=0){
                     /* Shoulder buttons browse destination rooms while the
                      * selected Mii remains attached to the stylus. */

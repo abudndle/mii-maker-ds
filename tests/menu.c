@@ -10,6 +10,13 @@ assert(mds_gallery_slot_step(0,0,-1)==9);assert(mds_gallery_slot_step(0,9,1)==0)
  * different room, even when the requested page itself is valid. */
 assert(mds_gallery_slot_step(0,100,1)==-1);
 assert(mds_gallery_slot_step(9,UINT_MAX,-1)==-1);
+/* Opposing shoulder edges are neutral: neither the current room nor a
+ * dragged Mii's destination should move when L and R arrive together. */
+assert(mds_gallery_shoulder_direction(0,0)==0);
+assert(mds_gallery_shoulder_direction(1,0)==-1);
+assert(mds_gallery_shoulder_direction(0,1)==1);
+assert(mds_gallery_shoulder_direction(1,1)==0);
+assert(mds_gallery_shoulder_direction(-1,2)==0);
 /* Physical shoulder paging during a drag must not double-page on the
  * following held-stylus VBlank when the stylus is over an arrow. */
 assert(mds_gallery_drag_arrow_latch_after_page(0,245,90,5)==0);
