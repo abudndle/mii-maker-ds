@@ -82,8 +82,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # Prove the Copy transaction completed BEFORE attempting Edit. The
   # subsequent byte-identity check is relative to this post-Copy snapshot,
   # so it cannot hide an Edit write behind the expected Copy generation.
-  python3 tools/check_gallery_copy_save.py "$RUNNER_TEMP/melonds-copy-before.sav" "$PWD/mii-ds.sav" \\
-    --report "$RUNNER_TEMP/melonds-copy-save.json"
+  python3 tools/check_gallery_copy_save.py "$RUNNER_TEMP/melonds-copy-before.sav" "$PWD/mii-ds.sav" --report "$RUNNER_TEMP/melonds-copy-save.json"
   cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"
   echo "Edit acceptance: Copy persisted; selecting ordinary Mii"
   xdotool windowfocus --sync "$win" || true
