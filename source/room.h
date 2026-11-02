@@ -23,6 +23,10 @@ typedef struct { int16_t dx,dy; uint8_t phase; } MdsRoomWalk;
 typedef struct { uint32_t start_tick; uint8_t clip, playing; } MdsRoomAnimation;
 /* Deterministic bounded wandering; return_home immediately resets displacement. */
 void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home);
+/* Save the departing room's modulo-768 walk phase and resume the destination's
+ * phase; never advance offscreen rooms or accept malformed room starts. */
+unsigned mds_room_walk_resume(unsigned phases[MDS_SLOTS/MDS_ROOM_SLOTS],
+                              unsigned previous_start,unsigned next_start,unsigned ticks);
 /* Per-actor animation clock; clip selection and start time survive room changes. */
 void mds_room_animation_start(MdsRoomAnimation *,unsigned clip,uint32_t tick);
 unsigned mds_room_animation_frame(const MdsRoomAnimation *,unsigned ticks,const uint32_t *counts,const uint8_t *fps,const uint8_t *loops,unsigned clip_count,int *ended);

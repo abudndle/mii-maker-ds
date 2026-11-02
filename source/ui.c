@@ -882,6 +882,8 @@ void mds_ui_home(int focus,const char *notice)
 static MdsRoomWalk room_walk[MDS_ROOM_SLOTS];
 static unsigned walk_room_start=UINT32_MAX;
 static unsigned walk_ticks;
+/* Each of ten rooms retains its own walking phase while offscreen. */
+static unsigned walk_phase_saved[MDS_SLOTS/MDS_ROOM_SLOTS];
 static unsigned walk_home_remaining;
 static uint32_t walk_last_clock;
 static int walk_clock_valid;
@@ -987,7 +989,8 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         unsigned previous_room_start=walk_room_start;
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
-        walk_ticks=0;
+        walk_ticks=mds_room_walk_resume(walk_phase_saved,
+                                        previous_room_start,start,walk_ticks);
         /* Rebase the clock on a room switch; retain the recall clock
          * if A was pressed before the very first room presentation. */
         if(previous_room_start!=UINT32_MAX||!walk_clock_valid){
