@@ -159,7 +159,7 @@ jobs:
         if: ${{ steps.melon_copy.outcome == 'success' }}
         continue-on-error: true
         shell: bash
-        run: bash tools/run_melonds_edit_restart.sh
+        run: timeout 180s bash tools/run_melonds_edit_restart.sh
       - name: Encrypt completed ROM and diagnostic frame captures for owner-only retrieval
         if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
         shell: bash

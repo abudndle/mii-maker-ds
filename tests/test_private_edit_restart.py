@@ -20,14 +20,14 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
         self.assertIn('mkdir -p "$XDG_CONFIG_HOME/melonDS"', s)
         self.assertIn('[Instance0.Keyboard]\nB = 90\nTOML', s)
-        self.assertIn('xdotool windowfocus --sync "$win" || true\n  xdotool key --clearmodifiers z', s)
+        self.assertIn('timeout 5s xdotool windowfocus --sync "$win" || true\n  xdotool key --clearmodifiers z', s)
         self.assertIn('python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"', s)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav"', s)
 
     def test_workflow_private_and_encrypted(self):
         w = WORKFLOW.read_text()
         self.assertNotIn("  pull_request:", w)
-        self.assertIn("run: bash tools/run_melonds_edit_restart.sh", w)
+        self.assertIn("run: timeout 180s bash tools/run_melonds_edit_restart.sh", w)
         self.assertIn("steps.melon_edit.outcome == 'failure'", w)
         self.assertIn('--output melonds-edit.png.gpg --encrypt', w)
         self.assertIn('melonds-edit.png.gpg', w)
