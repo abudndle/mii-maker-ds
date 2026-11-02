@@ -32,6 +32,11 @@ def sha256_file(path):
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
         after = os.fstat(source.fileno())
+        # A concurrent atomic rename could replace the pathname while the
+        # original descriptor remains unchanged. Reject this stale evidence.
+        current = Path(path).stat()
+    if (before.st_dev, before.st_ino) != (current.st_dev, current.st_ino):
+        raise ValueError("private evidence file replaced while hashing")
     if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
         raise ValueError("private evidence file changed while hashing")
     return digest.hexdigest()
