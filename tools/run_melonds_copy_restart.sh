@@ -36,12 +36,26 @@ export MELONDS_COPY_GALLERY="$RUNNER_TEMP/melonds-copy-gallery.png"
 export MELONDS_COPY_EDIT_GALLERY="$RUNNER_TEMP/melonds-copy-edit-gallery.png"
 export MELONDS_COPY_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
 export MELONDS_COPY_EDIT_RETURN="$RUNNER_TEMP/melonds-copy-edit-return.png"
-# Keep the exact clean-HOME startup contract that passed real Copy in #214.
-# A minimal injected melonDS.toml made subsequent second-process launches
-# abort before the first frame; use the emulator's built-in Z/B mapping and
-# hold the key across multiple VBlanks rather than injecting a partial TOML.
+# The successful Copy restart used an isolated HOME, but melonDS 1.1
+# defaults an unspecified keyboard binding to -1 (unmapped). The last
+# trusted run proved Edit entered, then pressing z left the editor on-screen.
+# Set only DS B to Qt::Key_Z (90) in the emulator's actual XDG config path.
+# Do not override XDG_CONFIG_HOME: that extra environment change accompanied
+# the earlier launcher-abort regression. Keep the proven isolated HOME.
 export HOME="$RUNNER_TEMP/melonds-home-restart"
-mkdir -p "$HOME"
+mkdir -p "$HOME/.config/melonDS"
+cat >"$HOME/.config/melonDS/melonDS.toml" <<'TOML'
+[Instance0.Keyboard]
+B = 90
+TOML
+# Fail closed on an absent or malformed mapping rather than reporting a
+# visually unchanged editor as a successful B cancellation.
+python3 - "$HOME/.config/melonDS/melonDS.toml" <<'PY'
+import pathlib, sys, tomllib
+cfg = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
+assert cfg["Instance0"]["Keyboard"]["B"] == 90
+print("PASS: isolated melonDS DS B mapping configured (Qt::Key_Z)")
+PY
 # Never upload or log the pre-copy save image.
 cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
