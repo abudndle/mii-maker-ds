@@ -7,7 +7,9 @@ menu=(root/"source/menu.c").read_text()
 art=(root/"source/original_gallery_art.c").read_text()
 source=(root/"source/gallery_balloon_clan.c").read_text()
 main=(root/'source/main.c').read_text()
-assert 'mds_gallery_balloon_clan_select(&gallery_balloon_state,now)' in ui
+assert 'mds_gallery_balloon_clan_selection_changed(&gallery_balloon_state,now)' in ui
+assert 'mds_gallery_balloon_clan_tick(&gallery_balloon_state,now)' in ui
+assert 'changed||balloon_transition||' in ui
 assert 'mds_gallery_balloon_clan_active(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_reset(&gallery_balloon_state)' in ui
 assert 'mds_gallery_balloon_clan_style(&gallery_balloon_state,now,&balloon)' in ui
