@@ -64,7 +64,14 @@ def check(layout, candidate, header, menu_source):
     panes = layout.get("panes")
     if not isinstance(panes, list):
         raise ValueError("missing source panes")
-    # Fail closed if the live touch arrow extents drift from our collision\n    # model; the two fixed rectangles are defined in source/menu.c.\n    for guard in ("if(page>=10||y<59||y>=131)return 0;",\n                  "if(x>=0&&x<19)return page>0?-1:0;",\n                  "if(x>=237&&x<256)return page<9?1:0;"):\n        if guard not in menu_source:\n            raise ValueError("room arrow source bounds changed")\n    protected = _rectangles_from_header(header)
+    # Fail closed if the live touch arrow extents drift from our collision
+    # model; the two fixed rectangles are defined in source/menu.c.
+    for guard in ("if(page>=10||y<59||y>=131)return 0;",
+                  "if(x>=0&&x<19)return page>0?-1:0;",
+                  "if(x>=237&&x<256)return page<9?1:0;"):
+        if guard not in menu_source:
+            raise ValueError("room arrow source bounds changed")
+    protected = _rectangles_from_header(header)
     result = {}
     for name in ACTIONS:
         matching = [p for p in panes if isinstance(p, dict) and p.get("name") == name]
@@ -103,7 +110,9 @@ def main():
     parser.add_argument("candidate_fit", type=Path)
     parser.add_argument("--menu-header", type=Path,
                         default=Path(__file__).resolve().parents[1] / "source/menu_generated.h")
-    parser.add_argument("--menu-source", type=Path,\n                        default=Path(__file__).resolve().parents[1] / "source/menu.c")\n    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--menu-source", type=Path,
+                        default=Path(__file__).resolve().parents[1] / "source/menu.c")
+    parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     result = check(json.loads(args.source_layout.read_text()),
                    json.loads(args.candidate_fit.read_text()),
