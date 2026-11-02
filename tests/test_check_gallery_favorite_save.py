@@ -1,5 +1,7 @@
 """Synthetic, asset-free compact EEPROM Favorite persistence regressions."""
 import struct
+import subprocess
+import tempfile
 import sys
 import unittest
 import zlib
@@ -46,6 +48,24 @@ class FavoriteSaveTests(unittest.TestCase):
         result = verify(self.before, self.after)
         self.assertTrue(result["unrelated_bytes_unchanged"])
         self.assertEqual(result["saved_miis"], 10)
+
+    def test_real_c_codec_fixture_matches_bit_layout(self):
+        # Cross-check offsets against the repository's actual C encoder,
+        # not just this Python test's independently fabricated image.
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            binary = Path(temp) / "fixture"
+            save = Path(temp) / "gallery.sav"
+            subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
+                            "-I", str(root / "source"),
+                            *[str(root / p) for p in (
+                                "tools/make_gallery_fixture.c",
+                                "source/save.c", "source/save_compact.c",
+                                "source/avatar.c", "source/unicode.c")],
+                            "-o", str(binary)], check=True, capture_output=True)
+            subprocess.run([str(binary), str(save)], check=True, capture_output=True)
+            baseline = save.read_bytes()
+            self.assertTrue(verify(baseline, modified(baseline))["verified"])
 
     def test_no_change_rejected(self):
         with self.assertRaisesRegex(ValueError, "generation"):
