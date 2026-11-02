@@ -67,6 +67,8 @@ jobs:
         run: python3 tests/test_gallery_drag.py
       - name: Verify interrupted Mii gallery previews retry after input settles
         run: python3 tests/test_gallery_retry.py
+      - name: Verify room movement phases resume across L/R room navigation
+        run: python3 tests/test_room_walk_persistence.py
       - name: Verify Mii preview cache recovery and safety guards
         run: python3 tests/test_preview_cache.py
       - name: Verify complete NitroFS asset parity validator
