@@ -6,6 +6,10 @@ int main(void){assert(mds_home_touch(100,25)==MDS_HOME_VIEW);assert(mds_home_tou
 assert(mds_home_focus_step(INT_MIN,INT_MIN)==0);
 assert(mds_home_focus_step(INT_MAX,INT_MIN)==3);
 assert(mds_gallery_slot_step(0,0,-1)==9);assert(mds_gallery_slot_step(0,9,1)==0);assert(mds_gallery_slot_step(4,42,1)==43);assert(mds_gallery_slot_step(4,49,1)==40);assert(mds_gallery_slot_step(9,99,1)==90);assert(mds_gallery_slot_step(2,99,1)==21);assert(mds_gallery_slot_step(10,0,1)==-1);assert(mds_gallery_slot_step(0,0,0)==-1);
+/* A malformed selected slot must not silently select a new Mii in a
+ * different room, even when the requested page itself is valid. */
+assert(mds_gallery_slot_step(0,100,1)==-1);
+assert(mds_gallery_slot_step(9,UINT_MAX,-1)==-1);
 /* Physical shoulder paging during a drag must not double-page on the
  * following held-stylus VBlank when the stylus is over an arrow. */
 assert(mds_gallery_drag_arrow_latch_after_page(0,245,90,5)==0);
@@ -23,6 +27,8 @@ assert(mds_gallery_page_step(0,0,-1)==-1);
 assert(mds_gallery_page_step(7,99,1)==80);
 assert(mds_gallery_page_step(10,0,1)==-1);
 assert(mds_gallery_page_step(3,35,0)==-1);
+assert(mds_gallery_page_step(0,100,1)==-1);
+assert(mds_gallery_page_step(5,UINT_MAX,-1)==-1);
 /* A simultaneous L/R edge wins over a fresh touchscreen press, so a
  * touched room arrow cannot advance a second room in the same VBlank. */
 assert(mds_gallery_touch_press_allowed(1,0));
