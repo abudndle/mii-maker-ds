@@ -79,10 +79,15 @@ reject(layout, needle, header, "touch target too small")
 sheared = copy.deepcopy(fit)
 sheared["scene_affine_ds"] = [1, 1, 0, 1, 1.0004, 0]
 reject(layout, sheared, header, "touch target too small")
-# A half-size 9x9 touch target is still above the conservative 8px/64px²
-# minimum, and remains a candidate (not a verified original anchor).
+# A half-size icon can meet the size threshold yet fail to align with
+# the three live action strips; all three icons must remain tappable.
+half = copy.deepcopy(fit)
+half["scene_affine_ds"] = [0.5, 0, 10, 0, 0.5, 84.5]
+reject(layout, half, header, "outside live touch region")
+# A modest 90% fit keeps all three icons in their own strips and remains
+# a candidate only (not a verified original runtime anchor).
 usable = copy.deepcopy(fit)
-usable["scene_affine_ds"] = [0.5, 0, 10, 0, 0.5, 84.5]
+usable["scene_affine_ds"] = [0.9, 0, 10, 0, 0.9, 16.9]
 assert check(layout, usable, header, menu)["runtime_anchor_verified"] is False
 
 bad = copy.deepcopy(fit)
