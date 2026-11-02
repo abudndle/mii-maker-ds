@@ -14,7 +14,15 @@ export MELONDS_EDIT_HOME="$RUNNER_TEMP/melonds-edit-home.png"
 export MELONDS_EDIT_GALLERY="$RUNNER_TEMP/melonds-edit-gallery.png"
 export MELONDS_EDIT_RETURN="$RUNNER_TEMP/melonds-edit-return.png"
 export HOME="$RUNNER_TEMP/melonds-home-edit"
-mkdir -p "$HOME"
+# melonDS 1.1 reads its keymap from the Qt/XDG config directory. An
+# unconfigured clean HOME has no reliable B binding: xdotool z alone was
+# ignored by the real emulator. Explicitly map Qt::Key_Z (90) to DS B.
+export XDG_CONFIG_HOME="$HOME/.config"
+mkdir -p "$XDG_CONFIG_HOME/melonDS"
+cat >"$XDG_CONFIG_HOME/melonDS/melonDS.toml" <<'TOML'
+[Instance0.Keyboard]
+B = 90
+TOML
 cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-edit-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
@@ -64,6 +72,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   import -window "$win" -depth 8 "$MELONDS_EDIT_IMAGE"
   python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
   # No draft changes: B must leave Edit without a cartridge mutation.
+  xdotool windowfocus --sync "$win" || true
   xdotool key --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
