@@ -43,24 +43,34 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   done
   test -n "$win"
   echo "Edit acceptance: window ready"
-  # The third isolated Qt instance has occasionally blocked XGetImage on
-  # its window even though the window was visible. Fall back to capturing
-  # only the window rectangle from the Xvfb root, never the whole desktop.
-  capture_method=window
+  # XGetImage against a Qt window can block, and the initial melonDS
+  # window ID may be replaced during ROM startup. Capture only the current
+  # visible window rectangle from the isolated Xvfb root. Re-resolve the
+  # window for every frame instead of reusing a potentially dead XID.
   capture_edit() {
-    local destination="$1" geometry x y width height
-    if [ "$capture_method" = window ]; then
-      if timeout 8s import -window "$win" -depth 8 "$destination"; then
-        return 0
+    local destination="$1" geometry="" candidate="" x y width height attempt
+    for attempt in 1 2 3; do
+      if ! kill -0 "$emu_pid" 2>/dev/null; then
+        echo "FAIL: Edit emulator exited before framebuffer capture"
+        return 1
       fi
-      capture_method=root
-      echo "Edit acceptance: window capture unavailable; using root-region fallback"
+      candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
+      if [ -n "$candidate" ] &&
+         geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)"; then
+        win="$candidate"
+        break
+      fi
+      geometry=""
+      sleep 1
+    done
+    if [ -z "$geometry" ]; then
+      echo "FAIL: no stable visible melonDS window for bounded Edit capture"
+      return 1
     fi
-    geometry="$(timeout 5s xdotool getwindowgeometry --shell "$win")"
-    x="$(printf "%s\\n" "$geometry" | sed -n "s/^X=//p")"
-    y="$(printf "%s\\n" "$geometry" | sed -n "s/^Y=//p")"
-    width="$(printf "%s\\n" "$geometry" | sed -n "s/^WIDTH=//p")"
-    height="$(printf "%s\\n" "$geometry" | sed -n "s/^HEIGHT=//p")"
+    x="$(printf '%s\n' "$geometry" | sed -n 's/^X=//p')"
+    y="$(printf '%s\n' "$geometry" | sed -n 's/^Y=//p')"
+    width="$(printf '%s\n' "$geometry" | sed -n 's/^WIDTH=//p')"
+    height="$(printf '%s\n' "$geometry" | sed -n 's/^HEIGHT=//p')"
     if ! [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ &&
             "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] ||
        ! (( width >= 256 && height >= 384 &&
@@ -69,6 +79,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
       return 1
     fi
     timeout 12s import -window root -depth 8 -crop "${width}x${height}+${x}+${y}" +repage "$destination"
+    test -s "$destination"
   }
 
   sleep 12
