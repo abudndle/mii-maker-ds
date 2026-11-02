@@ -28,7 +28,12 @@ int main(void)
     assert(mds_gallery_action_press_release_for_slot(&p,206,176,99,1)==MDS_GALLERY_ACTION_EDIT);
     mds_gallery_action_press_begin(&p,MDS_GALLERY_ACTION_FAVORITE);
     mds_gallery_action_press_bind_slot(&p,100);
+    assert(p.pressed==MDS_GALLERY_ACTION_NONE&&p.target_slot==-1);
     assert(mds_gallery_action_press_release_for_slot(&p,30,176,100,1)==MDS_GALLERY_ACTION_NONE);
+    /* The legacy release API must also be safe after an invalid bind. */
+    mds_gallery_action_press_begin(&p,MDS_GALLERY_ACTION_EDIT);
+    mds_gallery_action_press_bind_slot(&p,UINT_MAX);
+    assert(mds_gallery_action_press_release(&p,206,176)==MDS_GALLERY_ACTION_NONE);
     assert(mds_gallery_action_press_release_for_slot(NULL,30,176,4,1)==MDS_GALLERY_ACTION_NONE);
     puts("PASS: gallery action releases are bound to the original slot and visible artwork");
     return 0;
