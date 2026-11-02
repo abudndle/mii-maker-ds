@@ -154,6 +154,17 @@ unsigned mds_room_animation_gallery_frame(const MdsRoomAnimation *state,uint32_t
  return mds_room_animation_motion_frame(&synced,ticks,motion,ended);
 }
 
+unsigned mds_room_walk_resume(unsigned phases[MDS_SLOTS/MDS_ROOM_SLOTS],
+                              unsigned previous_start,unsigned next_start,unsigned ticks)
+{
+ /* Treat invalid selections transactionally: neither the active walk phase
+  * nor any room's saved phase may be changed on an invalid room switch. */
+ if(!phases||next_start>=MDS_SLOTS||next_start%MDS_ROOM_SLOTS)return ticks;
+ if(previous_start<MDS_SLOTS && previous_start%MDS_ROOM_SLOTS==0)
+  phases[previous_start/MDS_ROOM_SLOTS]=ticks%768u;
+ return phases[next_start/MDS_ROOM_SLOTS]%768u;
+}
+
 void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home)
 {
  if(!walk||local>=MDS_ROOM_SLOTS)return;
