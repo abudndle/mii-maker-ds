@@ -117,8 +117,12 @@ class EditRestartRunnerTests(unittest.TestCase):
     def test_workflow_private_and_encrypted(self):
         w = WORKFLOW.read_text()
         self.assertNotIn("  pull_request:", w)
-        self.assertIn("run: timeout 180s bash tools/run_melonds_edit_restart.sh", w)
-        self.assertIn("steps.melon_edit.outcome == 'failure'", w)
+        # Third-process startup has repeatedly aborted. The trusted gate
+        # now performs real Edit/cancel in the stable second process instead.
+        self.assertIn("run: bash tools/run_melonds_copy_restart.sh", w)
+        self.assertNotIn("run: timeout 180s bash tools/run_melonds_edit_restart.sh", w)
+        self.assertIn("steps.melon_copy.outcome == 'failure'", w)
+        self.assertNotIn("steps.melon_edit.outcome == 'failure'", w)
         self.assertIn('--output melonds-edit.png.gpg --encrypt', w)
         self.assertIn('melonds-edit.png.gpg', w)
         self.assertIn('rm -f "$RUNNER_TEMP/melonds-edit-before.sav"', w)
