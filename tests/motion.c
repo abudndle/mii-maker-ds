@@ -47,6 +47,18 @@ int main(void)
  for(unsigned i=0;i<3;i++){base[56+i*12]=128;base[56+i*12+8]=127;}
  assert(mds_motion_pose(&m,0,2,base,sizeof base,out,sizeof out));assert(out[56]==128&&out[57]==1&&out[70]==127);assert(!memcmp(out+56+15,base+56+9,3));
  assert(!mds_motion_pose(&m,1,0,base,sizeof base,out,sizeof out));assert(!mds_motion_pose(&m,0,3,base,sizeof base,out,sizeof out));assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,109));assert(!mds_motion_pose(&m,0,0,base,sizeof base,base,sizeof base));
+ /* Posed BOD3 is larger than BOD2; reject both alias directions without
+  * changing the input or destination, but permit adjacent buffers. */
+ unsigned char alias[256],snapshot[256];
+ memset(alias,0x5a,sizeof alias);memcpy(alias,base,sizeof base);memcpy(snapshot,alias,sizeof alias);
+ assert(!mds_motion_pose(&m,0,0,alias,sizeof base,alias+1,sizeof out));
+ assert(!memcmp(alias,snapshot,sizeof alias));
+ memset(alias,0x5a,sizeof alias);memcpy(alias+16,base,sizeof base);memcpy(snapshot,alias,sizeof alias);
+ assert(!mds_motion_pose(&m,0,0,alias+16,sizeof base,alias,sizeof out));
+ assert(!memcmp(alias,snapshot,sizeof alias));
+ memset(alias,0x5a,sizeof alias);memcpy(alias,base,sizeof base);
+ assert(mds_motion_pose(&m,0,0,alias,sizeof base,alias+sizeof base,sizeof out));
+ assert(!memcmp(alias,base,sizeof base));
  base[66]=18;assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));base[66]=0;
  /* A bad final vertex must not leave the output mesh partially updated. */
  memset(base+56+24,0,12);base[56+24]=127;
