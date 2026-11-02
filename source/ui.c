@@ -837,6 +837,12 @@ static unsigned walk_ticks;
 static unsigned walk_home_remaining;
 static uint32_t walk_last_clock;
 static int walk_clock_valid;
+void mds_ui_room_pause(void)
+{
+    /* Exclude time spent in non-room menus from the walking clock. */
+    walk_last_clock=animation_clock;
+    walk_clock_valid=1;
+}
 void mds_ui_room_recall(void)
 {
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
