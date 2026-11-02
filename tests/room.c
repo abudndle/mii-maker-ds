@@ -171,6 +171,28 @@ int main(void)
  /* Large unsigned cursors must wrap deterministically without overflow. */
  assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX)==7);
  assert(mds_room_next_refresh(&cache,occupied,attempts,UINT_MAX-1u)==7);
+ /* Ten room actors keep independent animation clip clocks. Changing the
+  * selected room does not reset these per-actor start ticks or clip IDs. */
+ MdsRoomAnimation animation[MDS_ROOM_SLOTS]={0};
+ uint32_t clip_counts[2]={5,9};uint8_t clip_fps[2]={30,60},clip_loops[2]={1,0};
+ for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++)
+  mds_room_animation_start(&animation[slot],slot%2,100u+slot*3u);
+ int animation_ended=0;
+ assert(mds_room_animation_frame(&animation[0],102,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[1],104,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[2],108,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
+ mds_room_select(&cache,19);
+ assert(animation[0].start_tick==100u&&animation[1].start_tick==103u);
+ assert(animation[0].clip==0&&animation[1].clip==1);
+ assert(mds_room_animation_frame(&animation[1],103u+8u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[1],103u+9u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&animation_ended);
+ /* Looping clips wrap independently; one-shot clips hold their last frame. */
+ assert(mds_room_animation_frame(&animation[0],100u+10u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&!animation_ended);
+ /* VBlank counter wrap is handled by unsigned elapsed-tick subtraction. */
+ mds_room_animation_start(&animation[0],1,UINT32_MAX-2u);
+ assert(mds_room_animation_frame(&animation[0],1u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==4&&!animation_ended);
+ assert(mds_room_animation_frame(NULL,0,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&animation_ended);
+ assert(mds_room_animation_frame(&animation[0],0,clip_counts,clip_fps,clip_loops,1,&animation_ended)==0&&animation_ended);
  /* Walking stays inside a small bounded area and resets on demand. */
  MdsRoomWalk walks[MDS_ROOM_SLOTS]={0};
  for(unsigned tick=0;tick<768;tick++){
