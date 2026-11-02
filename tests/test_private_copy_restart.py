@@ -26,6 +26,24 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('xdotool mousemove --window "$win" 128 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_gallery_copy_save.py', s)
 
+    def test_early_copy_captures_are_bounded_and_diagnosable(self):
+        s = self.script
+        # The previous trusted run timed out before reaching the Edit marker.
+        # Initial Home, saved gallery and post-Copy captures must not hang
+        # indefinitely in ImageMagick's XGetImage.
+        for capture in ("HOME", "GALLERY", "IMAGE"):
+            self.assertIn('capture_copy_edit "$MELONDS_COPY_' + capture + '"', s)
+            self.assertNotIn('import -window "$win" -depth 8 "$MELONDS_COPY_' + capture + '"', s)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_'), 6)
+        self.assertEqual(s.count('timeout 5s xdotool windowfocus --sync "$win" || true'), 3)
+        self.assertNotIn('  xdotool windowfocus --sync "$win" || true', s)
+        for marker in ("capturing reopened Home", "capturing saved gallery",
+                       "capturing post-Copy gallery"):
+            self.assertIn("Copy acceptance: " + marker, s)
+        self.assertIn('timeout 8s import -window "$win" -depth 8 "$destination"', s)
+        self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
+        self.assertIn('x + width <= 1280 && y + height <= 960', s)
+
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
         self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
