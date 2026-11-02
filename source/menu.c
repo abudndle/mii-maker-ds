@@ -113,6 +113,10 @@ int mds_gallery_room_arrow(int x,int y,unsigned page)
 /* When L/R changes the destination room during a stylus drag, latch the
  * arrow currently under the stylus. Otherwise the next VBlank sees that
  * same held arrow as a new entry and unintentionally skips another room. */
+int mds_gallery_touch_arrow_latch_active(int touch_held,int touch_up)
+{
+    return touch_held!=0||touch_up!=0;
+}
 int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned page)
 {
     return touch_held?mds_gallery_room_arrow(x,y,page):0;
