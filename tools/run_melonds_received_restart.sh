@@ -149,7 +149,7 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # screenshot/window refresh. Retry ONLY if the modal has not visibly
   # changed and the cartridge is still byte-identical to the pre-copy save.
   # Never mask a real second failure or replay an already accepted choice.
-  if ! timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1; then
+  if ! timeout 15s python3 tools/check_melonds_modal_dismissal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1; then
     echo "Received acceptance: No touch not observed; retrying once with refreshed window"
     cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
       echo "FAIL: received No retry blocked by unexpected EEPROM mutation"
@@ -163,7 +163,7 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     sleep 5
     capture_received "$MELONDS_RECEIVED_CANCEL"
   fi
-  timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
+  timeout 15s python3 tools/check_melonds_modal_dismissal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
   timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"
   cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
     echo "FAIL: cancelling received copy changed EEPROM"
