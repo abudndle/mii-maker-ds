@@ -51,6 +51,19 @@ reject(bad, fit, header, "outside DS screen")
 bad = copy.deepcopy(layout)
 bad["panes"][2]["ds_bounds"] = [102, 169, 18, 18]
 reject(bad, fit, header, "action panes overlap")
+# The original balloon icon is not actionable merely because it avoids
+# room boxes. It must also stay inside its own provisional runtime hitbox.
+# Otherwise Favorite can visually land in the inert gap or Copy region.
+bad = copy.deepcopy(layout)
+bad["panes"][0]["ds_bounds"] = [70, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
+bad = copy.deepcopy(layout)
+bad["panes"][0]["ds_bounds"] = [100, 169, 18, 18]
+bad["panes"][1]["ds_bounds"] = [23, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
+bad = copy.deepcopy(layout)
+bad["panes"][2]["ds_bounds"] = [158, 169, 18, 18]
+reject(bad, fit, header, "outside live touch region")
 bad = copy.deepcopy(layout)
 bad["panes"].append(copy.deepcopy(bad["panes"][0]))
 reject(bad, fit, header, "ambiguous")
@@ -91,6 +104,12 @@ except ValueError as exc:
     assert "room arrow source bounds changed" in str(exc)
 else:
     raise AssertionError("accepted stale room-arrow collision bounds")
+try:
+    check(layout, fit, header, menu.replace("x<84", "x<85"))
+except ValueError as exc:
+    assert "gallery action touch source bounds changed" in str(exc)
+else:
+    raise AssertionError("accepted stale Favorite hitbox collision model")
 with tempfile.TemporaryDirectory() as tmp:
     temp = Path(tmp)
     source, candidate, output = (temp / n for n in ("layout.json", "fit.json", "checked.json"))
