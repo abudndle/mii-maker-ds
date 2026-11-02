@@ -32,6 +32,7 @@ class OriginalMotionRenderRunnerTests(unittest.TestCase):
                 for name in runner.REQUIRED:
                     z.writestr(name, b"synthetic private resource bytes")
             invoked = []
+            staged_paths = []
 
             def capture(command, **kw):
                 invoked.append(command)
@@ -47,11 +48,14 @@ class OriginalMotionRenderRunnerTests(unittest.TestCase):
                     self.assertTrue(path.is_file())
                     self.assertEqual(path.read_bytes(), b"synthetic private resource bytes")
                     self.assertTrue(str(path).endswith(name))
+                    self.assertNotIn(str(ROOT / "nitrofiles"), str(path))
+                    staged_paths.append(path)
 
             with patch.object(runner.subprocess, "run", side_effect=capture):
                 runner.run("synthetic-cc", archive)
             self.assertEqual(len(invoked), 4)
-            self.assertFalse((ROOT / "nitrofiles/models/MaleBody.msp").exists())
+            self.assertTrue(staged_paths)
+            self.assertTrue(all(not path.exists() for path in staged_paths))
 
     def test_missing_private_motion_resources_do_not_start_compiler(self):
         with tempfile.TemporaryDirectory() as temp:
