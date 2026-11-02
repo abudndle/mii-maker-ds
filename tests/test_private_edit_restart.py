@@ -46,6 +46,13 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn('timeout 60s "$appimage" --appimage-extract >/dev/null', s)
         self.assertIn('test -x "$edit_appdir/squashfs-root/AppRun"', s)
         self.assertIn('export APPDIR="$edit_appdir/squashfs-root"', s)
+        # A directly extracted AppRun must receive the same launch metadata
+        # that the verified AppImage runtime would normally supply.
+        self.assertIn('export APPIMAGE="$appimage"', s)
+        self.assertIn('export ARGV0="$appimage"', s)
+        self.assertIn('export OWD="$PWD"', s)
+        self.assertLess(s.index('export APPIMAGE="$appimage"'),
+                        s.index('setsid -w "$MELONDS_APP" "$MELONDS_ROM"'))
         self.assertIn('export MELONDS_APP="$APPDIR/AppRun"', s)
         self.assertIn('setsid -w "$MELONDS_APP" "$MELONDS_ROM"', s)
         self.assertNotIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run', s)

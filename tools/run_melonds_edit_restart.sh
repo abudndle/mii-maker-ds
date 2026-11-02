@@ -39,7 +39,14 @@ mkdir -p "$edit_appdir"
   timeout 60s "$appimage" --appimage-extract >/dev/null
 )
 test -x "$edit_appdir/squashfs-root/AppRun"
+# The AppImage runtime normally exports these four values before calling
+# AppRun. A manually extracted AppRun without the original launch contract
+# can initialize a window but abort later when Qt or the single-instance
+# handler resolves its executable. Never print the owner-private paths.
+export APPIMAGE="$appimage"
 export APPDIR="$edit_appdir/squashfs-root"
+export ARGV0="$appimage"
+export OWD="$PWD"
 export MELONDS_APP="$APPDIR/AppRun"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
