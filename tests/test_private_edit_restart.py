@@ -17,7 +17,10 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn('"$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py', s)
-        self.assertIn('xdotool key --clearmodifiers z', s)
+        self.assertIn('export XDG_CONFIG_HOME="$HOME/.config"', s)
+        self.assertIn('mkdir -p "$XDG_CONFIG_HOME/melonDS"', s)
+        self.assertIn('[Instance0.Keyboard]\\nB = 90\\nTOML', s)
+        self.assertIn('xdotool windowfocus --sync "$win" || true\\n  xdotool key --clearmodifiers z', s)
         self.assertIn('python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"', s)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav"', s)
 
