@@ -57,6 +57,10 @@ int main(void)
  assert(dst[20u*256u+20u]==0x83e0u);
  assert(dst[20u*256u+21u]==0x801fu);
  assert(dst[19u*256u+20u]==0x801fu);
+ /* Two cached actors can be drawn without overwriting each other's pixels. */
+ assert(mds_room_blit(&cache,19,0,dst,256,192,100,20));
+ assert(dst[20u*256u+100u]==0x801fu);
+ assert(dst[20u*256u+20u]==0x83e0u);
  /* Overlapping Mii previews must composite opaque pixels in draw order
   * while transparent pixels reveal the actor already drawn underneath. */
  for(unsigned i=0;i<MDS_ROOM_SOURCE*MDS_ROOM_SOURCE;i++)rendered[i]=0;
@@ -74,10 +78,6 @@ int main(void)
  /* A transparent second actor must preserve the first actor's pixel. */
  assert(mds_room_blit(&cache,19,3,dst,256,192,40,40));
  assert(dst[40u*256u+40u]==0x83e0u);
- /* Two cached actors can be drawn without overwriting each other's pixels. */
- assert(mds_room_blit(&cache,19,0,dst,256,192,100,20));
- assert(dst[20u*256u+100u]==0x801fu);
- assert(dst[20u*256u+20u]==0x83e0u);
  a.value[5]++;
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,1,&a,rendered));
