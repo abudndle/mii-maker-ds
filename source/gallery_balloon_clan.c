@@ -104,3 +104,10 @@ int mds_gallery_balloon_clan_actions_visible(const MdsGalleryBalloonClan *state,
      * UnDecide fades only I_Favorite; Copy/Edit must remain usable. */
     return style.balloon_alpha>0u;
 }
+
+int mds_gallery_balloon_clan_favorite_visible(const MdsGalleryBalloonClan *state,uint32_t now)
+{
+    MdsGalleryBalloonStyle style;
+    mds_gallery_balloon_clan_style(state,now,&style);
+    return style.balloon_alpha>0u&&style.favorite_alpha>0u;
+}
