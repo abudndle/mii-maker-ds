@@ -193,6 +193,44 @@ int main(void)
  assert(mds_room_animation_frame(&animation[0],1u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==4&&!animation_ended);
  assert(mds_room_animation_frame(NULL,0,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&animation_ended);
  assert(mds_room_animation_frame(&animation[0],0,clip_counts,clip_fps,clip_loops,1,&animation_ended)==0&&animation_ended);
+ /* The actual MSP1 animation table now drives room actor frame selection.
+  * Ten simultaneous actors must not share a single source frame even
+  * when they play the same original clip. */
+ MdsMotion original={0};
+ original.file=tmpfile();assert(original.file);
+ original.count=2;
+ original.clips[0].count=5;
+ original.clips[0].fps=30;
+ original.clips[0].loop=1;
+ original.clips[1].count=9;
+ original.clips[1].fps=60;
+ original.clips[1].loop=0;
+ unsigned distinct_frames[5]={0};
+ for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
+  mds_room_animation_start(&animation[slot],0,
+                           (uint32_t)(100u-slot*7u));
+  unsigned frame=mds_room_animation_motion_frame(&animation[slot],100u,
+                                                  &original,&animation_ended);
+  assert(frame<5&&!animation_ended);
+  distinct_frames[frame]=1;
+ }
+ unsigned distinct=0;
+ for(unsigned frame=0;frame<5;frame++)distinct+=distinct_frames[frame];
+ assert(distinct>=3u);
+ /* A mapped female clip can use a different table index and frame rate. */
+ animation[0].clip=1;
+ assert(mds_room_animation_motion_frame(&animation[0],108u,&original,
+                                         &animation_ended)==8&&!animation_ended);
+ assert(mds_room_animation_motion_frame(&animation[0],109u,&original,
+                                         &animation_ended)==8&&animation_ended);
+ mds_room_animation_start(&animation[0],0,UINT32_MAX-2u);
+ assert(mds_room_animation_motion_frame(&animation[0],1u,&original,
+                                         &animation_ended)==2&&!animation_ended);
+ assert(mds_room_animation_motion_frame(NULL,1u,&original,
+                                         &animation_ended)==0&&animation_ended);
+ assert(mds_room_animation_motion_frame(&animation[0],1u,NULL,
+                                         &animation_ended)==0&&animation_ended);
+ fclose(original.file);
  /* Walking stays inside a small bounded area and resets on demand. */
  MdsRoomWalk walks[MDS_ROOM_SLOTS]={0};
  for(unsigned tick=0;tick<768;tick++){
