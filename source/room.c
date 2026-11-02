@@ -1,4 +1,5 @@
 #include "room.h"
+#include "motion.h"
 #include <stddef.h>
 #include <string.h>
 unsigned mds_room_start(unsigned selected)
@@ -87,6 +88,30 @@ int mds_room_next_refresh(const MdsRoomCache *cache,
   if(occupied[i]&&cache->actor[i].valid&&attempts[i]<3u)return (int)i;
  }
  return -1;
+}
+
+void mds_room_animation_start(MdsRoomAnimation *state,unsigned clip,uint32_t tick)
+{
+ if(!state)return;
+ state->clip=(uint8_t)(clip<256u?clip:255u);
+ state->start_tick=tick;
+ state->playing=1;
+}
+unsigned mds_room_animation_frame(const MdsRoomAnimation *state,unsigned ticks,
+ const uint32_t *counts,const uint8_t *fps,const uint8_t *loops,
+ unsigned clip_count,int *ended)
+{
+ if(ended)*ended=0;
+ if(!state||!state->playing||!counts||!fps||!loops||
+    state->clip>=clip_count||!counts[state->clip]||!fps[state->clip]||
+    fps[state->clip]>60u||loops[state->clip]>1u){
+  if(ended)*ended=1;
+  return 0;
+ }
+ MdsMotionClip clip={0};
+ clip.count=counts[state->clip];clip.fps=fps[state->clip];clip.loop=loops[state->clip];
+ /* Unsigned subtraction intentionally handles the DS VBlank counter wrap. */
+ return mds_motion_frame(&clip,(uint32_t)(ticks-state->start_tick),ended);
 }
 
 void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home)
