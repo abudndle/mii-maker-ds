@@ -21,14 +21,15 @@ layout = {"source_sha256": SHA, "runtime_anchor_verified": False,
 fit = {"source_sha256": SHA, "runtime_anchor_verified": False,
        "scene_affine_ds": [1, 0, 0, 0, 1, 0]}
 header = (ROOT / "source/menu_generated.h").read_text()
-result = check(layout, fit, header)
+menu = (ROOT / "source/menu.c").read_text()
+result = check(layout, fit, header, menu)
 assert list(result["action_bounds_ds"]) == ["B_Favorite", "I_MiiCopy", "I_MiiOpen"]
 assert result["runtime_anchor_verified"] is False
 
 
 def reject(l, f, h, fragment):
     try:
-        check(l, f, h)
+        check(l, f, h, menu)
     except ValueError as exc:
         assert fragment in str(exc), (fragment, str(exc))
     else:
@@ -66,6 +67,12 @@ bad = copy.deepcopy(fit)
 bad["scene_affine_ds"] = [1, 0, float("nan"), 0, 1, 0]
 reject(layout, bad, header, "invalid candidate")
 reject(layout, fit, header.replace("gallery_room_hits", "missing_room_hits"), "missing generated")
+try:
+    check(layout, fit, header, menu.replace("x<19", "x<20"))
+except ValueError as exc:
+    assert "room arrow source bounds changed" in str(exc)
+else:
+    raise AssertionError("accepted stale room-arrow collision bounds")
 with tempfile.TemporaryDirectory() as tmp:
     temp = Path(tmp)
     source, candidate, output = (temp / n for n in ("layout.json", "fit.json", "checked.json"))
