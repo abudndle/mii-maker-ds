@@ -100,6 +100,28 @@ for point, (x, y) in zip(near_line_target["points"], positions):
     point["ds_center"] = [80 + 0.5 * x, 80 + 0.005 * y]
 rejects(layout, near_line_target, "measured panes lack two-dimensional spread")
 
+# A zero-residual fit can still mirror the screen, rotate it 180/90
+# degrees, or swap the horizontal/vertical control axes. Such fits would
+# put Favorite/Copy/Edit in the wrong visual order despite matching every
+# supplied observation. Source ds_bounds already use DS screen axes.
+def affine_observations(affine):
+    changed = copy.deepcopy(measurements)
+    a, b, tx, c, d, ty = affine
+    for point, (x, y) in zip(changed["points"], positions):
+        point["ds_center"] = [a * x + b * y + tx,
+                              c * x + d * y + ty]
+    return changed
+
+
+rejects(layout, affine_observations((-1.1, 0.1, 245, -0.05, 0.9, 8)),
+        "reverses screen orientation")  # horizontal reflection
+rejects(layout, affine_observations((-1.1, -0.1, 245, 0.05, -0.9, 170)),
+        "reverses screen orientation")  # upside-down screen
+rejects(layout, affine_observations((0, -1, 180, 1, 0, 0)),
+        "reverses screen orientation")  # quarter-turn
+rejects(layout, affine_observations((0.3, 0.9, 5, 0, 1, 5)),
+        "excessively skews gallery axes")  # axes effectively swapped
+
 bad = copy.deepcopy(measurements)
 bad["points"][0]["ds_center"] = [math.inf, 0]
 rejects(layout, bad, "measured center")

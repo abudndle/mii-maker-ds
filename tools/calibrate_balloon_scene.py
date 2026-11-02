@@ -124,6 +124,18 @@ def calibrate(layout, measurements, max_error=2.0):
     if _weak_axis_variance(target) < 16.0:  # 4 DS pixels RMS
         raise ValueError("measured panes lack two-dimensional spread")
     determinant = a * d - b * c
+    # Pane ds_bounds are already in screen coordinates (rightward X and
+    # downward Y). A reflection, 180-degree flip or quarter-turn can fit
+    # every screenshot point perfectly yet reverse the Favorite/Copy/Edit
+    # touch order. A scene anchor is not allowed to reorient the DS screen.
+    if a <= 0 or d <= 0 or determinant <= 0:
+        raise ValueError("scene affine reverses screen orientation")
+    # The external scene transform may include modest skew, but a candidate
+    # whose horizontal position depends more on source Y (or vice versa)
+    # cannot represent this screen-aligned gallery. This is a conservative
+    # candidate preflight, not proof of authentic 3DS placement.
+    if abs(b) > a * 0.5 or abs(c) > d * 0.5:
+        raise ValueError("scene affine excessively skews gallery axes")
     if (any(abs(v) > 16 for v in (a, b, c, d)) or
             any(abs(v) > 4096 for v in (tx, ty)) or
             not 0.0001 <= abs(determinant) <= 256):
