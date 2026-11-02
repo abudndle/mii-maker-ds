@@ -13,6 +13,21 @@ from pathlib import Path
 ACTIONS = ("B_Favorite", "I_MiiCopy", "I_MiiOpen")
 # EDITSelectBase room arrows are handled separately in mds_gallery_room_arrow.
 ARROWS = ((0., 59., 19., 72.), (237., 59., 19., 72.))
+# Provisional Favorite/Copy/Edit touch strips in menu.c. These are NOT
+# source CLYT pane bounds. A candidate icon must be fully inside its own
+# currently actionable strip, or users would see an icon that cannot be
+# tapped (or would activate a different command).
+ACTION_TOUCH_REGIONS = {
+    "B_Favorite": (8., 168., 76., 23.),
+    "I_MiiCopy": (90., 168., 76., 23.),
+    "I_MiiOpen": (172., 168., 76., 23.),
+}
+ACTION_TOUCH_GUARDS = (
+    "if(y<168||y>=191||x<8||x>=248)return MDS_GALLERY_ACTION_NONE;",
+    "if(x<84)return MDS_GALLERY_ACTION_FAVORITE;",
+    "if(x>=90&&x<166)return MDS_GALLERY_ACTION_COPY;",
+    "if(x>=172)return MDS_GALLERY_ACTION_EDIT;",
+)
 
 
 def _rectangles_from_header(header):
@@ -71,6 +86,11 @@ def check(layout, candidate, header, menu_source):
                   "if(x>=237&&x<256)return page<9?1:0;"):
         if guard not in menu_source:
             raise ValueError("room arrow source bounds changed")
+    # Fail closed if the provisional runtime action hitboxes drift from this
+    # model, just as the room-arrow preflight already does. These bounds must
+    # be updated together with menu.c when authentic anchoring is implemented.
+    if any(guard not in menu_source for guard in ACTION_TOUCH_GUARDS):
+        raise ValueError("gallery action touch source bounds changed")
     protected = _rectangles_from_header(header)
     result = {}
     for name in ACTIONS:
@@ -102,6 +122,12 @@ def check(layout, candidate, header, menu_source):
                 transformed[0] + transformed[2] > 256.01 or
                 transformed[1] + transformed[3] > 192.01):
             raise ValueError("action outside DS screen: " + name)
+        touch = ACTION_TOUCH_REGIONS[name]
+        if (transformed[0] < touch[0] - 0.01 or
+                transformed[1] < touch[1] - 0.01 or
+                transformed[0] + transformed[2] > touch[0] + touch[2] + 0.01 or
+                transformed[1] + transformed[3] > touch[1] + touch[3] + 0.01):
+            raise ValueError("action outside live touch region: " + name)
         if any(_overlap(transformed, target) for target in protected):
             raise ValueError("action overlaps gallery controls: " + name)
         if any(_overlap(transformed, prior) for prior in result.values()):
