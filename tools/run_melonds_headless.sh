@@ -17,9 +17,14 @@ export MELONDS_APP="$appimage"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_IMAGE="$RUNNER_TEMP/melonds-boot.png"
 export MELONDS_GALLERY_IMAGE="$RUNNER_TEMP/melonds-gallery-ten.png"
+export MELONDS_FAVORITE_IMAGE="$RUNNER_TEMP/melonds-favorite.png"
 export MELONDS_LOG="$RUNNER_TEMP/melonds-boot.log"
 export HOME="$RUNNER_TEMP/melonds-home"
 mkdir -p "$HOME"
+if [ -s "$PWD/mii-ds.sav" ]; then
+  # This owner-private baseline is never uploaded or printed.
+  cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-favorite-before.sav"
+fi
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   set -euo pipefail
@@ -75,10 +80,41 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
       python3 tools/melonds_gallery_probe.py "$MELONDS_IMAGE" "$MELONDS_GALLERY_IMAGE"
     fi
     echo "PASS: emulator entered gallery and displayed at least two saved Miis"
+    # Coordinates are native DS bottom-screen pixels, not a guessed desktop
+    # window offset. The existing gallery probe crops the bottom 384 pixels.
+    # Slot 1 is non-Personal in the isolated synthetic EEPROM fixture.
+    capture_height="$(identify -format "%h" "$MELONDS_GALLERY_IMAGE")"
+    touch_origin=$((capture_height-192))
+    xdotool windowfocus --sync "$win" || true
+    xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
+    xdotool mousedown 1
+    sleep 0.25
+    xdotool mouseup 1
+    sleep 4
+    # Favorite is in the provisional bottom action strip (8..83, 168..190).
+    # A physical X press would test a shortcut, not the actual touch binding.
+    xdotool mousemove --window "$win" 50 "$((touch_origin+179))"
+    xdotool mousedown 1
+    sleep 0.35
+    xdotool mouseup 1
+    sleep 5
+    if ! kill -0 "$emu_pid" 2>/dev/null; then
+      echo "FAIL: melonDS exited during Favorite touch acceptance"
+      exit 1
+    fi
+    import -window "$win" -depth 8 "$MELONDS_FAVORITE_IMAGE"
+    test -s "$MELONDS_FAVORITE_IMAGE"
+    echo "Favorite touch dispatched; EEPROM change must still pass independent verification"
   fi
   echo "PASS: melonDS remained running and a framebuffer was captured"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_IMAGE" --report "$RUNNER_TEMP/melonds-boot-metadata.json"
+if [ -s "$RUNNER_TEMP/melonds-favorite-before.sav" ]; then
+  test -s "$MELONDS_FAVORITE_IMAGE"
+  python3 tools/melonds_screen_probe.py "$MELONDS_FAVORITE_IMAGE" --report "$RUNNER_TEMP/melonds-favorite-metadata.json"
+  python3 tools/check_gallery_favorite_save.py "$RUNNER_TEMP/melonds-favorite-before.sav" "$PWD/mii-ds.sav" \
+    --slot 1 --report "$RUNNER_TEMP/melonds-favorite-save.json"
+fi
 if [ -s "${MELONDS_GALLERY_IMAGE:-}" ]; then
   python3 tools/melonds_screen_probe.py "$MELONDS_GALLERY_IMAGE" --report "$RUNNER_TEMP/melonds-gallery-metadata.json"
   python3 tools/melonds_gallery_probe.py "$MELONDS_IMAGE" "$MELONDS_GALLERY_IMAGE" --report "$RUNNER_TEMP/melonds-gallery-scene.json"
