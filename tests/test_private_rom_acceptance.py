@@ -20,6 +20,14 @@ class AcceptanceTests(unittest.TestCase):
             self.assertTrue(report["emulator_launched"])
             self.assertFalse(report["gameplay_verified"])
 
+    def test_missing_rom_evidence_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            missing = Path(d) / "missing.nds"
+            archive = Path(d) / "archive.zip"
+            archive.write_bytes(b"fixture")
+            with self.assertRaises(FileNotFoundError):
+                make_report(missing, archive)
+
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "private.zip"
