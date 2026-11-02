@@ -44,6 +44,19 @@ class RoomRecallRolloverTests(unittest.TestCase):
             remaining = max(0, remaining - elapsed)
         self.assertEqual(remaining, 0)
 
+    def test_navigation_rebases_clock_without_losing_first_draw_recall(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        self.assertIn("if(previous_room_start!=UINT32_MAX||!walk_clock_valid)", source)
+        self.assertIn("walk_last_clock=animation_clock;", source)
+        self.assertNotIn("walk_ticks=0;\n        walk_clock_valid=0;", source)
+        # A pending recall before first draw keeps its original clock origin.
+        previous_room_start = 0xffffffff
+        walk_clock_valid = True
+        self.assertFalse(previous_room_start != 0xffffffff or not walk_clock_valid)
+        # Switching from an existing room always rebases to the new scene.
+        previous_room_start = 0
+        self.assertTrue(previous_room_start != 0xffffffff or not walk_clock_valid)
+
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
             remaining = 24
