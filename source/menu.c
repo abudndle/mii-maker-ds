@@ -121,6 +121,10 @@ int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down)
 {
     return touch_down!=0&&shoulder_down==0;
 }
+int mds_gallery_shoulder_direction(int left_down,int right_down)
+{
+    return (right_down!=0)-(left_down!=0);
+}
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
 {
     if(page>=10||selected>=100u||!direction)return -1;
