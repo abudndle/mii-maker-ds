@@ -54,10 +54,10 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     test -n "$candidate" || { echo "FAIL: no live Edit window"; return 1; }
     geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)" ||
       { echo "FAIL: no Edit window geometry"; return 1; }
-    x="$(printf '%s\\n' "$geometry" | sed -n 's/^X=//p')"
-    y="$(printf '%s\\n' "$geometry" | sed -n 's/^Y=//p')"
-    width="$(printf '%s\\n' "$geometry" | sed -n 's/^WIDTH=//p')"
-    height="$(printf '%s\\n' "$geometry" | sed -n 's/^HEIGHT=//p')"
+    x="$(printf '%s\n' "$geometry" | sed -n 's/^X=//p')"
+    y="$(printf '%s\n' "$geometry" | sed -n 's/^Y=//p')"
+    width="$(printf '%s\n' "$geometry" | sed -n 's/^WIDTH=//p')"
+    height="$(printf '%s\n' "$geometry" | sed -n 's/^HEIGHT=//p')"
     if ! [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ &&
             "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] ||
        ! (( width >= 256 && height >= 384 &&
