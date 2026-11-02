@@ -36,6 +36,9 @@ checks={
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
+    "physical page consumes already-held touchscreen arrow":
+        "gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(" in gallery and
+        "(input.held&KEY_TOUCH)!=0,live_touch_x,live_touch_y,page" in gallery,
     "continuous touch drag browses rooms over arrows": "if((input.held&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
                                       "mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow)" in gallery,
     "continuous arrow hover uses live VBlank coordinates": "mds_gallery_room_arrow(live_touch_x,live_touch_y,page)" in gallery,

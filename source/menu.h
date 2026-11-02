@@ -71,6 +71,9 @@ MdsGalleryBoxAction mds_gallery_box_press(int slot,int occupied);
 int mds_gallery_room_touch(int x,int y);
 /* Touchscreen room navigation: -1 left, +1 right, 0 elsewhere. */
 int mds_gallery_room_arrow(int x,int y,unsigned page);
+/* Prevent a held stylus over an arrow from causing an extra room transition
+ * immediately after L/R has already changed the destination room. */
+int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned page);
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 /* Move to the next ten-slot page without losing the cursor position. */
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction);
