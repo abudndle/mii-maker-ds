@@ -59,6 +59,40 @@ int main(void)
     assert(state.clip==MDS_BALLOON_DECIDE&&state.started==240);
     mds_gallery_balloon_clan_play(&state,(MdsGalleryBalloonClip)-1,254);
     assert(state.clip==MDS_BALLOON_DECIDE&&state.started==240);
+    /* The first selected Mii plays Select immediately. Subsequent changes
+     * play original Unselect, then Select without delaying the new Mii. */
+    mds_gallery_balloon_clan_reset(&state);
+    mds_gallery_balloon_clan_selection_changed(&state,100);
+    assert(state.clip==MDS_BALLOON_SELECT&&state.started==100&&!state.pending_select);
+    mds_gallery_balloon_clan_selection_changed(&state,103);
+    assert(state.clip==MDS_BALLOON_UNSELECT&&state.started==103&&state.pending_select);
+    mds_gallery_balloon_clan_selection_changed(&state,107);
+    assert(state.started==103&&state.pending_select); /* rapid tap cannot starve fade */
+    assert(!mds_gallery_balloon_clan_tick(&state,114));
+    assert(!mds_gallery_balloon_clan_actions_visible(&state,114));
+    assert(mds_gallery_balloon_clan_tick(&state,115));
+    assert(state.clip==MDS_BALLOON_SELECT&&state.started==115&&!state.pending_select);
+    assert(!mds_gallery_balloon_clan_actions_visible(&state,115));
+    assert(mds_gallery_balloon_clan_actions_visible(&state,117));
+    assert(!mds_gallery_balloon_clan_tick(&state,117));
+    /* A skipped frame resumes the source clip at its real elapsed frame. */
+    mds_gallery_balloon_clan_selection_changed(&state,120);
+    assert(mds_gallery_balloon_clan_tick(&state,140));
+    assert(state.started==132&&state.clip==MDS_BALLOON_SELECT);
+    assert(mds_gallery_balloon_clan_actions_visible(&state,140));
+    /* Wraparound must not defer the next selected balloon for 2^32 ticks. */
+    mds_gallery_balloon_clan_reset(&state);
+    mds_gallery_balloon_clan_selection_changed(&state,UINT32_MAX-5u);
+    mds_gallery_balloon_clan_selection_changed(&state,UINT32_MAX-3u);
+    assert(!mds_gallery_balloon_clan_tick(&state,7u));
+    assert(mds_gallery_balloon_clan_tick(&state,8u));
+    assert(state.started==8u&&state.clip==MDS_BALLOON_SELECT);
+    /* Direct source clip playback cancels an unfinished queued transition. */
+    mds_gallery_balloon_clan_selection_changed(&state,10u);
+    assert(state.pending_select);
+    mds_gallery_balloon_clan_play(&state,MDS_BALLOON_DECIDE,11u);
+    assert(!state.pending_select&&!mds_gallery_balloon_clan_tick(&state,30u));
+    assert(!mds_gallery_balloon_clan_tick(NULL,30u));
     mds_gallery_balloon_clan_reset(&state);
     assert(!mds_gallery_balloon_clan_active(&state,2));
     assert(mds_gallery_balloon_clan_actions_visible(&state,2));

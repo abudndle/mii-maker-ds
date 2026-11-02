@@ -9,7 +9,7 @@ typedef enum {
     MDS_BALLOON_DECIDE=2,
     MDS_BALLOON_UNDECIDE=3
 } MdsGalleryBalloonClip;
-typedef struct {uint32_t started;uint8_t active,clip;} MdsGalleryBalloonClan;
+typedef struct {uint32_t started;uint8_t active,clip,pending_select;} MdsGalleryBalloonClan;
 typedef struct {
     uint32_t favorite_scale_q16;
     unsigned balloon_alpha,favorite_alpha;
@@ -17,6 +17,12 @@ typedef struct {
 } MdsGalleryBalloonStyle;
 void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state);
 void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now);
+/* A changed gallery selection fades out the previous balloon with the
+ * original Unselect clip, then starts Select for the new selection.
+ * No source runtime scene-event timing is claimed by this DS transition. */
+void mds_gallery_balloon_clan_selection_changed(MdsGalleryBalloonClan *state,uint32_t now);
+/* Advance a queued transition; return 1 when Select begins (redraw). */
+int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now);
 /* Exact numeric CLVC playback; call sites for new clips need scene validation. */
 void mds_gallery_balloon_clan_play(MdsGalleryBalloonClan *state,
                                    MdsGalleryBalloonClip clip,uint32_t now);
