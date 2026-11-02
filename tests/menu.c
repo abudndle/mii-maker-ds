@@ -19,6 +19,12 @@ assert(mds_gallery_shoulder_direction(1,1)==0);
 assert(mds_gallery_shoulder_direction(-1,2)==0);
 /* Physical shoulder paging during a drag must not double-page on the
  * following held-stylus VBlank when the stylus is over an arrow. */
+/* A stylus release coinciding with L/R still latches its arrow;
+ * otherwise the release branch can page the destination twice. */
+assert(!mds_gallery_touch_arrow_latch_active(0,0));
+assert(mds_gallery_touch_arrow_latch_active(1,0));
+assert(mds_gallery_touch_arrow_latch_active(0,1));
+assert(mds_gallery_touch_arrow_latch_active(1,1));
 assert(mds_gallery_drag_arrow_latch_after_page(0,245,90,5)==0);
 assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,5)==1);
 assert(mds_gallery_drag_arrow_latch_after_page(1,5,90,5)==-1);

@@ -308,7 +308,9 @@ int main(void)
                         /* L/R already paged this drag: consume the held
                          * stylus arrow until it leaves and re-enters. */
                         gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(
-                            (input.held&KEY_TOUCH)!=0,live_touch_x,live_touch_y,page);
+                            mds_gallery_touch_arrow_latch_active(
+                                (input.held&KEY_TOUCH)!=0,(input.up&KEY_TOUCH)!=0),
+                            live_touch_x,live_touch_y,page);
                         mds_ui_gallery_navigation(direction,animation_vblanks);
                         drawn_screen=-1;
                     }

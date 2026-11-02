@@ -46,9 +46,12 @@ checks={
         "(down&KEY_TOUCH)!=0,(down&(KEY_L|KEY_R))!=0" in gallery and
         "int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);" in (root/"source/menu.h").read_text() and
         "return touch_down!=0&&shoulder_down==0;" in (root/"source/menu.c").read_text(),
-    "physical page consumes already-held touchscreen arrow":
+    "physical page consumes held or just-released touchscreen arrow":
         "gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(" in gallery and
-        "(input.held&KEY_TOUCH)!=0,live_touch_x,live_touch_y,page" in gallery,
+        "mds_gallery_touch_arrow_latch_active(" in gallery and
+        "(input.held&KEY_TOUCH)!=0,(input.up&KEY_TOUCH)!=0" in gallery and
+        "live_touch_x,live_touch_y,page" in gallery and
+        "return touch_held!=0||touch_up!=0;" in (root/"source/menu.c").read_text(),
     "continuous touch drag browses rooms over arrows": "if((input.held&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
                                       "mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow)" in gallery,
     "continuous arrow hover uses live VBlank coordinates": "mds_gallery_room_arrow(live_touch_x,live_touch_y,page)" in gallery,
