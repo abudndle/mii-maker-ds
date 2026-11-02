@@ -94,6 +94,17 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"status": "previous"})
             self.assertEqual(list(path.parent.glob(".private-acceptance-*.tmp")), [])
 
+    def test_symlinked_report_destination_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            original = Path(d) / "protected.json"
+            original.write_text("protected", encoding="utf-8")
+            destination = Path(d) / "report.json"
+            destination.symlink_to(original)
+            with self.assertRaises(ValueError):
+                write_report(destination, {"gameplay_verified": False})
+            self.assertEqual(original.read_text(encoding="utf-8"), "protected")
+            self.assertTrue(destination.is_symlink())
+
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "private.zip"
