@@ -42,4 +42,14 @@ require("Motion: %s" in ui and "UP/DOWN: Clip   START: Auto" in ui,
 require("mds_ui_motion_step(int direction)" in header and
         "mds_ui_motion_auto(void)" in header,
         "public UI control declarations missing")
+require("gallery_actor_render_local=local;" in ui and
+        "gallery_actor_render_local=UINT32_MAX;" in ui and
+        "mds_room_animation_motion_frame(&actor,motion_clip_ticks" in ui,
+        "the room gallery must use independent actor clocks for original motion frames")
+require("actor.clip=(uint8_t)clip;" in ui and
+        "gallery_female_by_male[motion_clip]" in ui,
+        "per-room animation frames must preserve gender clip name mapping")
+require("mds_room_animation_start(&gallery_actor_motion[i],0" in ui,
+        "changing playback mode must restart each room actor's clock")
+print("PASS: original 53-clip controls, gender name matching and mixed-pack fallback")
 print("PASS: original 53-clip controls, gender name matching and mixed-pack fallback")
