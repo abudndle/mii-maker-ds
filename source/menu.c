@@ -60,8 +60,10 @@ void mds_gallery_action_press_begin(MdsGalleryActionPress *gesture,
 void mds_gallery_action_press_bind_slot(MdsGalleryActionPress *gesture,unsigned slot)
 {
  if(!gesture)return;
- gesture->target_slot=gesture->pressed!=MDS_GALLERY_ACTION_NONE&&slot<100u?
-                      (int)slot:-1;
+ /* A corrupt or stale slot must disarm the gesture completely. Even the
+  * legacy release helper must never activate an unbound action. */
+ if(slot>=100u){mds_gallery_action_press_reset(gesture);return;}
+ gesture->target_slot=gesture->pressed!=MDS_GALLERY_ACTION_NONE?(int)slot:-1;
 }
 void mds_gallery_action_press_hold(MdsGalleryActionPress *gesture,int x,int y)
 {
@@ -121,13 +123,13 @@ int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down)
 }
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
 {
-    if(page>=10||!direction)return -1;
+    if(page>=10||selected>=100u||!direction)return -1;
     unsigned local=selected/10==page?selected%10:0;
     return (int)(page*10+(unsigned)((int)(local+10)+(direction>0?1:-1))%10);
 }
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction)
 {
-    if(page>=10||!direction)return -1;
+    if(page>=10||selected>=100u||!direction)return -1;
     unsigned position=selected/10==page?selected%10:0;
     /* Match original visible room-arrow limits: no hidden wrap from
      * the first room back to room ten or from the last to the first. */
