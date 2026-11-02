@@ -1204,7 +1204,8 @@ void mds_ui_gallery(const MdsGallery *g,unsigned page,unsigned selected,const ch
     }
     /* No Favorite/Copy label on empty slots: only Create is actionable. */
     if(g->used[selected]&&mds_ui_gallery_actions_visible(now)){
-        if(mds_ui_gallery_favorite_visible(now))
+        /* I_MyMii uses the parent alpha, not I_Favorite's UnDecide track. */
+        if(g->miis[selected].value[51]||mds_ui_gallery_favorite_visible(now))
             text_at(bottom,38,174,g->miis[selected].value[51]?"Owner":"Fav");
         text_at(bottom,124,174,"Copy");
     }
