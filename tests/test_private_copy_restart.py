@@ -34,8 +34,8 @@ class CopyRestartRunnerTests(unittest.TestCase):
         for capture in ("HOME", "GALLERY", "IMAGE"):
             self.assertIn('capture_copy_edit "$MELONDS_COPY_' + capture + '"', s)
             self.assertNotIn('import -window "$win" -depth 8 "$MELONDS_COPY_' + capture + '"', s)
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_'), 6)
-        self.assertEqual(s.count('timeout 5s xdotool windowfocus --sync "$win" || true'), 3)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_'), 7)
+        self.assertEqual(s.count('timeout 5s xdotool windowfocus --sync "$win" || true'), 4)
         self.assertNotIn('  xdotool windowfocus --sync "$win" || true', s)
         for marker in ("capturing reopened Home", "capturing saved gallery",
                        "capturing post-Copy gallery"):
@@ -95,13 +95,24 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-copy-postcopy.sav" "$PWD/mii-ds.sav"', s)
         self.assertLess(s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"'),
                         s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"'))
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 3)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 4)
         self.assertNotIn('import -window "$win"', s)
         self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
         self.assertIn('x + width <= 1280 && y + height <= 960', s)
         self.assertNotIn('import -window root -depth 8 "$destination"', s)
         for marker in ("capturing selected gallery", "capturing editor", "capturing B return"):
             self.assertIn("Edit acceptance: " + marker, s)
+        # The previous private run proved Edit entry but B returned an
+        # identical bottom-screen image. Retry only after a failed visual
+        # return check, otherwise a second B could exit the gallery.
+        self.assertIn('if ! python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"; then', s)
+        self.assertIn('B not observed; focusing game surface and retrying once', s)
+        self.assertIn('xdotool mousemove --window "$win" 128 65', s)
+        self.assertIn('sleep 0.6', s)
+        self.assertLess(s.index('B not observed; focusing game surface and retrying once'),
+                        s.index('sleep 0.6'))
+        self.assertIn('kill -0 "$emu_pid"', s)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"'), 2)
         self.assertIn('melonds-edit.png.gpg', self.workflow)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-postcopy.sav"', self.workflow)
 
