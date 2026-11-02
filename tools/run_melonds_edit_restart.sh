@@ -45,7 +45,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   echo "Edit acceptance: window ready"
   # The third isolated Qt instance has occasionally blocked XGetImage on
   # its window even though the window was visible. Fall back to capturing
-  # only that window's rectangle from the Xvfb root, never the whole desktop.
+  # only the window rectangle from the Xvfb root, never the whole desktop.
   capture_method=window
   capture_edit() {
     local destination="$1" geometry x y width height
