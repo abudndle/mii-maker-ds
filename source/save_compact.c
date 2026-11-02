@@ -7,16 +7,24 @@ static uint32_t get32(const uint8_t*p){return p[0]|(uint32_t)p[1]<<8|(uint32_t)p
 static void put32(uint8_t*p,uint32_t n){for(unsigned i=0;i<4;i++)p[i]=(uint8_t)(n>>(i*8));}
 static uint32_t crc(const uint8_t*p,size_t n){uint32_t c=~0u;for(size_t i=0;i<n;i++){c^=p[i];for(int k=0;k<8;k++)c=(c>>1)^(0xedb88320u&-(c&1));}return ~c;}
 static unsigned width(unsigned n){unsigned w=0;do{w++;n>>=1;}while(n);return w;}
+/* Both compact operations must keep the encoded EEPROM image separate from
+ * live gallery RAM. Decode uses a temporary gallery, but writing it back
+ * would still destroy an aliased source image. Compare offsets without
+ * adding lengths to pointers (which could wrap on 32-bit targets). */
+static int gallery_buffer_overlaps(const MdsGallery *g,const uint8_t *buffer,size_t n)
+{
+ uintptr_t gallery_addr=(uintptr_t)(const void *)g;
+ uintptr_t buffer_addr=(uintptr_t)(const void *)buffer;
+ return (buffer_addr>=gallery_addr&&buffer_addr-gallery_addr<sizeof *g)||
+        (buffer_addr<gallery_addr&&gallery_addr-buffer_addr<n);
+}
 int mds_compact_encode(const MdsGallery*g,uint8_t*out,size_t n)
 {
  if(!g||!out||n!=MDS_COMPACT_SIZE)return 0;
  /* A caller must not use gallery storage as the encoded image buffer.
   * Validation below reads the entire gallery; overlapping output would
   * overwrite still-needed Mii records before the encode completes. */
- uintptr_t gallery_addr=(uintptr_t)(const void *)g;
- uintptr_t output_addr=(uintptr_t)(void *)out;
- if((output_addr>=gallery_addr&&output_addr-gallery_addr<sizeof *g)||
-    (output_addr<gallery_addr&&gallery_addr-output_addr<n))return 0;
+ if(gallery_buffer_overlaps(g,out,n))return 0;
  /* Validate every slot before writing any bytes to the destination. */
  unsigned checked_personal=0;
  for(unsigned i=0;i<MDS_SLOTS;i++){
@@ -42,7 +50,8 @@ int mds_compact_encode(const MdsGallery*g,uint8_t*out,size_t n)
 }
 int mds_compact_load(MdsGallery*g,const uint8_t*in,size_t n)
 {
- if(!g||!in||n!=MDS_COMPACT_SIZE||memcmp(in,"MDSC",4)||(get32(in+4)!=1&&get32(in+4)!=2)||get32(in+12)!=BODY||get32(in+BODY)!=crc(in,BODY))return 0;
+ if(!g||!in||n!=MDS_COMPACT_SIZE||gallery_buffer_overlaps(g,in,n)||
+    memcmp(in,"MDSC",4)||(get32(in+4)!=1&&get32(in+4)!=2)||get32(in+12)!=BODY||get32(in+BODY)!=crc(in,BODY))return 0;
  unsigned version=get32(in+4);MdsGallery tmp;mds_gallery_new(&tmp);tmp.generation=get32(in+8);tmp.active_bank=2;memcpy(tmp.settings,in+16,8);
  unsigned personal=0;
  for(unsigned i=0;i<MDS_SLOTS;i++){
