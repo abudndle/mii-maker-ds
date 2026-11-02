@@ -78,7 +78,7 @@ int main(int argc,char **argv)
     unsigned visible=0;
     for(unsigned i=0;i<PREVIEW_PIXELS;i++)visible+=(pixels[i]&0x8000u)!=0u;
     assert(visible>1000u);
-    if(!total || (gender==1 && n==0 && k==0)){
+    if(n==0 && k==0){
      baseline_mesh=mesh;baseline_image=image;
     }else{
      changed_mesh+=mesh!=baseline_mesh;
