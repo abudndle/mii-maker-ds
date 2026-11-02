@@ -28,7 +28,10 @@ void mds_room_select(MdsRoomCache *cache,unsigned selected)
  unsigned start=mds_room_start(selected);
  if(cache->start!=start){
   cache->start=start;
-  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++)cache->actor[i].valid=0;
+  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++){
+   cache->actor[i].valid=0;
+   cache->actor[i].refresh_pending=0;
+  }
  }
 }
 int mds_room_matches(const MdsRoomCache *cache,unsigned selected,unsigned local,const MdsAvatar *a)
@@ -50,6 +53,7 @@ int mds_room_capture(MdsRoomCache *cache,unsigned selected,unsigned local,const 
        (x*MDS_ROOM_SOURCE/MDS_ROOM_W)];
  memcpy(actor->appearance,a->value,MDS_FIELDS);
  actor->valid=1;
+ actor->refresh_pending=0;
  return 1;
 }
 int mds_room_blit(const MdsRoomCache *cache,unsigned selected,unsigned local,uint16_t *dst,unsigned width,unsigned height,int x,int y)
@@ -81,11 +85,13 @@ int mds_room_next_refresh(const MdsRoomCache *cache,
 {
  if(!cache||!occupied||!attempts)return -1;
  for(unsigned i=0;i<MDS_ROOM_SLOTS;i++)
-  if(occupied[i]&&!cache->actor[i].valid&&attempts[i]<3u)return -1;
+  if(occupied[i]&&(!cache->actor[i].valid||
+      cache->actor[i].refresh_pending)&&attempts[i]<3u)return -1;
  for(unsigned n=0;n<MDS_ROOM_SLOTS;n++){
   /* Reduce the cursor first: cursor + n may overflow on 32-bit ARM. */
   unsigned i=((cursor%MDS_ROOM_SLOTS)+n)%MDS_ROOM_SLOTS;
-  if(occupied[i]&&cache->actor[i].valid&&attempts[i]<3u)return (int)i;
+  if(occupied[i]&&cache->actor[i].valid&&
+     !cache->actor[i].refresh_pending&&attempts[i]<3u)return (int)i;
  }
  return -1;
 }
