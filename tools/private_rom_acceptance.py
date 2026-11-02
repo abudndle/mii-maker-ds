@@ -24,8 +24,8 @@ def commands(archive, docker=False, emulator=None):
     return steps
 
 
-def sha256_file(path):
-    """Hash large private ROMs and archives without loading them into RAM."""
+def sha256_file_info(path):
+    """Hash private evidence and return the matching descriptor metadata."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as source:
         before = os.fstat(source.fileno())
@@ -39,7 +39,26 @@ def sha256_file(path):
         raise ValueError("private evidence file replaced while hashing")
     if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
         raise ValueError("private evidence file changed while hashing")
-    return digest.hexdigest()
+    return digest.hexdigest(), after
+
+
+def sha256_file(path):
+    """Hash large private ROMs and archives without loading them into RAM."""
+    return sha256_file_info(path)[0]
+
+
+def _evidence_still_current(path, hashed_stat):
+    """Reject a file changed or replaced while hashing the other evidence."""
+    path = Path(path)
+    if path.is_symlink():
+        raise ValueError("private evidence file replaced after hashing")
+    try:
+        current = path.stat()
+    except OSError as exc:
+        raise ValueError("private evidence file disappeared after hashing") from exc
+    fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+    if any(getattr(current, key) != getattr(hashed_stat, key) for key in fields):
+        raise ValueError("private evidence file changed after hashing")
 
 
 def make_report(rom, archive, emulator_launched=False):
@@ -48,11 +67,18 @@ def make_report(rom, archive, emulator_launched=False):
         raise ValueError("private ROM evidence requires a nonempty regular ROM file")
     if archive.is_symlink() or not archive.is_file() or archive.stat().st_size == 0:
         raise ValueError("private ROM evidence requires a nonempty regular resource archive")
+    # Both hashes and byte lengths come from the same open descriptors.
+    # Recheck both paths after hashing the other file, not just at open time:
+    # otherwise an atomic rename could pair an old ROM digest with a new size.
+    rom_hash, rom_stat = sha256_file_info(rom)
+    archive_hash, archive_stat = sha256_file_info(archive)
+    _evidence_still_current(rom, rom_stat)
+    _evidence_still_current(archive, archive_stat)
     return {
-        "private_rom_sha256": sha256_file(rom),
-        "private_rom_bytes": rom.stat().st_size,
-        "archive_sha256": sha256_file(archive),
-        "archive_bytes": archive.stat().st_size,
+        "private_rom_sha256": rom_hash,
+        "private_rom_bytes": rom_stat.st_size,
+        "archive_sha256": archive_hash,
+        "archive_bytes": archive_stat.st_size,
         "emulator_launched": bool(emulator_launched),
         "gameplay_verified": False,
     }

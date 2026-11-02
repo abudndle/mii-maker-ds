@@ -62,6 +62,42 @@ class AcceptanceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "changed while hashing"):
                     sha256_file(archive)
 
+    def test_report_rejects_rom_swapped_after_hash_before_archive_finishes(self):
+        from private_rom_acceptance import sha256_file_info
+        with tempfile.TemporaryDirectory() as d:
+            rom, archive = Path(d) / "rom.nds", Path(d) / "archive.zip"
+            replacement = Path(d) / "replacement.nds"
+            rom.write_bytes(b"old synthetic ROM")
+            archive.write_bytes(b"synthetic archive")
+            replacement.write_bytes(b"new synthetic ROM of a different size")
+            def swap_after_archive(path):
+                result = sha256_file_info(path)
+                if Path(path) == archive:
+                    replacement.replace(rom)
+                return result
+            with mock.patch("private_rom_acceptance.sha256_file_info",
+                            side_effect=swap_after_archive):
+                with self.assertRaisesRegex(ValueError, "changed after hashing"):
+                    make_report(rom, archive)
+
+    def test_report_rejects_archive_swapped_after_its_hash(self):
+        from private_rom_acceptance import sha256_file_info
+        with tempfile.TemporaryDirectory() as d:
+            rom, archive = Path(d) / "rom.nds", Path(d) / "archive.zip"
+            replacement = Path(d) / "replacement.zip"
+            rom.write_bytes(b"synthetic ROM")
+            archive.write_bytes(b"original synthetic archive")
+            replacement.write_bytes(b"replacement synthetic archive")
+            def swap_after_hash(path):
+                result = sha256_file_info(path)
+                if Path(path) == archive:
+                    replacement.replace(archive)
+                return result
+            with mock.patch("private_rom_acceptance.sha256_file_info",
+                            side_effect=swap_after_hash):
+                with self.assertRaisesRegex(ValueError, "changed after hashing"):
+                    make_report(rom, archive)
+
     def test_missing_rom_evidence_fails(self):
         with tempfile.TemporaryDirectory() as d:
             missing = Path(d) / "missing.nds"
