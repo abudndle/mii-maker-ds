@@ -23,8 +23,9 @@ require("mds_ui_motion_auto()" in gallery and "down&KEY_START" in gallery,
 require("int mds_ui_motion_step(int direction)" in ui and
         "int mds_ui_motion_auto(void)" in ui,
         "gallery playback control implementation missing")
-require("mds_motion_cycle(&motions[0],gallery_selected_clip,direction)" in ui,
-        "gallery navigation no longer uses checked catalog cycling")
+require("mds_motion_primary(motions)" in ui and
+        "mds_motion_cycle(&motions[primary],gallery_selected_clip,direction)" in ui,
+        "gallery navigation must select the available original motion catalog")
 require("gallery_selected_clip=-1" in ui and
         "gallery_selected_clip>=0)clip=gallery_selected_clip" in ui,
         "manual selection no longer overrides idle autoplay")
@@ -33,10 +34,19 @@ require("mds_motion_find(&motions[1],motions[0].clips[i].name)" in ui,
 require("gallery_female_by_male[motion_clip]" in ui and
         "gallery_female_by_male[clip]" in ui,
         "preview and redraw must both resolve female clip by name")
-require("else if(!motions[1].file){" in ui and
+require("if(!motions[1].file){" in ui and
         "mds_animation_pose(&animations[1],ticks,&sampled)" in ui and
         "female_key=sampled;" in ui,
         "female sampled-animation fallback must advance without a female MSP1 pack")
+require("if(!motions[0].file){" in ui and
+        "mds_animation_pose(&animations[0],ticks,&sampled)" in ui and
+        "male_key=sampled;" in ui,
+        "male sampled-animation fallback must advance without a male MSP1 pack")
+require("mds_motion_find(&motions[primary],gallery_idle_names[i])" in ui and
+        "if((unsigned)primary==gender)selected=(int)motion_clip;" in ui,
+        "female-only original MSP1 must control idle selection and actual rendered poses")
+require("motions[primary].clips[gallery_selected_clip].name" in ui,
+        "motion UI must show available original rig clip names")
 require("Motion: %s" in ui and "UP/DOWN: Clip   START: Auto" in ui,
         "gallery does not display selected clip and controls")
 require("mds_ui_motion_step(int direction)" in header and
@@ -51,5 +61,4 @@ require("actor.clip=(uint8_t)clip;" in ui and
         "per-room animation frames must preserve gender clip name mapping")
 require("mds_room_animation_start(&gallery_actor_motion[i],0" in ui,
         "changing playback mode must restart each room actor's clock")
-print("PASS: original 53-clip controls, gender name matching and mixed-pack fallback")
-print("PASS: original 53-clip controls, gender name matching and mixed-pack fallback")
+print("PASS: original 53-clip controls, single-gender rig recovery and mixed-pack fallback")
