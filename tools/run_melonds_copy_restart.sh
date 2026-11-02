@@ -80,14 +80,16 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   done
   test -n "$win"
   sleep 12
-  import -window "$win" -depth 8 "$MELONDS_COPY_HOME"
-  xdotool windowfocus --sync "$win" || true
+  echo "Copy acceptance: capturing reopened Home"
+  capture_copy_edit "$MELONDS_COPY_HOME"
+  timeout 5s xdotool windowfocus --sync "$win" || true
   xdotool mousemove --window "$win" 120 232
   xdotool mousedown 1
   sleep 0.45
   xdotool mouseup 1
   sleep 15
-  import -window "$win" -depth 8 "$MELONDS_COPY_GALLERY"
+  echo "Copy acceptance: capturing saved gallery"
+  capture_copy_edit "$MELONDS_COPY_GALLERY"
   # A second process must actually load the previous 10-Mii save.
   python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_GALLERY"
   capture_height="$(identify -format "%h" "$MELONDS_COPY_GALLERY")"
@@ -104,7 +106,8 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   xdotool mouseup 1
   sleep 5
   kill -0 "$emu_pid"
-  import -window "$win" -depth 8 "$MELONDS_COPY_IMAGE"
+  echo "Copy acceptance: capturing post-Copy gallery"
+  capture_copy_edit "$MELONDS_COPY_IMAGE"
   test -s "$MELONDS_COPY_IMAGE"
   # Prove the Copy transaction completed BEFORE attempting Edit. The
   # subsequent byte-identity check is relative to this post-Copy snapshot,
@@ -112,7 +115,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   python3 tools/check_gallery_copy_save.py "$RUNNER_TEMP/melonds-copy-before.sav" "$PWD/mii-ds.sav" --report "$RUNNER_TEMP/melonds-copy-save.json"
   cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"
   echo "Edit acceptance: Copy persisted; selecting ordinary Mii"
-  xdotool windowfocus --sync "$win" || true
+  timeout 5s xdotool windowfocus --sync "$win" || true
   xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
   xdotool mousedown 1
   sleep 0.25
@@ -132,7 +135,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   capture_copy_edit "$MELONDS_COPY_EDIT_IMAGE"
   python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"
   echo "Edit acceptance: editor transition confirmed"
-  xdotool windowfocus --sync "$win" || true
+  timeout 5s xdotool windowfocus --sync "$win" || true
   xdotool keydown --clearmodifiers z
   sleep 0.35
   xdotool keyup --clearmodifiers z
