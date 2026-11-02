@@ -84,6 +84,16 @@ class RuntimeAssets(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Unsafe/duplicate'):
             module.verify(self.archive,self.root)
 
+    def test_symlinked_private_archive_entry(self):
+        self.write_archive()
+        with zipfile.ZipFile(self.archive, 'a') as z:
+            info = zipfile.ZipInfo('nitrofiles/ui/symlink.rgb555')
+            info.create_system = 3
+            info.external_attr = (0o120777 << 16)
+            z.writestr(info, 'outside-resource.rgb555')
+        with self.assertRaisesRegex(ValueError, 'symlinked private NitroFS'):
+            module.verify(self.archive, self.root)
+
     def test_dynamic_template_drift(self):
         path=self.root/'source/ui.c'
         path.write_text(path.read_text().replace('nitro:/ui/%s.rgb555','nitro:/ui/%d.rgb555'))
