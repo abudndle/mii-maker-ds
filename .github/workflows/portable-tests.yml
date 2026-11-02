@@ -45,6 +45,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_check_gallery_copy_save.py
       - name: Verify private second-process melonDS Copy wiring and cleanup
         run: python3 -m unittest discover -s tests -p test_private_copy_restart.py
+      - name: Verify running melonDS Qt config origin and B binding (synthetic /proc)
+        run: python3 -m unittest discover -s tests -p test_verify_melonds_input_config.py
       - name: Verify trusted third-process Edit/cancel runner and encrypted artifact policy
         run: python3 -m unittest discover -s tests -p test_private_edit_restart.py
       - name: Install Pillow required by strict framebuffer regression tests

@@ -86,6 +86,10 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertLess(s.index('[Instance0.Keyboard]'), s.index('B = 90'))
         self.assertIn('tomllib.loads(pathlib.Path(sys.argv[1]).read_text())', s)
         self.assertIn('cfg["Instance0"]["Keyboard"]["B"] == 90', s)
+        self.assertIn('python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"', s)
+        self.assertLess(s.index('verify_melonds_input_config.py --pid'),
+                        s.index('Copy acceptance: capturing reopened Home'))
+        self.assertNotIn('cat "$MELONDS_COPY_LOG"', s)
         self.assertNotIn('export XDG_CONFIG_HOME=', s)
         self.assertIn('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)

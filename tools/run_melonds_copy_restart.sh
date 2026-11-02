@@ -119,6 +119,15 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     sleep 1
   done
   test -n "$win"
+  # Do not trust an on-disk TOML alone: melonDS 1.1 may select an AppImage
+  # portable directory or an inherited XDG root. Inspect only the running
+  # Qt process executable and HOME/config origin, never print private paths.
+  qt_pid="$(pgrep -n -x melonDS || true)"
+  if [ -z "$qt_pid" ]; then
+    echo "FAIL: no running melonDS Qt process for B mapping audit"
+    exit 1
+  fi
+  python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"
   sleep 12
   if ! kill -0 "$emu_pid" 2>/dev/null; then
     echo "FAIL: restarted emulator launcher exited before Home capture"
