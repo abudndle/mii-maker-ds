@@ -24,6 +24,15 @@ def commands(archive, docker=False, emulator=None):
     return steps
 
 
+def sha256_file(path):
+    """Hash large private ROMs and archives without loading them into RAM."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def make_report(rom, archive, emulator_launched=False):
     rom, archive = Path(rom), Path(archive)
     if rom.is_symlink() or not rom.is_file() or rom.stat().st_size == 0:
@@ -31,9 +40,9 @@ def make_report(rom, archive, emulator_launched=False):
     if archive.is_symlink() or not archive.is_file() or archive.stat().st_size == 0:
         raise ValueError("private ROM evidence requires a nonempty regular resource archive")
     return {
-        "private_rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
+        "private_rom_sha256": sha256_file(rom),
         "private_rom_bytes": rom.stat().st_size,
-        "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "archive_sha256": sha256_file(archive),
         "emulator_launched": bool(emulator_launched),
         "gameplay_verified": False,
     }

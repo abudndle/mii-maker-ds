@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from private_rom_acceptance import commands, make_report, launch_emulator, write_report, ROOT
+from private_rom_acceptance import commands, make_report, launch_emulator, write_report, sha256_file, ROOT
 
 
 class AcceptanceTests(unittest.TestCase):
@@ -22,6 +22,14 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(report["private_rom_bytes"], len(b"synthetic rom"))
             self.assertTrue(report["emulator_launched"])
             self.assertFalse(report["gameplay_verified"])
+
+    def test_streaming_hash_matches_standard_sha256_across_chunks(self):
+        with tempfile.TemporaryDirectory() as d:
+            sample = Path(d) / "large-private-fixture.bin"
+            data = (b"private synthetic fixture" * 50000) + b"tail"
+            sample.write_bytes(data)
+            self.assertGreater(len(data), 1024 * 1024)
+            self.assertEqual(sha256_file(sample), hashlib.sha256(data).hexdigest())
 
     def test_missing_rom_evidence_fails(self):
         with tempfile.TemporaryDirectory() as d:
