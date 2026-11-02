@@ -943,7 +943,9 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     uint32_t elapsed=walk_clock_valid?(uint32_t)(animation_clock-walk_last_clock):0u;
     walk_last_clock=animation_clock;
     walk_clock_valid=1;
-    walk_ticks+=elapsed;
+    /* The room walk repeats every 64 phases of 12 VBlanks. Keep the
+     * accumulator bounded so long-running sessions never wrap mid-phase. */
+    walk_ticks=((walk_ticks%768u)+(elapsed%768u))%768u;
     /* Advance recall for every slot, including temporarily empty slots,
      * so a Mii added during recall begins at its home position. */
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
