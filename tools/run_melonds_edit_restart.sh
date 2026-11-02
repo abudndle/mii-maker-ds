@@ -43,15 +43,43 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   done
   test -n "$win"
   echo "Edit acceptance: window ready"
+  # The third isolated Qt instance has occasionally blocked XGetImage on
+  # its window even though the window was visible. Fall back to capturing
+  # only the window rectangle from the Xvfb root, never the whole desktop.
+  capture_method=window
+  capture_edit() {
+    local destination="$1" geometry x y width height
+    if [ "$capture_method" = window ]; then
+      if timeout 8s import -window "$win" -depth 8 "$destination"; then
+        return 0
+      fi
+      capture_method=root
+      echo "Edit acceptance: window capture unavailable; using root-region fallback"
+    fi
+    geometry="$(timeout 5s xdotool getwindowgeometry --shell "$win")"
+    x="$(printf "%s\\n" "$geometry" | sed -n "s/^X=//p")"
+    y="$(printf "%s\\n" "$geometry" | sed -n "s/^Y=//p")"
+    width="$(printf "%s\\n" "$geometry" | sed -n "s/^WIDTH=//p")"
+    height="$(printf "%s\\n" "$geometry" | sed -n "s/^HEIGHT=//p")"
+    if ! [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ &&
+            "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] ||
+       ! (( width >= 256 && height >= 384 &&
+             x + width <= 1280 && y + height <= 960 )); then
+      echo "FAIL: invalid bounded Edit capture geometry"
+      return 1
+    fi
+    timeout 12s import -window root -depth 8 -crop "${width}x${height}+${x}+${y}" +repage "$destination"
+  }
+
   sleep 12
-  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_HOME"
+  capture_edit "$MELONDS_EDIT_HOME"
   timeout 5s xdotool windowfocus --sync "$win" || true
   timeout 5s xdotool mousemove --window "$win" 120 232
   timeout 5s xdotool mousedown 1
   sleep 0.45
   timeout 5s xdotool mouseup 1
   sleep 15
-  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
+  capture_edit "$MELONDS_EDIT_GALLERY"
   echo "Edit acceptance: verifying gallery entry"
   timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_GALLERY"
   capture_height="$(timeout 5s identify -format "%h" "$MELONDS_EDIT_GALLERY")"
@@ -64,7 +92,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   sleep 4
   # Refresh the baseline AFTER selecting slot 1. Otherwise a selection-only
   # repaint could masquerade as a successful Edit transition.
-  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_GALLERY"
+  capture_edit "$MELONDS_EDIT_GALLERY"
   echo "Edit acceptance: selected ordinary Mii"
   # Actual touchscreen Edit strip (172..247,168..190).
   timeout 5s xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
@@ -73,7 +101,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   timeout 5s xdotool mouseup 1
   sleep 6
   kill -0 "$emu_pid"
-  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_IMAGE"
+  capture_edit "$MELONDS_EDIT_IMAGE"
   echo "Edit acceptance: verifying editor transition"
   timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
   # No draft changes: B must leave Edit without a cartridge mutation.
@@ -85,7 +113,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   timeout 5s xdotool keyup --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
-  timeout 12s import -window "$win" -depth 8 "$MELONDS_EDIT_RETURN"
+  capture_edit "$MELONDS_EDIT_RETURN"
   echo "Edit acceptance: verifying B return"
   timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"
   timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_RETURN" "$MELONDS_EDIT_IMAGE"
