@@ -87,6 +87,9 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('tomllib.loads(pathlib.Path(sys.argv[1]).read_text())', s)
         self.assertIn('cfg["Instance0"]["Keyboard"]["B"] == 90', s)
         self.assertIn('python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"', s)
+        self.assertIn('xdotool getwindowpid "$win"', s)
+        self.assertNotIn('qt_pid="$(pgrep -n -x melonDS', s)
+        self.assertIn('[ ! -r "/proc/$qt_pid/environ" ]', s)
         self.assertLess(s.index('verify_melonds_input_config.py --pid'),
                         s.index('Copy acceptance: capturing reopened Home'))
         self.assertNotIn('cat "$MELONDS_COPY_LOG"', s)
