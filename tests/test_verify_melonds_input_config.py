@@ -64,17 +64,29 @@ class ConfigOriginTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unreadable"):
             inspect(1234, self.home, self.proc)
 
-    def test_prelaunch_fingerprint_detects_emulator_rewrite(self):
+    def test_prelaunch_fingerprint_allows_only_semantically_valid_rewrites(self):
         expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
         self.assertEqual(inspect(1234, self.home, self.proc, expected),
                          "isolated-home")
+        # melonDS 1.1 serializes its config at runtime. The original bytes
+        # need not survive, but the process-effective B binding must.
+        self.config.write_text("[Instance0.Keyboard]\nA = 65\nB = 90\n")
+        self.assertEqual(inspect(1234, self.home, self.proc, expected),
+                         "isolated-home-normalized")
         self.config.write_text("[Instance0.Keyboard]\nA = 90\n")
-        with self.assertRaisesRegex(ValueError, "changed isolated B config"):
-            inspect(1234, self.home, self.proc, expected)
-        # No fingerprint: report the missing mapping distinctly from
-        # malformed TOML, without printing the configuration path.
         with self.assertRaisesRegex(ValueError, "effective B mapping is missing"):
-            inspect(1234, self.home, self.proc)
+            inspect(1234, self.home, self.proc, expected)
+
+    def test_rewritten_mapping_cannot_silently_disable_b(self):
+        expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
+        for bad in ("B = -1", "B = 65", "B = true"):
+            with self.subTest(bad=bad):
+                self.config.write_text("[Instance0.Keyboard]\n" + bad + "\n")
+                with self.assertRaisesRegex(ValueError, "not Qt::Key_Z"):
+                    inspect(1234, self.home, self.proc, expected)
+        self.config.write_text("[Instance0.Keyboard\nB = 90\n")
+        with self.assertRaisesRegex(ValueError, "unreadable"):
+            inspect(1234, self.home, self.proc, expected)
 
     def test_invalid_fingerprint_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "invalid expected config fingerprint"):
