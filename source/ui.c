@@ -98,11 +98,12 @@ void mds_ui_gallery_clan_reset(void)
 int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now)
 {
     int changed=mds_gallery_clan_update(&gallery_clan_state,page,selected,now);
-    if(changed)mds_gallery_balloon_clan_select(&gallery_balloon_state,now);
+    if(changed)mds_gallery_balloon_clan_selection_changed(&gallery_balloon_state,now);
+    int balloon_transition=mds_gallery_balloon_clan_tick(&gallery_balloon_state,now);
     int active=mds_gallery_clan_active(&gallery_clan_state,now)||
                mds_gallery_balloon_clan_active(&gallery_balloon_state,now)||
                mds_gallery_nav_clan_active(&gallery_nav_clan_state,now);
-    int repaint=changed||(active&&gallery_clan_painted!=now)||
+    int repaint=changed||balloon_transition||(active&&gallery_clan_painted!=now)||
                 (gallery_clan_was_active&&!active);
     gallery_clan_was_active=active;
     return repaint;
