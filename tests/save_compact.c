@@ -50,5 +50,31 @@ int main(void){
  assert(!memcmp(&overlap.gallery,&b,sizeof b));
  assert(mds_compact_encode(&a,image,sizeof image));
  assert(!memcmp(&a,&b,sizeof a));
- puts("PASS: 100 compact slots, all fields, Unicode round trip, limits, invalid UTF-8, corruption, truncation and overlapping output");
+ /* A valid compact image must not be decoded into overlapping gallery RAM:
+  * even successful temporary decoding would overwrite its source bytes. */
+ static struct {
+  uint8_t prefix[MDS_COMPACT_SIZE];
+  MdsGallery gallery;
+  uint8_t suffix[MDS_COMPACT_SIZE];
+ } input_alias;
+ memcpy((uint8_t *)&input_alias.gallery,image,sizeof image);
+ b=input_alias.gallery;
+ assert(!mds_compact_load(&input_alias.gallery,
+         (const uint8_t *)&input_alias.gallery,MDS_COMPACT_SIZE));
+ assert(!memcmp(&input_alias.gallery,&b,sizeof b));
+ /* An image starting one byte before the gallery is also forbidden. */
+ uint8_t *before=input_alias.prefix+MDS_COMPACT_SIZE-1u;
+ memcpy(before,image,sizeof image);
+ b=input_alias.gallery;
+ assert(!mds_compact_load(&input_alias.gallery,before,MDS_COMPACT_SIZE));
+ assert(!memcmp(&input_alias.gallery,&b,sizeof b));
+ /* Likewise an image starting at the last gallery byte. */
+ uint8_t *after=(uint8_t *)&input_alias.gallery+sizeof input_alias.gallery-1u;
+ memcpy(after,image,sizeof image);
+ b=input_alias.gallery;
+ assert(!mds_compact_load(&input_alias.gallery,after,MDS_COMPACT_SIZE));
+ assert(!memcmp(&input_alias.gallery,&b,sizeof b));
+ /* The exact same encoded image still loads into independent storage. */
+ assert(mds_compact_load(&b,image,sizeof image));
+ puts("PASS: 100 compact slots, all fields, Unicode, corruption, truncation and bidirectional alias guards");
 }
