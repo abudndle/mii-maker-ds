@@ -45,8 +45,11 @@ def main():
     args = parser.parse_args()
     if not args.archive.is_file():
         parser.error("private resource archive not found")
-    if args.emulator and not Path(args.emulator).is_file():
-        parser.error("emulator executable not found; provide an existing melonDS executable path")
+    if args.emulator:
+        emulator_path = Path(args.emulator).expanduser().resolve()
+        if not emulator_path.is_file():
+            parser.error("emulator executable not found; provide an existing melonDS executable path")
+        args.emulator = str(emulator_path)
     build_command = commands(args.archive, docker=args.docker)[0]
     print("+", " ".join(build_command), flush=True)
     subprocess.run(build_command, cwd=ROOT, check=True)
@@ -61,11 +64,14 @@ def main():
     if args.emulator:
         emulator_command = commands(args.archive, docker=args.docker, emulator=args.emulator)[1]
         print("+", " ".join(emulator_command), flush=True)
-        subprocess.run(emulator_command, cwd=ROOT, check=True)
+        process = subprocess.Popen(emulator_command, cwd=ROOT)
         report["emulator_launched"] = True
         report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        exit_code = process.wait()
+        if exit_code != 0:
+            raise subprocess.CalledProcessError(exit_code, emulator_command)
     if args.emulator:
-        print("NOTE: emulator was launched; manual gameplay and save-persistence acceptance remain required")
+        print("NOTE: emulator process started and exited successfully; manual gameplay and save-persistence acceptance remain required")
     else:
         print("NOTE: emulator was not run")
     return 0
