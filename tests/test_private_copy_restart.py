@@ -128,7 +128,7 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-copy-postcopy.sav" "$PWD/mii-ds.sav"', s)
         self.assertLess(s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"'),
                         s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"'))
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 4)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 5)
         self.assertNotIn('import -window "$win"', s)
         self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
         self.assertIn('x + width <= 1280 && y + height <= 960', s)
