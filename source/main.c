@@ -435,7 +435,9 @@ int main(void)
                 }else if(gallery_drag.source>=0){
                     gallery_drag_arrow_latch=0;
                     int destination=mds_gallery_drag_end(&gallery_drag,page,
-                        mds_gallery_touch(input.touch.px,input.touch.py,page),&source);
+                        mds_gallery_drag_release_destination(
+                            mds_gallery_touch(input.touch.px,input.touch.py,page),
+                            (down&(KEY_L|KEY_R))!=0),&source);
                     /* Erase the floating thumbnail even when tap selects the
                      * same slot or a drag is cancelled outside the grid. */
                     drawn_screen=-1;
