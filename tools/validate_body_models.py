@@ -10,17 +10,20 @@ MAX_VERTICES = 12000
 
 def inspect_bytes(data: bytes, name: str = 'body mesh') -> tuple[int, int]:
     path = name
-    if len(data) < 56 or data[:4] != b'BOD2':
-        raise ValueError(f'{path}: expected BOD2 original body mesh')
+    if len(data) < 56 or data[:4] not in (b'BOD2', b'BOD3'):
+        raise ValueError(f'{path}: expected BOD2/BOD3 original body mesh')
+    # BOD2 stores signed 16-bit positions; BOD3 is the wide-coordinate
+    # variant emitted by body_models.py for source meshes outside that range.
+    stride, material_offset, bone_offset = (12, 9, 10) if data[:4] == b'BOD2' else (18, 15, 16)
     count = struct.unpack_from('<I', data, 4)[0]
-    if not 0 < count <= MAX_VERTICES or count % 3 or len(data) != 56 + count * 12:
+    if not 0 < count <= MAX_VERTICES or count % 3 or len(data) != 56 + count * stride:
         raise ValueError(f'{path}: invalid triangle count or mesh length')
     matrix = struct.unpack_from('<12f', data, 8)
     if not all(math.isfinite(x) and abs(x) <= 4096 for x in matrix):
         raise ValueError(f'{path}: invalid head-bone transform')
     for index in range(count):
-        start = 56 + index * 12
-        material, bone = data[start + 9], data[start + 10]
+        start = 56 + index * stride
+        material, bone = data[start + material_offset], data[start + bone_offset]
         if bone >= BONES:
             raise ValueError(f'{path}: vertex {index} references missing bone {bone}')
         if material > 1:
