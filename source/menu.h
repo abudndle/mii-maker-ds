@@ -77,6 +77,9 @@ int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned 
 /* When L/R and a fresh stylus press arrive in one VBlank, shoulder paging
  * takes priority. Do not select or grab a box in the newly displayed room. */
 int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);
+/* Simultaneous opposite shoulder edges cancel instead of arbitrarily
+ * paging left; this also applies while dragging a Mii between rooms. */
+int mds_gallery_shoulder_direction(int left_down,int right_down);
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 /* Move to the next ten-slot page without losing the cursor position. */
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction);
