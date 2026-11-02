@@ -14,6 +14,20 @@ class EditRestartRunnerTests(unittest.TestCase):
     def test_shell_syntax(self):
         subprocess.run(["bash", "-n", str(SCRIPT)], check=True)
 
+    def test_edit_touch_commands_are_real_shell_lines(self):
+        # A previous patch accidentally embedded literal backslash-n text
+        # inside a shell comment, silently commenting out both touch moves.
+        # bash -n accepts that script, so verify executable line boundaries.
+        lines = SCRIPT.read_text().splitlines()
+        focus = '  timeout 5s xdotool windowfocus --sync "$win" || true'
+        for command in (
+            '  timeout 5s xdotool mousemove --window "$win" 82 "$((touch_origin+71))"',
+            '  timeout 5s xdotool mousemove --window "$win" 210 "$((touch_origin+179))"',
+        ):
+            self.assertEqual(lines.count(command), 1)
+            self.assertEqual(lines[lines.index(command) - 1], focus)
+        self.assertNotIn(r'\n  timeout 5s xdotool', SCRIPT.read_text())
+
     def test_private_startup_diagnostics_never_echo_raw_paths(self):
         classifier = ROOT / "tools/classify_melonds_startup.py"
         samples = {
