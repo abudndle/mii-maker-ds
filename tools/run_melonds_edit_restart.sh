@@ -6,6 +6,27 @@ test "$(stat -c %s mii-ds.sav)" -eq 8192
 bin_dir="$RUNNER_TEMP/melonds-1.1"
 appimage="$(find "$bin_dir" -maxdepth 3 -type f -name '*.AppImage' -print -quit)"
 test -n "$appimage"
+# The two preceding isolated Xvfb stages must not leave a real Qt emulator
+# behind. AppImage child processes can detach from their launcher's process
+# group and redirect later ROM launches to a stale instance. This trusted
+# GitHub-hosted runner is dedicated to this job; terminate only the exact
+# melonDS executable name, never arbitrary user processes or path matches.
+if pgrep -x melonDS >/dev/null 2>&1; then
+  echo "Edit acceptance: reaping stale emulator from earlier stage"
+  pkill -TERM -x melonDS 2>/dev/null || true
+  for attempt in 1 2 3 4 5; do
+    if ! pgrep -x melonDS >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+  if pgrep -x melonDS >/dev/null 2>&1; then
+    pkill -KILL -x melonDS 2>/dev/null || true
+    sleep 1
+  fi
+  if pgrep -x melonDS >/dev/null 2>&1; then
+    echo "FAIL: previous melonDS process survived cleanup; refusing Edit test"
+    exit 1
+  fi
+fi
 # Extract the verified AppImage once and launch AppRun directly for the
 # third emulator process. The AppImage --appimage-extract-and-run wrapper
 # has intermittently exited with status 127 before the first Edit capture,
