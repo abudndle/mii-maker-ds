@@ -74,6 +74,9 @@ int mds_gallery_room_arrow(int x,int y,unsigned page);
 /* Prevent a held stylus over an arrow from causing an extra room transition
  * immediately after L/R has already changed the destination room. */
 int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned page);
+/* When L/R and a fresh stylus press arrive in one VBlank, shoulder paging
+ * takes priority. Do not select or grab a box in the newly displayed room. */
+int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction);
 /* Move to the next ten-slot page without losing the cursor position. */
 int mds_gallery_page_step(unsigned page,unsigned selected,int direction);
