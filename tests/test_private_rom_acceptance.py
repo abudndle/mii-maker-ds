@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from private_rom_acceptance import commands, make_report, launch_emulator, ROOT
+from private_rom_acceptance import commands, make_report, launch_emulator, write_report, ROOT
 
 
 class AcceptanceTests(unittest.TestCase):
@@ -73,6 +73,15 @@ class AcceptanceTests(unittest.TestCase):
                 launch_emulator([str(Path(d) / "nonexistent-emulator")], report, path)
             self.assertFalse(report["emulator_launched"])
             self.assertFalse(path.exists())
+
+    def test_atomic_report_replacement(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "build" / "private-acceptance-report.json"
+            write_report(path, {"emulator_launched": False})
+            write_report(path, {"emulator_launched": True, "gameplay_verified": False})
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")),
+                             {"emulator_launched": True, "gameplay_verified": False})
+            self.assertEqual(list(path.parent.glob("*.tmp")), [])
 
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
