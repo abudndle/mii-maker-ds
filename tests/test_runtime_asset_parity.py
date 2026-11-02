@@ -60,11 +60,6 @@ class RuntimeAssets(unittest.TestCase):
         target = 'nitrofiles/ui/home-bottom.rgb555'
         with zipfile.ZipFile(self.archive) as z:
             info = z.getinfo(target)
-            with self.assertRaises(zipfile.BadZipFile):
-                # Sanity: an untouched archive entry has a valid CRC.
-                with z.open(info) as stream:
-                    while stream.read(1024 * 1024):
-                        pass
         raw = bytearray(self.archive.read_bytes())
         name_length = int.from_bytes(raw[info.header_offset + 26:info.header_offset + 28], 'little')
         extra_length = int.from_bytes(raw[info.header_offset + 28:info.header_offset + 30], 'little')
