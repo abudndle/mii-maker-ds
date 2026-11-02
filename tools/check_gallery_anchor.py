@@ -85,6 +85,15 @@ def check(layout, candidate, header, menu_source):
                 rect[2] <= 0 or rect[3] <= 0):
             raise ValueError("invalid action bounds: " + name)
         x, y, w, h = rect
+        # A collision-free affine can still squash a visible icon into a
+        # subpixel or needle-thin touch target. Check the transformed edges
+        # and true parallelogram area, not its potentially inflated AABB.
+        # This is a conservative preflight, never proof of the 3DS anchor.
+        edge_w = math.hypot(a * w, c * w)
+        edge_h = math.hypot(b * h, d * h)
+        touch_area = abs(det) * w * h
+        if edge_w < 8.0 or edge_h < 8.0 or touch_area < 64.0:
+            raise ValueError("action touch target too small: " + name)
         corners = ((x, y), (x + w, y), (x, y + h), (x + w, y + h))
         points = [(a * px + b * py + tx, c * px + d * py + ty) for px, py in corners]
         xs, ys = zip(*points)
