@@ -24,4 +24,7 @@ int mds_gallery_balloon_clan_active(const MdsGalleryBalloonClan *state,uint32_t 
 int mds_gallery_balloon_clan_style(const MdsGalleryBalloonClan *state,uint32_t now,MdsGalleryBalloonStyle *out);
 /* Do not dispatch a touch command while its original balloon icon is invisible. */
 int mds_gallery_balloon_clan_actions_visible(const MdsGalleryBalloonClan *state,uint32_t now);
+/* UnDecide fades only the Favorite icon. Never allow an invisible Favorite
+ * touch target while Copy/Edit remain visible under the parent balloon. */
+int mds_gallery_balloon_clan_favorite_visible(const MdsGalleryBalloonClan *state,uint32_t now);
 #endif

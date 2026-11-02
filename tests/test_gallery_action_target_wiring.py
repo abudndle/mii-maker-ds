@@ -8,7 +8,9 @@ gallery=main.split("}else if(screen==MDS_SCREEN_GALLERY){",1)[1].split(
 assert "mds_gallery_action_press_bind_slot(&gallery_action_press,editor.slot);" in gallery
 assert "mds_gallery_action_press_release_for_slot(" in gallery
 assert "editor.slot,!gallery.used[editor.slot]||" in gallery
-assert "mds_ui_gallery_actions_visible(animation_vblanks));" in gallery
+assert "mds_ui_gallery_actions_visible(animation_vblanks)&&" in gallery
+assert "gallery_action_press.pressed!=MDS_GALLERY_ACTION_FAVORITE||" in gallery
+assert "mds_ui_gallery_favorite_visible(animation_vblanks))));" in gallery
 assert gallery.index("mds_gallery_action_press_bind_slot(") < gallery.index(
     "mds_gallery_action_press_release_for_slot("
 )

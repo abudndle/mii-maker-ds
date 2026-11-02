@@ -304,6 +304,11 @@ int main(void)
                     mds_gallery_action_touch(input.touch.px,input.touch.py):
                     MDS_GALLERY_ACTION_NONE);
                 mds_gallery_action_press_bind_slot(&gallery_action_press,editor.slot);
+                /* UnDecide can hide Favorite while Copy/Edit stay visible.
+                 * Do not arm a touch target whose original icon is invisible. */
+                if(gallery_action_press.pressed==MDS_GALLERY_ACTION_FAVORITE&&
+                   !mds_ui_gallery_favorite_visible(animation_vblanks))
+                    mds_gallery_action_press_reset(&gallery_action_press);
                 if(gallery_action_press.pressed!=MDS_GALLERY_ACTION_NONE&&
                    (input.held&KEY_SELECT))
                     gallery_controls.select_used=1;
@@ -375,7 +380,9 @@ int main(void)
                 touch_action=mds_gallery_action_press_release_for_slot(
                     &gallery_action_press,input.touch.px,input.touch.py,
                     editor.slot,!gallery.used[editor.slot]||
-                    mds_ui_gallery_actions_visible(animation_vblanks));
+                    (mds_ui_gallery_actions_visible(animation_vblanks)&&
+                     (gallery_action_press.pressed!=MDS_GALLERY_ACTION_FAVORITE||
+                      mds_ui_gallery_favorite_visible(animation_vblanks))));
             /* Empty gallery slots can be selected for Create, but cannot
              * be favorited or copied. Do not dispatch invisible actions. */
             if(!gallery.used[editor.slot]&&

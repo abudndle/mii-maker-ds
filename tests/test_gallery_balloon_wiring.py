@@ -6,14 +6,20 @@ ui=(root/"source/ui.c").read_text()
 menu=(root/"source/menu.c").read_text()
 art=(root/"source/original_gallery_art.c").read_text()
 source=(root/"source/gallery_balloon_clan.c").read_text()
+main=(root/'source/main.c').read_text()
 assert 'mds_gallery_balloon_clan_select(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_active(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_reset(&gallery_balloon_state)' in ui
 assert 'mds_gallery_balloon_clan_style(&gallery_balloon_state,now,&balloon)' in ui
 assert 'mds_gallery_balloon_clan_actions_visible(&gallery_balloon_state,now)' in ui
+assert 'mds_gallery_balloon_clan_favorite_visible(&gallery_balloon_state,now)' in ui
+assert 'if(g->miis[selected].value[51]||mds_ui_gallery_favorite_visible(now))' in ui
+assert '!mds_ui_gallery_favorite_visible(animation_vblanks)' in main
+assert 'gallery_action_press.pressed!=MDS_GALLERY_ACTION_FAVORITE||' in main
+assert 'mds_ui_gallery_favorite_visible(animation_vblanks)' in main
+assert 'return style.balloon_alpha>0u&&style.favorite_alpha>0u;' in source
 assert 'if(g->used[selected]&&mds_ui_gallery_actions_visible(now))' in ui
 assert 'if(!g->used[selected]||mds_ui_gallery_actions_visible(now))' in ui
-main=(root/'source/main.c').read_text()
 assert 'gallery_drag.source<0&&\n                    (!gallery.used[editor.slot]||mds_ui_gallery_actions_visible(animation_vblanks))?' in main
 assert 'balloon.favorite_scale_q16' in ui
 assert 'balloon.balloon_alpha*balloon.favorite_alpha' in ui
