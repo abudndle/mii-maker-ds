@@ -15,6 +15,8 @@ typedef struct {
 /* Borrowed FILE, caller retains ownership. Failed open leaves zero state. */
 int mds_motion_open(MdsMotion *,FILE *);
 int mds_motion_find(const MdsMotion *,const char *);
+/* Prefer original male MSP1, but play female MSP1 when only it is present. */
+int mds_motion_primary(const MdsMotion rigs[2]);
 /* Cycle through all available clips; -1 selects from automatic playback. */
 int mds_motion_cycle(const MdsMotion *,int current,int direction);
 unsigned mds_motion_frame(const MdsMotionClip *,uint32_t,int *);
