@@ -129,9 +129,9 @@ int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned 
 {
     return touch_held?mds_gallery_room_arrow(x,y,page):0;
 }
-int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down)
+int mds_gallery_touch_press_allowed(int touch_down,int physical_down)
 {
-    return touch_down!=0&&shoulder_down==0;
+    return touch_down!=0&&physical_down==0;
 }
 int mds_gallery_shoulder_direction(int left_down,int right_down)
 {
