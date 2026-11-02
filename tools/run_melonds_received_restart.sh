@@ -122,7 +122,19 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   tap 210 "$((touch_origin+179))" # Edit -> copy-before-edit modal
   sleep 5
   capture_received "$MELONDS_RECEIVED_MODAL"
-  timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
+  if ! timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"; then
+    # A missed Qt touch must not be mistaken for a valid modal. Retry once
+    # only if the cartridge is still byte-identical to its original fixture.
+    cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
+      echo "FAIL: received Edit touch changed EEPROM before confirmation"
+      exit 1
+    }
+    echo "Received acceptance: retrying unobserved Edit modal once"
+    tap 210 "$((touch_origin+179))"
+    sleep 5
+    capture_received "$MELONDS_RECEIVED_MODAL"
+    timeout 15s python3 tools/check_melonds_confirm_modal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"
+  fi
   echo "Received acceptance: rejecting copy-to-edit via original No pane"
   tap 128 "$((touch_origin+127))"
   sleep 5
