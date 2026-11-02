@@ -24,6 +24,10 @@ def commands(archive, docker=False, emulator=None):
 
 def make_report(rom, archive, emulator_launched=False):
     rom, archive = Path(rom), Path(archive)
+    if rom.is_symlink() or not rom.is_file() or rom.stat().st_size == 0:
+        raise ValueError("private ROM evidence requires a nonempty regular ROM file")
+    if archive.is_symlink() or not archive.is_file() or archive.stat().st_size == 0:
+        raise ValueError("private ROM evidence requires a nonempty regular resource archive")
     return {
         "private_rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
         "private_rom_bytes": rom.stat().st_size,
