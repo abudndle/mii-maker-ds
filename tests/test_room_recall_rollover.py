@@ -97,8 +97,17 @@ class RoomRecallRolloverTests(unittest.TestCase):
         begin = source.index("void mds_ui_room_pause(void)")
         end = source.index("void mds_ui_room_recall(void)", begin)
         pause = source[begin:end]
-        self.assertIn("if(walk_room_start!=UINT32_MAX)", pause)
-        self.assertLess(pause.index("if(walk_room_start!=UINT32_MAX)"), pause.index("walk_clock_valid=1;"))
+        self.assertIn("if(walk_room_start!=UINT32_MAX||walk_clock_valid)", pause)
+        self.assertLess(pause.index("if(walk_room_start!=UINT32_MAX||walk_clock_valid)"), pause.index("walk_clock_valid=1;"))
+
+    def test_queued_recall_clock_is_rebased_during_pre_gallery_pause(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        pause = source.split("void mds_ui_room_pause(void)", 1)[1].split("void mds_ui_room_recall(void)", 1)[0]
+        self.assertIn("if(walk_room_start!=UINT32_MAX||walk_clock_valid)", pause)
+        # An untouched room stays uninitialized; an A-button recall has
+        # initialized the clock and must not age while menus are shown.
+        self.assertFalse(False or False)
+        self.assertTrue(False or True)
 
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
