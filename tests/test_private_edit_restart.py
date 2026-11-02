@@ -52,6 +52,22 @@ class EditRestartRunnerTests(unittest.TestCase):
         # Diagnostics must not print the owner archive, raw save or screenshots.
         self.assertNotIn('cat "$RUNNER_TEMP/melonds-edit-before.sav"', s)
 
+    def test_every_emulator_stage_reaps_appimage_children(self):
+        # Three separate xvfb-run sessions must not leave a Qt child behind:
+        # a later launcher may exit cleanly after handing its ROM to an orphan.
+        for name in ("run_melonds_headless.sh", "run_melonds_copy_restart.sh",
+                     "run_melonds_edit_restart.sh"):
+            script = (ROOT / "tools" / name).read_text()
+            self.assertIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', script)
+            self.assertIn('kill -- "-$emu_pid" 2>/dev/null || true', script)
+            self.assertIn('wait "$emu_pid" 2>/dev/null || true', script)
+            self.assertIn('trap cleanup_emulator EXIT', script)
+            subprocess.run(["bash", "-n", str(ROOT / "tools" / name)], check=True)
+        edit = SCRIPT.read_text()
+        self.assertIn('if wait "$emu_pid"; then', edit)
+        self.assertIn('Edit emulator launcher exited cleanly before capture', edit)
+        self.assertIn('Edit emulator exited before capture (status $status)', edit)
+
     def test_workflow_private_and_encrypted(self):
         w = WORKFLOW.read_text()
         self.assertNotIn("  pull_request:", w)

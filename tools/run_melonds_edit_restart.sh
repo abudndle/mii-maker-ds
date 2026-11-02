@@ -28,9 +28,17 @@ export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 echo "Edit acceptance: launching isolated emulator"
 timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   set -euo pipefail
-  "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
+  # Give the AppImage and its extracted melonDS child a dedicated process
+  # group. Killing only the AppImage wrapper can orphan the actual Qt
+  # emulator, leaving a stale window or forwarding a later ROM launch to it.
+  setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
   emu_pid=$!
-  trap "kill $emu_pid 2>/dev/null || true" EXIT
+  cleanup_emulator() {
+    kill -- "-$emu_pid" 2>/dev/null || true
+    kill "$emu_pid" 2>/dev/null || true
+    wait "$emu_pid" 2>/dev/null || true
+  }
+  trap cleanup_emulator EXIT
   win=""
   for attempt in $(seq 1 25); do
     if ! kill -0 "$emu_pid" 2>/dev/null; then
@@ -48,10 +56,15 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # visible window rectangle from the isolated Xvfb root. Re-resolve the
   # window for every frame instead of reusing a potentially dead XID.
   capture_edit() {
-    local destination="$1" geometry="" candidate="" x y width height attempt
+    local destination="$1" geometry="" candidate="" x y width height attempt status
     for attempt in 1 2 3; do
       if ! kill -0 "$emu_pid" 2>/dev/null; then
-        echo "FAIL: Edit emulator exited before framebuffer capture"
+        if wait "$emu_pid"; then
+          echo "FAIL: Edit emulator launcher exited cleanly before capture"
+        else
+          status=$?
+          echo "FAIL: Edit emulator exited before capture (status $status)"
+        fi
         return 1
       fi
       candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
