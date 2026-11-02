@@ -6,12 +6,14 @@ configuration paths, or the owner ROM. It follows melonDS 1.1 pathInit():
 a portable directory next to the executable wins over QStandardPaths.
 """
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import tomllib
 
 
-def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc")) -> str:
+def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc"),
+            expected_sha256: str | None = None) -> str:
     if pid <= 0:
         raise ValueError("invalid emulator PID")
     proc = proc_root / str(pid)
@@ -38,9 +40,17 @@ def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc")) -> s
     if not config.is_file():
         raise ValueError("emulator's effective TOML is absent")
     try:
-        parsed = tomllib.loads(config.read_text(encoding="utf-8"))
+        raw = config.read_bytes()
+        if expected_sha256 is not None:
+            if len(expected_sha256) != 64 or any(c not in "0123456789abcdef" for c in expected_sha256):
+                raise ValueError("invalid expected config fingerprint")
+            if hashlib.sha256(raw).hexdigest() != expected_sha256:
+                raise ValueError("emulator changed isolated B config after launch")
+        parsed = tomllib.loads(raw.decode("utf-8"))
         b = parsed["Instance0"]["Keyboard"]["B"]
-    except (OSError, UnicodeError, tomllib.TOMLDecodeError, KeyError, TypeError) as exc:
+    except KeyError as exc:
+        raise ValueError("emulator's effective B mapping is missing") from exc
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError, TypeError) as exc:
         raise ValueError("emulator's effective B mapping is unreadable") from exc
     if type(b) is not int or b != 90:
         raise ValueError("emulator's effective DS B mapping is not Qt::Key_Z")
@@ -51,9 +61,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
     parser.add_argument("--expected-home", type=Path, required=True)
+    parser.add_argument("--expected-sha256", help="private-safe prelaunch TOML fingerprint")
     args = parser.parse_args()
     try:
-        origin = inspect(args.pid, args.expected_home)
+        origin = inspect(args.pid, args.expected_home, expected_sha256=args.expected_sha256)
     except (ValueError, OSError) as exc:
         parser.exit(1, "FAIL: melonDS input config: " + str(exc) + "\n")
     print("PASS: running melonDS uses verified " + origin + " DS B mapping")
