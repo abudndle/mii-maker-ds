@@ -386,8 +386,8 @@ static int preview(const MdsAvatar *a,int mode)
      * time from the current room actor's independent phase clock. */
     MdsRoomAnimation actor=gallery_actor_motion[gallery_actor_render_local];
     actor.clip=(uint8_t)clip;
-    frame=mds_room_animation_motion_frame(&actor,motion_clip_ticks,
-                                           &motions[gender],NULL);
+    frame=mds_room_animation_gallery_frame(&actor,motion_clip_ticks,
+                                            &motions[gender],NULL);
    }
    unsigned key=clip*7200+frame;
    if(!motion_cached[gender]||motion_cached_key[gender]!=key){
