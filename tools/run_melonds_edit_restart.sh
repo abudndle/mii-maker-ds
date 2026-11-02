@@ -138,7 +138,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   capture_height="$(timeout 5s identify -format "%h" "$MELONDS_EDIT_GALLERY")"
   touch_origin=$((capture_height-192))
   # Select an ordinary, non-Personal saved Mii.
-  timeout 5s xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
+  # Capture may have resolved a replacement Qt window ID. Re-focus the\n  # live window before every touch transaction, not only on first launch.\n  timeout 5s xdotool windowfocus --sync "$win" || true\n  timeout 5s xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
   timeout 5s xdotool mousedown 1
   sleep 0.25
   timeout 5s xdotool mouseup 1
@@ -148,7 +148,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   capture_edit "$MELONDS_EDIT_GALLERY"
   echo "Edit acceptance: selected ordinary Mii"
   # Actual touchscreen Edit strip (172..247,168..190).
-  timeout 5s xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
+  timeout 5s xdotool windowfocus --sync "$win" || true\n  timeout 5s xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
   timeout 5s xdotool mousedown 1
   sleep 0.35
   timeout 5s xdotool mouseup 1
