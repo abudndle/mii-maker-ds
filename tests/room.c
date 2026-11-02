@@ -65,6 +65,16 @@ int main(void)
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,1,&a,rendered));
  assert(mds_room_matches(&cache,19,1,&a));
+ /* Changing one Mii appearance must invalidate only its matching cached
+  * preview, not other Miis sharing the same visible room. */
+ MdsAvatar changed=a;
+ changed.value[0]++;
+ assert(!mds_room_matches(&cache,19,1,&changed));
+ assert(mds_room_matches(&cache,19,1,&a));
+ assert(mds_room_capture(&cache,19,1,&changed,rendered));
+ assert(mds_room_matches(&cache,19,1,&changed));
+ assert(!mds_room_matches(&cache,19,1,&a));
+ assert(cache.actor[0].valid&&cache.actor[2].valid);
  /* Selecting a different slot in the same room retains all cached Miis. */
  mds_room_select(&cache,10);
  assert(cache.actor[0].valid);
