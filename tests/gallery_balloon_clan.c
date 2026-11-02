@@ -108,6 +108,27 @@ int main(void)
     mds_gallery_balloon_clan_favorite_pressed(&state,322u);
     assert(state.clip==MDS_BALLOON_UNDECIDE&&state.started==320u);
     assert(mds_gallery_balloon_clan_tick(&state,332u));
+    /* A second persisted Favorite update cannot restart the pending fade
+     * and keep its icon invisible indefinitely. */
+    mds_gallery_balloon_clan_favorite_committed(&state,334u);
+    mds_gallery_balloon_clan_favorite_committed(&state,338u);
+    assert(state.clip==MDS_BALLOON_UNDECIDE&&state.started==334u);
+    assert(state.pending_decide);
+    assert(!mds_gallery_balloon_clan_tick(&state,345u));
+    assert(mds_gallery_balloon_clan_tick(&state,346u));
+    assert(state.clip==MDS_BALLOON_DECIDE&&state.started==346u);
+    assert(mds_gallery_balloon_clan_favorite_visible(&state,346u));
+    /* A completed persistence callback must not erase the selected Mii's
+     * pending Unselect -> Select transition. */
+    mds_gallery_balloon_clan_reset(&state);
+    mds_gallery_balloon_clan_selection_changed(&state,350u);
+    mds_gallery_balloon_clan_selection_changed(&state,352u);
+    mds_gallery_balloon_clan_favorite_committed(&state,353u);
+    assert(state.clip==MDS_BALLOON_UNSELECT&&state.started==352u);
+    assert(state.pending_select&&!state.pending_decide);
+    assert(mds_gallery_balloon_clan_tick(&state,364u));
+    assert(state.clip==MDS_BALLOON_SELECT&&state.started==364u);
+    mds_gallery_balloon_clan_reset(&state);
     /* Selection changes supersede Favorite feedback and still reveal a
      * new selected Mii after Unselect, even if the old icon was fading. */
     mds_gallery_balloon_clan_favorite_committed(&state,340u);

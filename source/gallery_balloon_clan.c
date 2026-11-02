@@ -63,7 +63,10 @@ void mds_gallery_balloon_clan_favorite_pressed(MdsGalleryBalloonClan *state,uint
 }
 void mds_gallery_balloon_clan_favorite_committed(MdsGalleryBalloonClan *state,uint32_t now)
 {
-    if(!state)return;
+    /* A persisted Favorite change must not cancel the queued Unselect ->
+     * Select transition for a different Mii. Repeated commits during the
+     * existing UnDecide fade must not restart it and starve restoration. */
+    if(!state||state->pending_select||state->pending_decide)return;
     mds_gallery_balloon_clan_play(state,MDS_BALLOON_UNDECIDE,now);
     state->pending_decide=1;
 }
