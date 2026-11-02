@@ -45,8 +45,12 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_check_gallery_copy_save.py
       - name: Verify private second-process melonDS Copy wiring and cleanup
         run: python3 -m unittest discover -s tests -p test_private_copy_restart.py
+      - name: Verify trusted third-process Edit/cancel runner and encrypted artifact policy
+        run: python3 -m unittest discover -s tests -p test_private_edit_restart.py
       - name: Install Pillow required by strict framebuffer regression tests
         run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil
+      - name: Verify Edit framebuffer transition rejects ignored touches
+        run: python3 -m unittest discover -s tests -p test_melonds_edit_transition.py
       - name: Verify real multi-Mii emulator screenshot acceptance gate
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify original CLAN numeric build-parity gate
