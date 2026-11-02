@@ -19,9 +19,17 @@ cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-before.sav"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   set -euo pipefail
-  "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_COPY_LOG" 2>&1 &
+  # Give the AppImage and its extracted melonDS child a dedicated process
+  # group. Killing only the AppImage wrapper can orphan the actual Qt
+  # emulator, leaving a stale window or forwarding a later ROM launch to it.
+  setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_COPY_LOG" 2>&1 &
   emu_pid=$!
-  trap "kill $emu_pid 2>/dev/null || true" EXIT
+  cleanup_emulator() {
+    kill -- "-$emu_pid" 2>/dev/null || true
+    kill "$emu_pid" 2>/dev/null || true
+    wait "$emu_pid" 2>/dev/null || true
+  }
+  trap cleanup_emulator EXIT
   win=""
   for attempt in $(seq 1 25); do
     if ! kill -0 "$emu_pid" 2>/dev/null; then
