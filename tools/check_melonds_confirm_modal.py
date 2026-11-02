@@ -24,7 +24,22 @@ def verify(before_path, modal_path, threshold=28, minimum=350):
     )
     if changed < minimum:
         raise ValueError("confirmation dialog did not visibly change bottom screen")
-    return {"verified": True, "bottom_changed_pixels": changed}
+    # The original confirmation CLYT places its Yes and No button panes at
+    # x=28..228, y=71..103 and y=111..143 in DS touchscreen coordinates.
+    # A room selection/animation elsewhere is not evidence of this modal.
+    def pane_changed(top, bottom):
+        return sum(
+            max(abs(pa[x, y][channel] - pb[x, y][channel])
+                for channel in range(3)) >= threshold
+            for y in range(top, bottom) for x in range(28, 228)
+        )
+    yes_changed = pane_changed(71, 103)
+    no_changed = pane_changed(111, 143)
+    if min(yes_changed, no_changed) < 64:
+        raise ValueError("confirmation dialog did not change both original choice panes")
+    return {"verified": True, "bottom_changed_pixels": changed,
+            "yes_pane_changed_pixels": yes_changed,
+            "no_pane_changed_pixels": no_changed}
 
 
 def main():
