@@ -915,10 +915,13 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     /* Walking offsets are per room slot, not per selection. Keep motion
      * deterministic across redraws and avoid shifting cached appearance. */
     if(walk_room_start!=start){
+        unsigned previous_room_start=walk_room_start;
         walk_room_start=start;
         memset(room_walk,0,sizeof room_walk);
         walk_ticks=0;
-        walk_home_remaining=0;
+        /* A recall requested before the first gallery draw must survive
+         * room initialization. Only a real room switch cancels it. */
+        if(previous_room_start!=UINT32_MAX)walk_home_remaining=0;
     }
     walk_ticks++;
     /* Advance recall for every slot, including temporarily empty slots,
