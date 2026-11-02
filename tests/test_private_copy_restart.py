@@ -40,9 +40,20 @@ class CopyRestartRunnerTests(unittest.TestCase):
         for marker in ("capturing reopened Home", "capturing saved gallery",
                        "capturing post-Copy gallery"):
             self.assertIn("Copy acceptance: " + marker, s)
-        self.assertIn('timeout 8s import -window "$win" -depth 8 "$destination"', s)
+        self.assertNotIn('import -window "$win"', s)
         self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
         self.assertIn('x + width <= 1280 && y + height <= 960', s)
+        # The first real post-merge run showed the initial Home capture
+        # hanging in XGetImage, then the title-based re-search found no
+        # visible "melonDS" window. Use the stable original XID first.
+        self.assertIn('candidate="$win" geometry=""', s)
+        self.assertIn('geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate"', s)
+        self.assertLess(s.index('geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate"'),
+                        s.index('candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS"'))
+        self.assertIn('win="$candidate"', s)
+        self.assertIn('timeout 5s identify -format "%wx%h" "$destination"', s)
+        self.assertNotIn('import -window "$win"', s)
+
 
     def test_in_session_edit_is_real_and_does_not_mutate_copy(self):
         s = self.script
@@ -57,7 +68,7 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertLess(s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"'),
                         s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"'))
         self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 3)
-        self.assertIn('timeout 8s import -window "$win" -depth 8 "$destination"', s)
+        self.assertNotIn('import -window "$win"', s)
         self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
         self.assertIn('x + width <= 1280 && y + height <= 960', s)
         self.assertNotIn('import -window root -depth 8 "$destination"', s)
