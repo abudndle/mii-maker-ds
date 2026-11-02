@@ -616,6 +616,7 @@ int main(void)
         mds_ui_motion_scene(screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED);
         mds_ui_view_scene(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_ACCESSORIES);
         if(!mds_ui_slider_active()&&!(screen==MDS_SCREEN_PROFILE&&profile.mode!=MDS_PROFILE_ROOT))animate=mds_ui_animation_tick(animation_vblanks);
+        if(screen!=MDS_SCREEN_GALLERY&&screen!=MDS_SCREEN_SAVED)mds_ui_room_pause();
         if(screen!=MDS_SCREEN_GALLERY)mds_ui_gallery_clan_reset();
         int gallery_clan_repaint=screen==MDS_SCREEN_GALLERY&&
             mds_ui_gallery_clan_tick(page,editor.slot,animation_vblanks);
