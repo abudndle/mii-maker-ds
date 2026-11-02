@@ -10,7 +10,8 @@ class RoomRecallRolloverTests(unittest.TestCase):
         source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
         self.assertIn("walk_home_remaining=24u;", source)
         self.assertIn("walk_home_remaining!=0u", source)
-        self.assertIn("if(walk_home_remaining)walk_home_remaining--;", source)
+        self.assertIn("if(elapsed>=walk_home_remaining)walk_home_remaining=0;", source)
+        self.assertIn("else walk_home_remaining-=elapsed;", source)
         self.assertNotIn("walk_ticks<walk_home_until", source)
         self.assertNotIn("walk_ticks+24u", source)
 
@@ -31,6 +32,16 @@ class RoomRecallRolloverTests(unittest.TestCase):
         previous = 0
         if previous != 0xffffffff:
             remaining = 0
+        self.assertEqual(remaining, 0)
+
+    def test_recall_counts_vblanks_not_redraws(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        self.assertIn("animation_clock-walk_last_clock", source)
+        self.assertIn("walk_ticks+=elapsed;", source)
+        self.assertNotIn("walk_ticks++;", source)
+        remaining = 24
+        for elapsed in (0, 0, 5, 0, 8, 11):
+            remaining = max(0, remaining - elapsed)
         self.assertEqual(remaining, 0)
 
     def test_countdown_is_bounded_at_uint_rollover(self):
