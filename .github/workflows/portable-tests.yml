@@ -37,6 +37,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_blocksds_build_entry.py
       - name: Verify real compact 8K EEPROM and legacy dual-bank synthetic Mii saves
         run: python3 -m unittest discover -s tests -p test_eeprom_gallery_fixture.py
+      - name: Verify received-Mii confirmation cancellation and exact persisted copy
+        run: python3 -m unittest discover -s tests -p test_check_gallery_received_copy_save.py
       - name: Verify compact EEPROM Favorite persistence and unrelated-byte safety
         run: python3 -m unittest discover -s tests -p test_check_gallery_favorite_save.py
       - name: Verify private Favorite emulator wiring and encrypted evidence handling
