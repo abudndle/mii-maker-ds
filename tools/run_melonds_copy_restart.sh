@@ -189,8 +189,18 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # so it cannot hide an Edit write behind the expected Copy generation.
   python3 tools/check_gallery_copy_save.py "$RUNNER_TEMP/melonds-copy-before.sav" "$PWD/mii-ds.sav" --report "$RUNNER_TEMP/melonds-copy-save.json"
   cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"
-  echo "Edit acceptance: Copy persisted; selecting ordinary Mii"
+  # Copy selects the newly created slot 10 and switches to room two.
+  # Selecting x=82 here would select EMPTY slot 11, so Edit would open
+  # Create/Gender instead of the existing Mii editor. Return explicitly to
+  # original room one via the source EDITSelectBase B_Room_00 touch pane.
+  echo "Edit acceptance: Copy persisted; returning to original ten-Mii room"
   timeout 5s xdotool windowfocus --sync "$win" || true
+  xdotool mousemove --window "$win" 20 "$((touch_origin+12))"
+  xdotool mousedown 1
+  sleep 0.25
+  xdotool mouseup 1
+  sleep 4
+  echo "Edit acceptance: selecting occupied ordinary Mii in room one"
   xdotool mousemove --window "$win" 82 "$((touch_origin+71))"
   xdotool mousedown 1
   sleep 0.25
@@ -198,6 +208,9 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   sleep 3
   echo "Edit acceptance: capturing selected gallery"
   capture_copy_edit "$MELONDS_COPY_EDIT_GALLERY"
+  # The Edit baseline must contain multiple occupied Miis; otherwise a
+  # room-two empty-slot Create screen could pass the generic transition test.
+  python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_GALLERY"
   # Tap actual gallery Edit strip; selection-only changes are excluded from
   # the transition baseline by capturing AFTER selection.
   xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
