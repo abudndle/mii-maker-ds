@@ -80,6 +80,11 @@ int main(void)
  assert(cache.actor[0].valid);
  assert(cache.actor[1].valid);
  assert(cache.actor[2].valid);
+ /* An invalid selection must leave the currently displayed room and
+  * all of its cached Mii previews unchanged. */
+ mds_room_select(&cache,MDS_SLOTS);
+ assert(cache.start==10);
+ assert(cache.actor[0].valid&&cache.actor[1].valid&&cache.actor[2].valid);
  mds_room_select(&cache,20);
  assert(cache.start==20);
  assert(!cache.actor[0].valid);
