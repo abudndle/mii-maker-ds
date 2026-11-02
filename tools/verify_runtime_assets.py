@@ -100,6 +100,22 @@ def verify(archive, root=ROOT):
                         name in names):
                     raise ValueError("Unsafe/duplicate private NitroFS archive name")
                 names[name] = info
+        # zipfile checks CRC only when an entry is read to EOF. Metadata-only
+        # size checks can therefore accept damaged original model/UI payloads.
+        # Stream every private NitroFS file to validate CRC and actual length
+        # without retaining copyrighted bytes in memory or writing them out.
+        for name, info in names.items():
+            if info.flag_bits & 0x1:
+                raise ValueError("Encrypted private NitroFS archive entry is unsupported: " + name)
+            actual = 0
+            with z.open(info, "r") as payload:
+                while True:
+                    chunk = payload.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    actual += len(chunk)
+            if actual != info.file_size:
+                raise ValueError(f"Private NitroFS payload length mismatch: {name}")
         derived = derived_icons(z)
         missing = sorted(paths - (names.keys() | derived.keys()))
         if missing:
