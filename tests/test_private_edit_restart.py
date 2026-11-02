@@ -86,6 +86,18 @@ class EditRestartRunnerTests(unittest.TestCase):
         # Diagnostics must not print the owner archive, raw save or screenshots.
         self.assertNotIn('cat "$RUNNER_TEMP/melonds-edit-before.sav"', s)
 
+    def test_orphan_emulator_reaper_is_bounded_and_exact_name(self):
+        s = SCRIPT.read_text()
+        self.assertIn("if pgrep -x melonDS >/dev/null 2>&1; then", s)
+        self.assertIn("pkill -TERM -x melonDS 2>/dev/null || true", s)
+        self.assertIn("for attempt in 1 2 3 4 5; do", s)
+        self.assertIn("pkill -KILL -x melonDS 2>/dev/null || true", s)
+        self.assertIn("previous melonDS process survived cleanup; refusing Edit test", s)
+        self.assertLess(s.index("pkill -TERM -x melonDS"),
+                        s.index("timeout 60s \\"$appimage\\" --appimage-extract"))
+        self.assertNotIn("pkill -f", s)
+        self.assertNotIn("killall", s)
+
     def test_every_emulator_stage_reaps_appimage_children(self):
         # Three separate xvfb-run sessions must not leave a Qt child behind:
         # a later launcher may exit cleanly after handing its ROM to an orphan.
