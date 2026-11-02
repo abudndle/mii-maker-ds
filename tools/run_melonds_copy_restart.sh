@@ -43,6 +43,15 @@ export MELONDS_COPY_EDIT_RETURN="$RUNNER_TEMP/melonds-copy-edit-return.png"
 # Do not override XDG_CONFIG_HOME: that extra environment change accompanied
 # the earlier launcher-abort regression. Keep the proven isolated HOME.
 export HOME="$RUNNER_TEMP/melonds-home-restart"
+# The trusted Qt process exposed an inherited XDG_CONFIG_HOME that took
+# precedence over this isolated HOME.  Clear that inherited override instead
+# of exporting a new XDG path: melonDS 1.1 then uses HOME/.config, where the
+# exact B mapping is prepared before AppImage startup.  Never log the
+# inherited path or read/write another runner's configuration.
+if [ -n "${XDG_CONFIG_HOME:-}" ]; then
+  echo "Copy acceptance: clearing inherited XDG config override"
+fi
+unset XDG_CONFIG_HOME
 mkdir -p "$HOME/.config/melonDS"
 cat >"$HOME/.config/melonDS/melonDS.toml" <<'TOML'
 [Instance0.Keyboard]
