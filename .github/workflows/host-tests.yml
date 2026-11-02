@@ -29,6 +29,8 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-pil
       - name: Verify real compact 8K EEPROM and legacy dual-bank synthetic Mii saves
         run: python3 -m unittest discover -s tests -p test_eeprom_gallery_fixture.py
+      - name: Verify received-Mii confirmation cancellation and exact persisted copy
+        run: python3 -m unittest discover -s tests -p test_check_gallery_received_copy_save.py
       - name: Verify real multi-Mii emulator screenshot acceptance gate
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify original CLAN numeric build-parity gate
