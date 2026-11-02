@@ -30,6 +30,15 @@ int mds_motion_open(MdsMotion*m,FILE*f)
  m->file=f;m->count=count;return 1;
 bad:memset(m,0,sizeof *m);return 0;
 }
+int mds_motion_primary(const MdsMotion rigs[2])
+{
+ if(!rigs)return -1;
+ /* A partially initialized motion table is not a playable source. */
+ for(int gender=0;gender<2;gender++)
+  if(rigs[gender].file && rigs[gender].count>0 &&
+     rigs[gender].count<=MDS_MOTION_CLIPS)return gender;
+ return -1;
+}
 int mds_motion_find(const MdsMotion*m,const char*name)
 {
  if(!m||!m->file||!name)return -1;

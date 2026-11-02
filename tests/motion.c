@@ -41,6 +41,26 @@ int main(void)
  strcpy(female.clips[1].name,"Wait00");
  assert(mds_motion_find(&female,catalog.clips[0].name)==1);
  assert(mds_motion_find(&female,catalog.clips[1].name)==0);
+ /* A missing male MSP1 stream must not freeze a valid female original rig.
+  * Prefer male only when both original streams are present. */
+ MdsMotion rigs[2]={{0},{0}};
+ assert(mds_motion_primary(NULL)==-1);
+ assert(mds_motion_primary(rigs)==-1);
+ rigs[1]=female;
+ assert(mds_motion_primary(rigs)==1);
+ rigs[0]=catalog;
+ assert(mds_motion_primary(rigs)==0);
+ rigs[0].file=NULL;
+ assert(mds_motion_primary(rigs)==1);
+ rigs[0].file=f;rigs[0].count=0;
+ assert(mds_motion_primary(rigs)==1);
+ rigs[0].count=MDS_MOTION_CLIPS+1;
+ assert(mds_motion_primary(rigs)==1);
+ rigs[0].count=53;
+ rigs[1].file=NULL;
+ assert(mds_motion_primary(rigs)==0);
+ rigs[0].file=NULL;
+ assert(mds_motion_primary(rigs)==-1);
  int ended;assert(mds_motion_frame(&m.clips[0],5,&ended)==2&&!ended);assert(mds_motion_frame(&m.clips[0],6,&ended)==0&&!ended);assert(mds_motion_frame(&m.clips[0],UINT32_MAX,NULL)<3);
  /* Source frame clock must advance at exact 60 Hz tick boundaries for
   * common 30/60 fps clips and never exceed a one-shot's final frame. */
