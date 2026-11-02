@@ -34,7 +34,7 @@ class CopyRestartRunnerTests(unittest.TestCase):
         for capture in ("HOME", "GALLERY", "IMAGE"):
             self.assertIn('capture_copy_edit "$MELONDS_COPY_' + capture + '"', s)
             self.assertNotIn('import -window "$win" -depth 8 "$MELONDS_COPY_' + capture + '"', s)
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_'), 7)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_'), 8)
         self.assertEqual(s.count('timeout 5s xdotool windowfocus --sync "$win" || true'), 4)
         self.assertNotIn('  xdotool windowfocus --sync "$win" || true', s)
         for marker in ("capturing reopened Home", "capturing saved gallery",
@@ -123,12 +123,12 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"', s)
-        self.assertIn('xdotool keydown --clearmodifiers z\n  sleep 0.35\n  xdotool keyup --clearmodifiers z', s)
+        self.assertIn('xdotool keydown --clearmodifiers z\n  sleep 0.12\n  xdotool keyup --clearmodifiers z', s)
         self.assertIn('python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"', s)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-copy-postcopy.sav" "$PWD/mii-ds.sav"', s)
         self.assertLess(s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"'),
                         s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"'))
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 4)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 5)
         self.assertNotIn('import -window "$win"', s)
         self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
         self.assertIn('x + width <= 1280 && y + height <= 960', s)
@@ -141,13 +141,26 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('if ! python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"; then', s)
         self.assertIn('B not observed; focusing game surface and retrying once', s)
         self.assertIn('xdotool mousemove --window "$win" 128 65', s)
-        self.assertIn('sleep 0.6', s)
+        self.assertIn('sleep 0.12', s)
         self.assertLess(s.index('B not observed; focusing game surface and retrying once'),
-                        s.index('sleep 0.6'))
+                        s.index('sleep 0.12', s.index('B not observed; focusing game surface and retrying once')))
         self.assertIn('kill -0 "$emu_pid"', s)
-        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"'), 2)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"'), 3)
         self.assertIn('melonds-edit.png.gpg', self.workflow)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-postcopy.sav"', self.workflow)
+
+    def test_b_return_retries_render_without_a_second_keypress(self):
+        s = self.script
+        self.assertIn("sleep 0.12", s)
+        self.assertNotIn("sleep 0.35\n  xdotool keyup --clearmodifiers z", s)
+        self.assertNotIn("sleep 0.6\n    xdotool keyup --clearmodifiers z", s)
+        settle = s.split('echo "Edit acceptance: gallery actors not ready; waiting for redraw"', 1)[1]
+        settle = settle.split('echo "Edit acceptance: returned to gallery"', 1)[0]
+        self.assertIn('sleep 10', settle)
+        self.assertIn('capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"', settle)
+        self.assertIn('python3 tools/melonds_gallery_probe.py', settle)
+        self.assertNotIn('xdotool keydown', settle)
+        self.assertNotIn('xdotool keyup', settle)
 
     def test_private_workflow_encrypts_copy_capture_and_cleans_saves(self):
         w = self.workflow
