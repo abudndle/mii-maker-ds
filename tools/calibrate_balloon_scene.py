@@ -99,6 +99,20 @@ def calibrate(layout, measurements, max_error=2.0):
         target.append((x, y))
     a, b, tx = _solve3(source, [p[0] for p in target])
     c, d, ty = _solve3(source, [p[1] for p in target])
+    # A handful of tightly clustered pane centers can fit a perfect affine
+    # but cannot constrain its placement elsewhere in the 3DS scene. Reject
+    # poorly spread samples even when their residual happens to be zero.
+    # The minor covariance eigenvalue measures spread in the weakest axis;
+    # it is rotation-invariant, unlike separate X/Y range thresholds.
+    mx = sum(x for x, _ in source) / len(source)
+    my = sum(y for _, y in source) / len(source)
+    xx = sum((x - mx) ** 2 for x, _ in source) / len(source)
+    yy = sum((y - my) ** 2 for _, y in source) / len(source)
+    xy = sum((x - mx) * (y - my) for x, y in source) / len(source)
+    major = (xx + yy + math.hypot(xx - yy, 2 * xy)) / 2
+    minor = max(0.0, (xx * yy - xy * xy) / major) if major else 0.0
+    if minor < 16.0:  # at least 4 DS pixels RMS on the weakest axis
+        raise ValueError("calibration panes lack two-dimensional spread")
     determinant = a * d - b * c
     if (any(abs(v) > 16 for v in (a, b, c, d)) or
             any(abs(v) > 4096 for v in (tx, ty)) or
