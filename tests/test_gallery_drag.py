@@ -32,7 +32,12 @@ checks={
                                    "mds_original_gallery_box_border_tinted(bottom,256,192" in (root/"source/ui.c").read_text(),
     "drag thumbnail persists across rooms": "gallery_drag_snapshot=gallery_thumbnails.slots[local];" in (root/"source/ui.c").read_text(),
     "room tab touch uses recovered original pane": "mds_gallery_room_touch(input.touch.px,input.touch.py)" in gallery,
-    "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "arrow!=gallery_drag_arrow_latch" in gallery,
+    "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "mds_gallery_drag_arrow_page_allowed(" in gallery,
+    "shoulder edges win over held and released drag arrows even at room limits":
+        gallery.count("mds_gallery_drag_arrow_page_allowed(")==2 and
+        gallery.count("(down&(KEY_L|KEY_R))!=0)){")==2 and
+        "return arrow!=0&&arrow!=latched&&!shoulder_down;" in (root/"source/menu.c").read_text() and
+        "int mds_gallery_drag_arrow_page_allowed(int arrow,int latched,int shoulder_down);" in (root/"source/menu.h").read_text(),
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "opposing L/R inputs do not page either a room or a drag":
         "int shoulder_direction=mds_gallery_shoulder_direction(" in gallery and
