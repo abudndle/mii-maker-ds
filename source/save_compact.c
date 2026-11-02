@@ -10,6 +10,13 @@ static unsigned width(unsigned n){unsigned w=0;do{w++;n>>=1;}while(n);return w;}
 int mds_compact_encode(const MdsGallery*g,uint8_t*out,size_t n)
 {
  if(!g||!out||n!=MDS_COMPACT_SIZE)return 0;
+ /* A caller must not use gallery storage as the encoded image buffer.
+  * Validation below reads the entire gallery; overlapping output would
+  * overwrite still-needed Mii records before the encode completes. */
+ uintptr_t gallery_addr=(uintptr_t)(const void *)g;
+ uintptr_t output_addr=(uintptr_t)(void *)out;
+ if((output_addr>=gallery_addr&&output_addr-gallery_addr<sizeof *g)||
+    (output_addr<gallery_addr&&gallery_addr-output_addr<n))return 0;
  /* Validate every slot before writing any bytes to the destination. */
  unsigned checked_personal=0;
  for(unsigned i=0;i<MDS_SLOTS;i++){
