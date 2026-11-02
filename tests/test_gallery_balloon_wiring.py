@@ -13,7 +13,7 @@ assert 'mds_gallery_balloon_clan_reset(&gallery_balloon_state)' in ui
 assert 'mds_gallery_balloon_clan_style(&gallery_balloon_state,now,&balloon)' in ui
 assert 'mds_gallery_balloon_clan_actions_visible(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_favorite_visible(&gallery_balloon_state,now)' in ui
-assert 'if(mds_ui_gallery_favorite_visible(now))' in ui
+assert 'if(g->miis[selected].value[51]||mds_ui_gallery_favorite_visible(now))' in ui
 assert '!mds_ui_gallery_favorite_visible(animation_vblanks)' in main
 assert 'gallery_action_press.pressed!=MDS_GALLERY_ACTION_FAVORITE||' in main
 assert 'mds_ui_gallery_favorite_visible(animation_vblanks)' in main
