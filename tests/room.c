@@ -117,6 +117,12 @@ int main(void)
  cache.actor[7].valid=1;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==7);
  assert(mds_room_next_refresh(&cache,occupied,attempts,8)==7);
+ /* Empty room slots must never be scheduled for rendering, even when
+  * they still contain stale cached pixels from an earlier occupant. */
+ occupied[7]=0;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ occupied[7]=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==7);
  /* An occupied uncached actor with attempts remaining takes priority. */
  occupied[9]=1;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
