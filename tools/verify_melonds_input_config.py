@@ -39,13 +39,16 @@ def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc"),
     config = config_root / "melonDS" / "melonDS.toml"
     if not config.is_file():
         raise ValueError("emulator's effective TOML is absent")
+    # melonDS 1.1 can reserialize its TOML after loading it. A byte-level
+    # fingerprint change alone does not prove that the keyboard binding was
+    # lost. Validate the effective binding *after* parsing the rewritten
+    # config, but never silently accept a missing, malformed or remapped B.
+    if expected_sha256 is not None:
+        if (len(expected_sha256) != 64 or
+                any(c not in "0123456789abcdef" for c in expected_sha256)):
+            raise ValueError("invalid expected config fingerprint")
     try:
         raw = config.read_bytes()
-        if expected_sha256 is not None:
-            if len(expected_sha256) != 64 or any(c not in "0123456789abcdef" for c in expected_sha256):
-                raise ValueError("invalid expected config fingerprint")
-            if hashlib.sha256(raw).hexdigest() != expected_sha256:
-                raise ValueError("emulator changed isolated B config after launch")
         parsed = tomllib.loads(raw.decode("utf-8"))
         b = parsed["Instance0"]["Keyboard"]["B"]
     except KeyError as exc:
@@ -54,6 +57,8 @@ def inspect(pid: int, expected_home: Path, proc_root: Path = Path("/proc"),
         raise ValueError("emulator's effective B mapping is unreadable") from exc
     if type(b) is not int or b != 90:
         raise ValueError("emulator's effective DS B mapping is not Qt::Key_Z")
+    if expected_sha256 is not None and hashlib.sha256(raw).hexdigest() != expected_sha256:
+        return "isolated-home-normalized"
     return "isolated-home"
 
 
