@@ -22,8 +22,8 @@ class EditRestartRunnerTests(unittest.TestCase):
         self.assertIn('[Instance0.Keyboard]\nB = 90\nTOML', s)
         # DS keys are sampled at VBlank; a short synthetic X11 key event
         # may be missed even when Qt maps it correctly. Require a held B.
-        self.assertIn('timeout 5s xdotool windowfocus --sync "$win" || true\\n  # A one-shot xdotool key', s)
-        self.assertIn('xdotool keydown --clearmodifiers z\\n  sleep 0.35\\n  xdotool keyup --clearmodifiers z', s)
+        self.assertIn('timeout 5s xdotool windowfocus --sync "$win" || true\n  # A one-shot xdotool key', s)
+        self.assertIn('xdotool keydown --clearmodifiers z\n  sleep 0.35\n  xdotool keyup --clearmodifiers z', s)
         self.assertNotIn('xdotool key --clearmodifiers z', s)
         self.assertIn('python3 tools/melonds_gallery_probe.py "$MELONDS_EDIT_HOME" "$MELONDS_EDIT_RETURN"', s)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-edit-before.sav" "$PWD/mii-ds.sav"', s)
