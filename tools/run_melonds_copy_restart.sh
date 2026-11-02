@@ -188,8 +188,32 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   kill -0 "$emu_pid"
   echo "Edit acceptance: capturing B return"
   capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"
+  # The trusted 1.1 AppImage sometimes accepts touchscreen input while the
+  # main Qt window does not receive a synthesized key event. Do not assume
+  # the key was delivered: the previous two private runs captured an editor
+  # frame with *zero* changed bottom-screen pixels after the first B.
+  # Retry only if the first frame still matches Edit. A second B after a
+  # successful return would instead leave the gallery for Home.
+  if ! python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"; then
+    echo "Edit acceptance: B not observed; focusing game surface and retrying once"
+    # A physical XTest click on the non-interactive upper DS display gives
+    # Qt's screen panel focus without modifying the Mii or touching an
+    # editor slider. Do not send an XSendEvent directly to the window.
+    timeout 5s xdotool mousemove --window "$win" 128 65
+    timeout 5s xdotool mousedown 1
+    sleep 0.15
+    timeout 5s xdotool mouseup 1
+    timeout 5s xdotool windowfocus --sync "$win" || true
+    timeout 5s xdotool keydown --clearmodifiers z
+    sleep 0.6
+    timeout 5s xdotool keyup --clearmodifiers z
+    sleep 6
+    kill -0 "$emu_pid"
+    capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"
+    # Fail closed if the emulator is still in Edit after the bounded retry.
+    python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"
+  fi
   python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"
-  python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"
   echo "Edit acceptance: returned to gallery"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_COPY_IMAGE" --report "$RUNNER_TEMP/melonds-copy-metadata.json"
