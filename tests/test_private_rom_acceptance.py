@@ -56,6 +56,15 @@ class AcceptanceTests(unittest.TestCase):
             self.assertTrue(saved["emulator_launched"])
             self.assertFalse(saved["gameplay_verified"])
 
+    def test_emulator_success_still_requires_gameplay_verification(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "report.json"
+            report = {"emulator_launched": False, "gameplay_verified": False}
+            launch_emulator([sys.executable, "-c", "pass"], report, path)
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertTrue(saved["emulator_launched"])
+            self.assertFalse(saved["gameplay_verified"])
+
     def test_failed_process_creation_does_not_mark_launch(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "report.json"
