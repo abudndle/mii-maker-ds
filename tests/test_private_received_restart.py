@@ -35,6 +35,24 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertLess(s.index('tap 128 "$((touch_origin+127))"'),
                         s.index('tap 128 "$((touch_origin+87))"'))
 
+    def test_no_touch_retry_is_bounded_and_preserves_received_source(self):
+        s = SCRIPT.read_text()
+        # A transient dropped No touch must not fail a real private run, but
+        # only an unchanged modal AND byte-identical EEPROM authorize retry.
+        self.assertEqual(s.count('tap 128 "$((touch_origin+127))"'), 2)
+        retry = s[s.index('if ! timeout 15s python3 tools/check_melonds_confirm_modal.py '
+                          '"$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"'):
+                  s.index('timeout 15s python3 tools/melonds_gallery_probe.py '
+                          '"$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"')]
+        self.assertIn('cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"', retry)
+        self.assertIn('kill -0 "$emu_pid"', retry)
+        self.assertIn('xdotool search --onlyvisible --name "melonDS"', retry)
+        self.assertIn('win="$candidate"', retry)
+        self.assertIn('tap 128 "$((touch_origin+127))"', retry)
+        self.assertIn('capture_received "$MELONDS_RECEIVED_CANCEL"', retry)
+        self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_confirm_modal.py', retry)
+        self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_confirm_modal.py', retry)
+
     def test_received_editor_b_return_is_persistently_read_only(self):
         s = SCRIPT.read_text()
         self.assertIn('cp "$PWD/mii-ds.sav" "$MELONDS_RECEIVED_POSTCOPY"', s)
