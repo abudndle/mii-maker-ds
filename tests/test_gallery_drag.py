@@ -36,6 +36,11 @@ checks={
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
+    "simultaneous shoulder page suppresses fresh stylus box/arrow press":
+        "mds_gallery_touch_press_allowed(" in gallery and
+        "(down&KEY_TOUCH)!=0,(down&(KEY_L|KEY_R))!=0" in gallery and
+        "int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);" in (root/"source/menu.h").read_text() and
+        "return touch_down!=0&&shoulder_down==0;" in (root/"source/menu.c").read_text(),
     "physical page consumes already-held touchscreen arrow":
         "gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(" in gallery and
         "(input.held&KEY_TOUCH)!=0,live_touch_x,live_touch_y,page" in gallery,

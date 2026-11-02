@@ -349,7 +349,10 @@ int main(void)
              * Never dispatch a balloon tap while another control is held. */
             mds_gallery_action_press_cancel_for_held(
                 &gallery_action_press,(input.held&physical_gallery_keys)!=0);
-            if((down&KEY_TOUCH)&&
+            /* A simultaneous L/R and stylus-down must not page twice or
+             * grab a Mii from the destination room after paging. */
+            if(mds_gallery_touch_press_allowed(
+                 (down&KEY_TOUCH)!=0,(down&(KEY_L|KEY_R))!=0)&&
                gallery_action_press.pressed==MDS_GALLERY_ACTION_NONE){
                 int slot=mds_gallery_touch(input.touch.px,input.touch.py,page);
                 MdsGalleryBoxAction box_action=mds_gallery_box_press(

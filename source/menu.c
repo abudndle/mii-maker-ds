@@ -115,6 +115,10 @@ int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned 
 {
     return touch_held?mds_gallery_room_arrow(x,y,page):0;
 }
+int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down)
+{
+    return touch_down!=0&&shoulder_down==0;
+}
 int mds_gallery_slot_step(unsigned page,unsigned selected,int direction)
 {
     if(page>=10||!direction)return -1;
