@@ -111,7 +111,8 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('sleep 0.6', s)
         self.assertLess(s.index('B not observed; focusing game surface and retrying once'),
                         s.index('sleep 0.6'))
-        self.assertIn('kill -0 "$emu_pid"\\n    capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"', s)
+        self.assertIn('kill -0 "$emu_pid"', s)
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"'), 2)
         self.assertIn('melonds-edit.png.gpg', self.workflow)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-postcopy.sav"', self.workflow)
 
