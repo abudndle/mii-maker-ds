@@ -64,6 +64,22 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
         self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
 
+    def test_yes_retry_requires_unchanged_eeprom_and_same_visible_modal(self):
+        s = SCRIPT.read_text()
+        self.assertEqual(s.count('tap 128 "$((touch_origin+87))"'), 2)
+        begin = s.index('Received acceptance: confirming copy-to-edit via original Yes pane')
+        end = s.index('Received acceptance: confirmed copy opened editor', begin)
+        yes = s[begin:end]
+        self.assertIn('if cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"; then', yes)
+        self.assertIn('tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_EDITOR"', yes)
+        self.assertIn('kill -0 "$emu_pid"', yes)
+        self.assertIn('Received acceptance: retrying unobserved Yes touch once', yes)
+        self.assertEqual(yes.count('tap 128 "$((touch_origin+87))"'), 2)
+        self.assertIn('tools/check_gallery_received_copy_save.py "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" --mode copy', yes)
+        self.assertLess(yes.index('--mode copy'),
+                        yes.index('tools/check_melonds_edit_transition.py'))
+        self.assertNotIn('|| true', yes)
+
     def test_received_editor_b_return_is_persistently_read_only(self):
         s = SCRIPT.read_text()
         self.assertIn('cp "$PWD/mii-ds.sav" "$MELONDS_RECEIVED_POSTCOPY"', s)
