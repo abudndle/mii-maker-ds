@@ -6,7 +6,20 @@ test "$(stat -c %s mii-ds.sav)" -eq 8192
 bin_dir="$RUNNER_TEMP/melonds-1.1"
 appimage="$(find "$bin_dir" -maxdepth 3 -type f -name '*.AppImage' -print -quit)"
 test -n "$appimage"
-export MELONDS_APP="$appimage"
+# Extract the verified AppImage once and launch AppRun directly for the
+# third emulator process. The AppImage --appimage-extract-and-run wrapper
+# has intermittently exited with status 127 before the first Edit capture,
+# even though the preceding Favorite and Copy processes succeeded. Keep
+# this extraction in the trusted runner and never upload extracted files.
+edit_appdir="$RUNNER_TEMP/melonds-1.1/edit-apprun"
+mkdir -p "$edit_appdir"
+(
+  cd "$edit_appdir"
+  timeout 60s "$appimage" --appimage-extract >/dev/null
+)
+test -x "$edit_appdir/squashfs-root/AppRun"
+export APPDIR="$edit_appdir/squashfs-root"
+export MELONDS_APP="$APPDIR/AppRun"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
 export MELONDS_EDIT_LOG="$RUNNER_TEMP/melonds-edit.log"
@@ -31,7 +44,7 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # Give the AppImage and its extracted melonDS child a dedicated process
   # group. Killing only the AppImage wrapper can orphan the actual Qt
   # emulator, leaving a stale window or forwarding a later ROM launch to it.
-  setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
+  setsid -w "$MELONDS_APP" "$MELONDS_ROM" >"$MELONDS_EDIT_LOG" 2>&1 &
   emu_pid=$!
   cleanup_emulator() {
     kill -- "-$emu_pid" 2>/dev/null || true
