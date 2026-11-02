@@ -211,8 +211,11 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"
   echo "Edit acceptance: editor transition confirmed"
   timeout 5s xdotool windowfocus --sync "$win" || true
+  # A valid Qt B mapping now reaches the DS. Keep the held key across
+  # several VBlanks but below the host's auto-repeat delay: repeated B
+  # edges could exit Edit and then immediately exit the gallery to Home.
   xdotool keydown --clearmodifiers z
-  sleep 0.35
+  sleep 0.12
   xdotool keyup --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
@@ -235,7 +238,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     timeout 5s xdotool mouseup 1
     timeout 5s xdotool windowfocus --sync "$win" || true
     timeout 5s xdotool keydown --clearmodifiers z
-    sleep 0.6
+    sleep 0.12
     timeout 5s xdotool keyup --clearmodifiers z
     sleep 6
     kill -0 "$emu_pid"
@@ -243,7 +246,17 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     # Fail closed if the emulator is still in Edit after the bounded retry.
     python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"
   fi
-  python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"
+  # The room renderer may still be rebuilding ten original Mii previews
+  # six seconds after the Edit->gallery transition. If the first probe
+  # cannot see multiple Miis, wait for the existing render queue to settle
+  # and recapture WITHOUT another B press (which would leave the gallery).
+  if ! python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"; then
+    echo "Edit acceptance: gallery actors not ready; waiting for redraw"
+    sleep 10
+    kill -0 "$emu_pid"
+    capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"
+    python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"
+  fi
   echo "Edit acceptance: returned to gallery"
 '
 python3 tools/melonds_screen_probe.py "$MELONDS_COPY_IMAGE" --report "$RUNNER_TEMP/melonds-copy-metadata.json"
