@@ -56,6 +56,13 @@ assert(mds_gallery_box_press(0,0)==MDS_GALLERY_BOX_SELECT);
 assert(mds_gallery_box_press(99,0)==MDS_GALLERY_BOX_SELECT);
 assert(mds_gallery_box_press(0,1)==MDS_GALLERY_BOX_DRAG);
 assert(mds_gallery_box_press(99,1)==MDS_GALLERY_BOX_DRAG);
+/* A same-VBlank L/R edge plus release over a valid box must never
+ * be interpreted as a drop in the newly selected room. */
+assert(mds_gallery_drag_release_destination(52,0)==52);
+assert(mds_gallery_drag_release_destination(-1,0)==-1);
+assert(mds_gallery_drag_release_destination(52,1)==-1);
+assert(mds_gallery_drag_release_destination(52,2)==-1);
+assert(mds_gallery_drag_release_destination(52,-1)==-1);
 /* Both an ongoing drag and its release event suppress physical actions. */
 assert(!mds_gallery_drag_blocks_actions(0,0));
 assert(mds_gallery_drag_blocks_actions(0,1));
@@ -85,7 +92,13 @@ assert(mds_gallery_drag_begin(&drag,4,47,1));
 assert(mds_gallery_drag_end(&drag,4,52,&from)==-1); /* future-room slot */
 assert(drag.source==-1);
 assert(mds_gallery_drag_begin(&drag,4,47,1));
-assert(mds_gallery_drag_end(&drag,5,52,&from)==52&&from==47); /* valid cross-room move */
+from=999;
+assert(mds_gallery_drag_end(&drag,5,
+    mds_gallery_drag_release_destination(52,1),&from)==-1); /* simultaneous L/R and stylus-up */
+assert(drag.source==-1&&from==999);
+assert(mds_gallery_drag_begin(&drag,4,47,1));
+assert(mds_gallery_drag_end(&drag,5,
+    mds_gallery_drag_release_destination(52,0),&from)==52&&from==47); /* valid cross-room move */
 assert(drag.source==-1);
 assert(mds_gallery_drag_begin(&drag,4,47,1));
 assert(mds_gallery_drag_end(&drag,5,-1,&from)==-1); /* outside a slot */
