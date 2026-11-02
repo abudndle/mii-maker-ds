@@ -90,6 +90,17 @@ usable = copy.deepcopy(fit)
 usable["scene_affine_ds"] = [0.9, 0, 10, 0, 0.9, 16.9]
 assert check(layout, usable, header, menu)["runtime_anchor_verified"] is False
 
+# Each supplied coordinate is finite, but a large source pane transformed
+# by an otherwise valid affine can overflow to infinity. The old AABB then
+# contained NaN width (inf-inf) and escaped all clipping/touch comparisons.
+overflow = copy.deepcopy(layout)
+overflow["panes"][0]["ds_bounds"] = [1e308, 169, 1.125, 18]
+overflow["panes"][1]["ds_bounds"] = [6.25, 169, 1.125, 18]
+overflow["panes"][2]["ds_bounds"] = [11.3125, 169, 1.125, 18]
+scaled = copy.deepcopy(fit)
+scaled["scene_affine_ds"] = [16, 0, 0, 0, 1, 0]
+reject(overflow, scaled, header, "non-finite transformed action bounds")
+
 # Standalone preflight must not trust a manually supplied affine merely
 # because its transformed icon rectangles line up with the current strips.
 # Mirror/rotate the source panes inversely so all collision and hitbox
