@@ -50,7 +50,7 @@ class MotionPackTests(unittest.TestCase):
 
     def test_noncontiguous_clip_offsets_rejected(self):
         pack = make_pack()
-        struct.pack_into("<I", pack, 32+24+4, 1)
+        struct.pack_into("<I", pack, 32+24, 1)
         with self.assertRaisesRegex(ValueError, "directory entry"):
             MOTION.validate(pack, "fixture")
 
