@@ -179,6 +179,20 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   sleep 7
   kill -0 "$emu_pid"
   capture_received "$MELONDS_RECEIVED_EDITOR"
+  if cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"; then
+    # A dropped Qt Yes touch leaves the original modal visible and the
+    # synthetic EEPROM unchanged. Retry only that exact state, once.
+    timeout 15s python3 tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_EDITOR"
+    kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before Yes retry"; exit 1; }
+    echo "Received acceptance: retrying unobserved Yes touch once"
+    tap 128 "$((touch_origin+87))"
+    sleep 7
+    kill -0 "$emu_pid"
+    capture_received "$MELONDS_RECEIVED_EDITOR"
+  fi
+  # Verify the *actual cartridge transaction* before accepting a visual
+  # editor transition or sending B. A modal animation is not an editable copy.
+  timeout 15s python3 tools/check_gallery_received_copy_save.py "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" --mode copy
   timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_EDITOR"
   echo "Received acceptance: confirmed copy opened editor"
   cp "$PWD/mii-ds.sav" "$MELONDS_RECEIVED_POSTCOPY"
