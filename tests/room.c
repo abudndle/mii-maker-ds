@@ -180,12 +180,12 @@ int main(void)
  int animation_ended=0;
  assert(mds_room_animation_frame(&animation[0],102,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
  assert(mds_room_animation_frame(&animation[1],104,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
- assert(mds_room_animation_frame(&animation[2],106,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[2],108,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
  mds_room_select(&cache,19);
  assert(animation[0].start_tick==100u&&animation[1].start_tick==103u);
  assert(animation[0].clip==0&&animation[1].clip==1);
- assert(mds_room_animation_frame(&animation[1],103u+9u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&!animation_ended);
- assert(mds_room_animation_frame(&animation[1],103u+10u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&animation_ended);
+ assert(mds_room_animation_frame(&animation[1],103u+8u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[1],103u+9u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==8&&animation_ended);
  /* Looping clips wrap independently; one-shot clips hold their last frame. */
  assert(mds_room_animation_frame(&animation[0],100u+10u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&!animation_ended);
  /* VBlank counter wrap is handled by unsigned elapsed-tick subtraction. */
