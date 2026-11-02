@@ -948,10 +948,12 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     walk_ticks=((walk_ticks%768u)+(elapsed%768u))%768u;
     /* Advance recall for every slot, including temporarily empty slots,
      * so a Mii added during recall begins at its home position. */
-    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
-        mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);
     if(elapsed>=walk_home_remaining)walk_home_remaining=0;
     else walk_home_remaining-=elapsed;
+    /* Evaluate the recall deadline before drawing this frame. Without
+     * this ordering, the home pose persists for one extra redraw. */
+    for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
+        mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);
     /* Composite in fixed original SelectMii pane order. Rendering priority
      * may rotate, but draw order must not: overlapping heads and selection
      * markers otherwise flicker as the preview cursor advances. */
