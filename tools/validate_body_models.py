@@ -24,6 +24,10 @@ def inspect_bytes(data: bytes, name: str = 'body mesh') -> tuple[int, int]:
     for index in range(count):
         start = 56 + index * stride
         material, bone = data[start + material_offset], data[start + bone_offset]
+        if data[:4] == b'BOD3':
+            coords = struct.unpack_from('<3i', data, start)
+            if any(abs(value) > 524288 for value in coords):
+                raise ValueError(f'{path}: vertex {index} exceeds wide-coordinate conversion range')
         if bone >= BONES:
             raise ValueError(f'{path}: vertex {index} references missing bone {bone}')
         if material > 1:
