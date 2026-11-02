@@ -18,7 +18,7 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('cp mii-ds.sav "$RUNNER_TEMP/melonds-received-before.sav"', s)
         self.assertIn('setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM"', s)
         self.assertIn('tap 82 "$((touch_origin+71))"', s)
-        self.assertEqual(s.count('tap 210 "$((touch_origin+179))"'), 2)
+        # Two intended Edit actions plus one guarded retry of the first.\n        self.assertEqual(s.count('tap 210 "$((touch_origin+179))"'), 3)\n        retry = s[s.index('if ! timeout 15s python3 tools/check_melonds_confirm_modal.py '\n                          '"$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL"'):\n                  s.index('Received acceptance: rejecting copy-to-edit') ]\n        self.assertIn('cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"', retry)\n        self.assertIn('tap 210 "$((touch_origin+179))"', retry)\n        self.assertIn('capture_received "$MELONDS_RECEIVED_MODAL"', retry)
         self.assertIn('tap 128 "$((touch_origin+127))"', s)
         self.assertIn('tap 128 "$((touch_origin+87))"', s)
         self.assertIn('tools/check_melonds_confirm_modal.py', s)
