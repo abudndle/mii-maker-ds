@@ -491,7 +491,7 @@ int main(void)
             /* SELECT+X is a temporary accessible Favorite shortcut until
              * the original 3DS SelectBalloonButton pane is touch-bound.
              * Mark SELECT consumed so releasing it never exports an image. */
-            if((down&KEY_X)&&!block_gallery_actions&&
+            if(mds_gallery_secondary_key_allowed((down&KEY_X)!=0,(down&KEY_Y)!=0)&&!block_gallery_actions&&
                mds_gallery_controls_secondary_allowed(gallery_action)){
                 if(input.held&KEY_SELECT){
                     gallery_controls.select_used=1;
@@ -506,7 +506,7 @@ int main(void)
                     mds_ui_gallery_confirm(animation_vblanks);
                 drawn_screen=-1;
             }
-            if((down&KEY_Y)&&!block_gallery_actions&&
+            if(mds_gallery_secondary_key_allowed((down&KEY_Y)!=0,(down&KEY_X)!=0)&&!block_gallery_actions&&
                mds_gallery_controls_secondary_allowed(gallery_action)){if(mds_editor_copy(&editor,persist,NULL))page=editor.slot/10;}
             else if(touch_action==MDS_GALLERY_ACTION_COPY&&
                     mds_gallery_controls_secondary_allowed(gallery_action)){

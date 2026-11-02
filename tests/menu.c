@@ -139,6 +139,13 @@ assert(mds_gallery_next_saved(occupied,0,1)==0);
 assert(mds_gallery_next_saved(occupied,0,-1)==0);
 /* Real gallery input contract: held SELECT, not key-repeat SELECT, edits.
  * Standalone SELECT exports only on release; SELECT+A never exports. */
+/* Conflicting X+Y edges cannot both favorite/delete and copy a Mii. */
+assert(mds_gallery_secondary_key_allowed(1,0));
+assert(!mds_gallery_secondary_key_allowed(0,0));
+assert(!mds_gallery_secondary_key_allowed(1,1));
+assert(!mds_gallery_secondary_key_allowed(0,1));
+assert(!mds_gallery_secondary_key_allowed(-1,2));
+assert(mds_gallery_secondary_key_allowed(-1,0));
 MdsGalleryControls controls={0};
 assert(mds_gallery_controls_step(NULL,1,1,1,1,0)==MDS_GALLERY_CONTROL_NONE);
 assert(mds_gallery_controls_step(&controls,0,0,0,0,0)==MDS_GALLERY_CONTROL_NONE);

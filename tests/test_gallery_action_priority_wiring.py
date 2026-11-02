@@ -6,12 +6,13 @@ main=(root/"source/main.c").read_text()
 gallery=main.split("}else if(screen==MDS_SCREEN_GALLERY){",1)[1].split(
     "}else if(screen==MDS_SCREEN_GENDER){",1)[0]
 assert gallery.count("mds_gallery_controls_secondary_allowed(gallery_action)")>=4
-for token in ("if((down&KEY_X)&&!block_gallery_actions&&",
-              "if((down&KEY_Y)&&!block_gallery_actions&&",
+for token in ("if(mds_gallery_secondary_key_allowed((down&KEY_X)!=0,(down&KEY_Y)!=0)&&!block_gallery_actions&&",
+              "if(mds_gallery_secondary_key_allowed((down&KEY_Y)!=0,(down&KEY_X)!=0)&&!block_gallery_actions&&",
               "if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)&&",
               "else if(touch_action==MDS_GALLERY_ACTION_COPY&&"):
     assert token in gallery, token
 assert "KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START" in gallery
+assert "return requested_down!=0&&competing_down==0;" in (root/"source/menu.c").read_text()
 assert "mds_gallery_controls_suppress_export_on_touch(" in gallery
 assert "mds_gallery_controls_consume_physical(" in gallery
 assert "KEY_L|KEY_R|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT|KEY_START;" in gallery

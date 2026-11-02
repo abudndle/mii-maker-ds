@@ -13,6 +13,8 @@ typedef enum {
 typedef struct { unsigned char select_used,select_active; } MdsGalleryControls;
 /* A recall, edit or export excludes same-frame copy/delete/favorite. */
 int mds_gallery_controls_secondary_allowed(unsigned primary_action);
+/* X and Y must not both mutate the gallery in one input event. */
+int mds_gallery_secondary_key_allowed(int requested_down,int competing_down);
 void mds_gallery_controls_reset(MdsGalleryControls *controls);
 /* Any stylus interaction while SELECT is active consumes standalone export,
  * including box selection, room navigation and drags (not only balloon taps). */

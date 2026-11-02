@@ -225,6 +225,13 @@ int mds_home_focus_step(int current,int delta)
 /* Use the VBlank-captured held state, never the auto-repeat bitmask, to
  * distinguish SELECT+A from an ordinary A press. Defer standalone SELECT
  * export until release: holding SELECT to edit must not export first. */
+/* X delete/favorite and Y copy are mutually exclusive physical actions.
+ * Reject both when their edges coincide, rather than committing a Favorite
+ * and then creating a copy from the same queued VBlank. */
+int mds_gallery_secondary_key_allowed(int requested_down,int competing_down)
+{
+ return requested_down!=0&&competing_down==0;
+}
 int mds_gallery_controls_secondary_allowed(unsigned primary_action)
 {
  /* A VBlank may carry multiple physical key edges. A primary gallery
