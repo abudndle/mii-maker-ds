@@ -90,6 +90,38 @@ usable = copy.deepcopy(fit)
 usable["scene_affine_ds"] = [0.9, 0, 10, 0, 0.9, 16.9]
 assert check(layout, usable, header, menu)["runtime_anchor_verified"] is False
 
+# Standalone preflight must not trust a manually supplied affine merely
+# because its transformed icon rectangles line up with the current strips.
+# Mirror/rotate the source panes inversely so all collision and hitbox
+# checks would otherwise pass with exact original action positions.
+mirror = copy.deepcopy(layout)
+for pane in mirror["panes"]:
+    x, y, w, h = pane["ds_bounds"]
+    pane["ds_bounds"] = [256 - x - w, y, w, h]
+flipped = copy.deepcopy(fit)
+flipped["scene_affine_ds"] = [-1, 0, 256, 0, 1, 0]
+reject(mirror, flipped, header, "reverses screen orientation")
+
+inverted = copy.deepcopy(layout)
+for pane in inverted["panes"]:
+    x, y, w, h = pane["ds_bounds"]
+    pane["ds_bounds"] = [256 - x - w, 192 - y - h, w, h]
+flipped["scene_affine_ds"] = [-1, 0, 256, 0, -1, 192]
+reject(inverted, flipped, header, "reverses screen orientation")
+
+quarter_turn = copy.deepcopy(layout)
+for pane in quarter_turn["panes"]:
+    x, y, w, h = pane["ds_bounds"]
+    pane["ds_bounds"] = [y, 192 - x - w, h, w]
+flipped["scene_affine_ds"] = [0, -1, 192, 1, 0, 0]
+reject(quarter_turn, flipped, header, "reverses screen orientation")
+
+# Modest skew is allowed by the fitter; a larger skew can still leave
+# all three transformed icons tappable but is not a valid screen anchor.
+skewed = copy.deepcopy(fit)
+skewed["scene_affine_ds"] = [1, 0.6, -101.4, 0, 1, 0]
+reject(layout, skewed, header, "excessively skews gallery axes")
+
 bad = copy.deepcopy(fit)
 bad["source_sha256"] = "b" * 64
 reject(layout, bad, header, "mismatched")
