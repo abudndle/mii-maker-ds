@@ -92,6 +92,14 @@ class RoomRecallRolloverTests(unittest.TestCase):
         remaining -= 1
         self.assertEqual(remaining, 23)
 
+    def test_pre_gallery_pause_does_not_initialize_room_clock(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        begin = source.index("void mds_ui_room_pause(void)")
+        end = source.index("void mds_ui_room_recall(void)", begin)
+        pause = source[begin:end]
+        self.assertIn("if(walk_room_start!=UINT32_MAX)", pause)
+        self.assertLess(pause.index("if(walk_room_start!=UINT32_MAX)"), pause.index("walk_clock_valid=1;"))
+
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
             remaining = 24
