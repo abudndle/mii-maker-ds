@@ -6,6 +6,25 @@ test "$(stat -c %s mii-ds.sav)" -eq 8192
 bin_dir="$RUNNER_TEMP/melonds-1.1"
 appimage="$(find "$bin_dir" -maxdepth 3 -type f -name '*.AppImage' -print -quit)"
 test -n "$appimage"
+# A detached Qt child from the first emulator may accept the second ROM
+# launch and make the AppImage wrapper exit while leaving a stale XID.
+# Reap only the exact emulator executable on this isolated trusted runner.
+if pgrep -x melonDS >/dev/null 2>&1; then
+  echo "Copy acceptance: clearing prior emulator instance"
+  pkill -TERM -x melonDS 2>/dev/null || true
+  for attempt in 1 2 3 4 5; do
+    if ! pgrep -x melonDS >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+  if pgrep -x melonDS >/dev/null 2>&1; then
+    pkill -KILL -x melonDS 2>/dev/null || true
+    sleep 1
+  fi
+  if pgrep -x melonDS >/dev/null 2>&1; then
+    echo "FAIL: prior melonDS process survived cleanup; refusing Copy test"
+    exit 1
+  fi
+fi
 export MELONDS_APP="$appimage"
 export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_COPY_IMAGE="$RUNNER_TEMP/melonds-copy.png"
@@ -50,7 +69,11 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null || true)"
     if [ -z "$geometry" ]; then
       candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
-      test -n "$candidate" || { echo "FAIL: no live Copy/Edit window"; return 1; }
+      if [ -z "$candidate" ]; then
+        echo "FAIL: no live Copy/Edit window"
+        python3 tools/classify_melonds_startup.py "$MELONDS_COPY_LOG"
+        return 1
+      fi
       geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)" ||
         { echo "FAIL: no Copy/Edit window geometry"; return 1; }
     fi
@@ -85,6 +108,11 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   done
   test -n "$win"
   sleep 12
+  if ! kill -0 "$emu_pid" 2>/dev/null; then
+    echo "FAIL: restarted emulator launcher exited before Home capture"
+    python3 tools/classify_melonds_startup.py "$MELONDS_COPY_LOG"
+    exit 1
+  fi
   echo "Copy acceptance: capturing reopened Home"
   capture_copy_edit "$MELONDS_COPY_HOME"
   timeout 5s xdotool windowfocus --sync "$win" || true
