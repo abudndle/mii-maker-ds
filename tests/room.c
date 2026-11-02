@@ -121,6 +121,16 @@ int main(void)
    assert(walks[slot].dy>=-8&&walks[slot].dy<=8);
   }
  }
+ /* Walking remains periodic across long sessions and near tick rollover. */
+ for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
+  MdsRoomWalk first={0}, repeated={0};
+  mds_room_walk_tick(&first,slot,UINT_MAX-768u,0);
+  mds_room_walk_tick(&repeated,slot,UINT_MAX,0);
+  assert(first.dx==repeated.dx&&first.dy==repeated.dy&&first.phase==repeated.phase);
+  mds_room_walk_tick(&repeated,slot,UINT_MAX-1u,0);
+  assert(repeated.dx>=-8&&repeated.dx<=8);
+  assert(repeated.dy>=-8&&repeated.dy<=8);
+ }
  assert(walks[0].phase!=walks[1].phase);
  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
   mds_room_walk_tick(&walks[slot],slot,768,1);
