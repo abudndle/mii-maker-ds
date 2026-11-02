@@ -15,6 +15,11 @@ def ds_pixels(path):
     w,h=image.size
     if w<256 or h<384:
         raise ValueError("capture smaller than both original 256x192 DS screens")
+    # The private acceptance runner uses native-size 256x384 DS screens.
+    # Refuse wider windows rather than silently sampling their left edge,
+    # which could be toolbar/background pixels rather than the game.
+    if w!=256:
+        raise ValueError(f"capture width {w} is not native DS width 256; crop the emulator viewport first")
     # melonDS screenshots may include the QT menu bar above the DS canvas.
     return image.crop((0,h-384,256,h))
 
