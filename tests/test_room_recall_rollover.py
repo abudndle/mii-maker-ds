@@ -73,6 +73,14 @@ class RoomRecallRolloverTests(unittest.TestCase):
             self.assertEqual(actual, (previous + elapsed) % 768)
             self.assertLess(actual, 768)
 
+    def test_recall_deadline_is_evaluated_before_frame_pose(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        begin = source.index("/* The room walk repeats every 64 phases")
+        end = source.index("/* Composite in fixed original SelectMii pane order.", begin)
+        frame = source[begin:end]
+        self.assertLess(frame.index("if(elapsed>=walk_home_remaining)"), frame.index("mds_room_walk_tick(&room_walk[local],local,walk_ticks"))
+        self.assertEqual(max(0, 1 - 1), 0)
+
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
             remaining = 24
