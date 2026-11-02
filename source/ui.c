@@ -840,10 +840,9 @@ static int walk_clock_valid;
 void mds_ui_room_pause(void)
 {
     /* Exclude time spent in non-room menus from the walking clock. */
-    /* A menu transition may happen before any room was drawn. Preserve
-     * that first-draw initialization state instead of making the room
-     * look like it already sampled a frame. */
-    if(walk_room_start!=UINT32_MAX){
+    /* Do not initialize an untouched room clock, but keep rebasing when
+     * A has already queued a recall before the first gallery draw. */
+    if(walk_room_start!=UINT32_MAX||walk_clock_valid){
         walk_last_clock=animation_clock;
         walk_clock_valid=1;
     }
