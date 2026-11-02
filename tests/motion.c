@@ -75,6 +75,7 @@ int main(void)
  assert(mds_motion_pose(&m,0,0,alias,sizeof base,alias+sizeof base,sizeof out));
  assert(!memcmp(alias,base,sizeof base));
  base[66]=18;assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));base[66]=0;
+ base[65]=2;memset(out,0x6d,sizeof out);assert(!mds_motion_pose(&m,0,0,base,sizeof base,out,sizeof out));for(unsigned i=0;i<sizeof out;i++)assert(out[i]==0x6d);base[65]=0;
  /* A bad final vertex must not leave the output mesh partially updated. */
  memset(base+56+24,0,12);base[56+24]=127;
  memset(out,0xa5,sizeof out);
