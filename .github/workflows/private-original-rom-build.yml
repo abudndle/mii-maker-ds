@@ -148,6 +148,12 @@ jobs:
         continue-on-error: true
         shell: bash
         run: bash tools/run_melonds_headless.sh
+      - name: Restart melonDS and verify copied Mii save persistence
+        id: melon_copy
+        if: ${{ steps.melon_boot.outcome == 'success' }}
+        continue-on-error: true
+        shell: bash
+        run: bash tools/run_melonds_copy_restart.sh
       - name: Encrypt completed ROM and diagnostic frame captures for owner-only retrieval
         if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
         shell: bash
@@ -183,6 +189,11 @@ jobs:
               --output melonds-favorite.png.gpg --encrypt "$RUNNER_TEMP/melonds-favorite.png"
             test -s melonds-favorite.png.gpg
           fi
+          if [ -s "$RUNNER_TEMP/melonds-copy.png" ]; then
+            gpg --batch --yes --trust-model always --recipient "$fingerprint" \
+              --output melonds-copy.png.gpg --encrypt "$RUNNER_TEMP/melonds-copy.png"
+            test -s melonds-copy.png.gpg
+          fi
           echo "PASS: private ROM and emulator framebuffer encrypted before artifact upload."
       - name: Upload encrypted ROM and diagnostic screenshots (owner private key required)
         if: ${{ always() && steps.melon_boot.outcome != 'skipped' }}
@@ -194,19 +205,21 @@ jobs:
             melonds-boot.png.gpg
             melonds-gallery-ten.png.gpg
             melonds-favorite.png.gpg
+            melonds-copy.png.gpg
           retention-days: 7
           if-no-files-found: error
       - name: Reject unverified emulator gameplay after retaining encrypted diagnostics
-        if: ${{ always() && steps.melon_boot.outcome == 'failure' }}
+        if: ${{ always() && (steps.melon_boot.outcome == 'failure' || steps.melon_copy.outcome == 'failure') }}
         shell: bash
         run: |
-          echo "::error::Actual melonDS multi-Mii gallery validation failed; review the encrypted diagnostics."
+          echo "::error::Actual melonDS gallery Favorite or Copy/restart validation failed; review encrypted diagnostics."
           exit 1
       - name: Delete private game files from runner
         if: always()
         shell: bash
         run: |
-          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.sav mii-ds.nds.gpg melonds-boot.png.gpg melonds-gallery-ten.png.gpg melonds-favorite.png.gpg
-          rm -f "$RUNNER_TEMP/melonds-boot.png" "$RUNNER_TEMP/melonds-gallery-ten.png" "$RUNNER_TEMP/melonds-favorite.png" "$RUNNER_TEMP/melonds-boot.log"
+          rm -f /tmp/mii-private-original.zip mii-ds.nds mii-ds.sav mii-ds.nds.gpg melonds-boot.png.gpg melonds-gallery-ten.png.gpg melonds-favorite.png.gpg melonds-copy.png.gpg
+          rm -f "$RUNNER_TEMP/melonds-boot.png" "$RUNNER_TEMP/melonds-gallery-ten.png" "$RUNNER_TEMP/melonds-favorite.png" "$RUNNER_TEMP/melonds-copy.png" "$RUNNER_TEMP/melonds-copy-home.png" "$RUNNER_TEMP/melonds-copy-gallery.png" "$RUNNER_TEMP/melonds-boot.log" "$RUNNER_TEMP/melonds-copy.log"
           rm -f "$RUNNER_TEMP/melonds-favorite-before.sav" "$RUNNER_TEMP/melonds-favorite-save.json" "$RUNNER_TEMP/melonds-favorite-metadata.json"
+          rm -f "$RUNNER_TEMP/melonds-copy-before.sav" "$RUNNER_TEMP/melonds-copy-save.json" "$RUNNER_TEMP/melonds-copy-metadata.json"
           rm -rf nitrofiles assets/ui
