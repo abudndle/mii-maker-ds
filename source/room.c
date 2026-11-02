@@ -1,6 +1,7 @@
 #include "room.h"
+#include "motion.h"
 #include <stddef.h>
-#include <string.h>
+#include <string.h>\n#include "motion.h"
 unsigned mds_room_start(unsigned selected)
 {
  return selected<MDS_SLOTS?(selected/MDS_ROOM_SLOTS)*MDS_ROOM_SLOTS:0;
