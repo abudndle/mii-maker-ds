@@ -25,8 +25,24 @@ class AcceptanceTests(unittest.TestCase):
             missing = Path(d) / "missing.nds"
             archive = Path(d) / "archive.zip"
             archive.write_bytes(b"fixture")
-            with self.assertRaises(FileNotFoundError):
+            with self.assertRaises(ValueError):
                 make_report(missing, archive)
+
+    def test_empty_and_symlinked_evidence_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            rom, archive = Path(d) / "rom.nds", Path(d) / "archive.zip"
+            rom.write_bytes(b"valid synthetic rom")
+            archive.write_bytes(b"")
+            with self.assertRaises(ValueError):
+                make_report(rom, archive)
+            archive.write_bytes(b"valid synthetic archive")
+            rom.write_bytes(b"")
+            with self.assertRaises(ValueError):
+                make_report(rom, archive)
+            rom.unlink()
+            rom.symlink_to(archive)
+            with self.assertRaises(ValueError):
+                make_report(rom, archive)
 
     def test_native_build(self):
         with tempfile.TemporaryDirectory() as d:
