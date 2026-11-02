@@ -81,10 +81,10 @@ class ConfigOriginTests(unittest.TestCase):
         expected = hashlib.sha256(self.config.read_bytes()).hexdigest()
         for bad in ("B = -1", "B = 65", "B = true"):
             with self.subTest(bad=bad):
-                self.config.write_text("[Instance0.Keyboard]\\n" + bad + "\\n")
+                self.config.write_text("[Instance0.Keyboard]\n" + bad + "\n")
                 with self.assertRaisesRegex(ValueError, "not Qt::Key_Z"):
                     inspect(1234, self.home, self.proc, expected)
-        self.config.write_text("[Instance0.Keyboard\\nB = 90\\n")
+        self.config.write_text("[Instance0.Keyboard\nB = 90\n")
         with self.assertRaisesRegex(ValueError, "unreadable"):
             inspect(1234, self.home, self.proc, expected)
 
