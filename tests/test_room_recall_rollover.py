@@ -14,6 +14,11 @@ class RoomRecallRolloverTests(unittest.TestCase):
         self.assertNotIn("walk_ticks<walk_home_until", source)
         self.assertNotIn("walk_ticks+24u", source)
 
+    def test_all_room_slots_receive_recall_updates(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        self.assertIn("mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);", source)
+        self.assertNotIn("if(g->used[start+local])mds_room_walk_tick", source)
+
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
             remaining = 24
