@@ -4,6 +4,8 @@
 Never uploads proprietary resources or the generated ROM.
 """
 import argparse
+import hashlib
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -31,6 +33,17 @@ def main():
     for command in commands(args.archive, docker=args.docker, emulator=args.emulator):
         print("+", " ".join(command), flush=True)
         subprocess.run(command, cwd=ROOT, check=True)
+    rom = ROOT / "mii-ds.nds"
+    report = {
+        "private_rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
+        "private_rom_bytes": rom.stat().st_size,
+        "archive_sha256": hashlib.sha256(args.archive.read_bytes()).hexdigest(),
+        "emulator_launched": bool(args.emulator),
+        "gameplay_verified": False,
+    }
+    report_path = ROOT / "build" / "private-acceptance-report.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("PASS: private ROM build and packaged resource acceptance checks completed")
     if args.emulator:
         print("NOTE: emulator was launched; manual gameplay and save-persistence acceptance remain required")
