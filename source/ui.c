@@ -845,9 +845,11 @@ void mds_ui_room_pause(void)
 }
 void mds_ui_room_recall(void)
 {
+    /* Repeated A presses restart the full recall window, even if the
+     * previous recall was about to expire on this VBlank. */
+    walk_home_remaining=24u;
     for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         mds_room_walk_tick(&room_walk[local],local,0,1);
-    walk_home_remaining=24u;
     walk_last_clock=animation_clock;
     walk_clock_valid=1;
 }
