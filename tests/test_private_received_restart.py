@@ -76,7 +76,11 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_FIRST_MODAL" "$MELONDS_RECEIVED_MODAL"', after_no)
         self.assertLess(after_no.index('capture_received "$MELONDS_RECEIVED_MODAL"'),
                         after_no.index('tools/check_melonds_modal_still_open.py'))
-        self.assertIn('sleep 0.15\\n    timeout 5s xdotool mousedown 1', s)
+        tap = s[s.index('  tap() {'):s.index('  sleep 12', s.index('  tap() {'))]
+        self.assertLess(tap.index('timeout 5s xdotool mousemove --window'),
+                        tap.index('sleep 0.15'))
+        self.assertLess(tap.index('sleep 0.15'),
+                        tap.index('timeout 5s xdotool mousedown 1'))
 
     def test_yes_retry_requires_unchanged_eeprom_and_same_visible_modal(self):
         s = SCRIPT.read_text()
