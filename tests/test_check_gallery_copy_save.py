@@ -66,7 +66,7 @@ class CopySaveTests(unittest.TestCase):
 
     def test_occupied_destination_rejected(self):
         with self.assertRaisesRegex(ValueError, "occupied"):
-            verify(self.before, self.after, destination=1)
+            verify(self.before, self.after, destination=2)
 
     def test_generation_rollover(self):
         before = bytearray(self.before)
