@@ -32,6 +32,18 @@ assert(mds_gallery_drag_arrow_latch_after_page(1,120,90,5)==0);
 assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,9)==0);
 assert(mds_gallery_drag_arrow_latch_after_page(1,5,90,0)==0);
 assert(mds_gallery_drag_arrow_latch_after_page(1,245,90,10)==0);
+/* A simultaneous shoulder edge always wins over a drag arrow, including
+ * blocked boundary paging and opposing L+R edges. Stylus release must
+ * not turn that physical command into an unintended opposite room move. */
+assert(mds_gallery_drag_arrow_page_allowed(1,0,0));
+assert(mds_gallery_drag_arrow_page_allowed(-1,0,0));
+assert(!mds_gallery_drag_arrow_page_allowed(0,0,0));
+assert(!mds_gallery_drag_arrow_page_allowed(1,1,0));
+assert(!mds_gallery_drag_arrow_page_allowed(-1,-1,0));
+assert(!mds_gallery_drag_arrow_page_allowed(1,0,1));
+assert(!mds_gallery_drag_arrow_page_allowed(-1,0,1));
+assert(!mds_gallery_drag_arrow_page_allowed(-1,1,3));
+assert(!mds_gallery_drag_arrow_page_allowed(1,-1,-1));
 assert(mds_gallery_page_step(0,4,1)==14);
 assert(mds_gallery_page_step(4,47,1)==57);
 assert(mds_gallery_page_step(4,47,-1)==37);
