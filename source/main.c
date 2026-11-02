@@ -353,6 +353,8 @@ int main(void)
              * Never dispatch a balloon tap while another control is held. */
             mds_gallery_action_press_cancel_for_held(
                 &gallery_action_press,(input.held&physical_gallery_keys)!=0);
+            if((down&KEY_TOUCH)&&gallery_action_press.pressed==MDS_GALLERY_ACTION_FAVORITE)
+                mds_ui_gallery_favorite_press(animation_vblanks);
             /* A fresh stylus selection must not retarget an A/X/Y/START
              * physical command captured in the same VBlank. Shoulder
              * paging also wins over a simultaneous room/box tap. */
@@ -495,15 +497,19 @@ int main(void)
                mds_gallery_controls_secondary_allowed(gallery_action)){
                 if(input.held&KEY_SELECT){
                     gallery_controls.select_used=1;
-                    if(mds_editor_toggle_favorite(&editor,persist,NULL))
+                    if(mds_editor_toggle_favorite(&editor,persist,NULL)){
+                        mds_ui_gallery_favorite_committed(animation_vblanks);
                         mds_ui_gallery_confirm(animation_vblanks);
+                    }
                     drawn_screen=-1;
                 }else mds_editor_request(&editor,MDS_EDIT_DELETE);
             }
             if(touch_action==MDS_GALLERY_ACTION_FAVORITE&&!(down&KEY_X)&&
                mds_gallery_controls_secondary_allowed(gallery_action)){
-                if(mds_editor_toggle_favorite(&editor,persist,NULL))
+                if(mds_editor_toggle_favorite(&editor,persist,NULL)){
+                    mds_ui_gallery_favorite_committed(animation_vblanks);
                     mds_ui_gallery_confirm(animation_vblanks);
+                }
                 drawn_screen=-1;
             }
             if(mds_gallery_secondary_key_allowed((down&KEY_Y)!=0,(down&KEY_X)!=0)&&!block_gallery_actions&&
