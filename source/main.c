@@ -37,9 +37,24 @@ static void animation_vblank(void)
  if(!(event.down||event.up)&&queued>=23)return;
  unsigned next=(input_write+1)%32;
  if(next==input_read){
-  /* Rendering may take several VBlanks. Drop repeat-only events first;
-   * preserve new button/touch presses even when the FIFO is saturated. */
+  /* A full FIFO can still contain repeat-only entries behind fresh presses.
+   * Discard the oldest repeat before any press/release: dropping a stylus
+   * press would make its later release impossible to match to a drag. */
   if(!(event.down||event.up))return;
+  unsigned drop=input_read;
+  while(drop!=input_write &&
+        (input_queue[drop].down||input_queue[drop].up))
+   drop=(drop+1)%32;
+  if(drop!=input_write){
+   /* Shift only the older entries toward the removed repeat. This keeps
+    * press/release ordering intact even when the ring wraps around. */
+   while(drop!=input_read){
+    unsigned previous=(drop+31)%32;
+    input_queue[drop]=input_queue[previous];
+    drop=previous;
+   }
+  }
+  /* If every entry is an edge, evict the oldest as the last resort. */
   input_read=(input_read+1)%32;
  }
  input_queue[input_write]=event;
