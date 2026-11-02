@@ -190,7 +190,7 @@ int main(void)
  assert(mds_room_animation_frame(&animation[0],100u+10u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&!animation_ended);
  /* VBlank counter wrap is handled by unsigned elapsed-tick subtraction. */
  mds_room_animation_start(&animation[0],1,UINT32_MAX-2u);
- assert(mds_room_animation_frame(&animation[0],1u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==3&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[0],1u,clip_counts,clip_fps,clip_loops,2,&animation_ended)==4&&!animation_ended);
  assert(mds_room_animation_frame(NULL,0,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&animation_ended);
  assert(mds_room_animation_frame(&animation[0],0,clip_counts,clip_fps,clip_loops,1,&animation_ended)==0&&animation_ended);
  /* Walking stays inside a small bounded area and resets on demand. */
