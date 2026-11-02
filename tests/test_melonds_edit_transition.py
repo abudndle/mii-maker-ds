@@ -33,6 +33,13 @@ class EditTransitionTests(unittest.TestCase):
             Image.new("RGB", (256, 384), (0, 0, 0)).save(before)
             Image.new("RGB", (256, 384), (255, 255, 255)).save(after)
             verify(before, after)
+            one_screen = Image.new("RGB", (256, 384), (0, 0, 0))
+            for y in range(192):
+                for x in range(256):
+                    one_screen.putpixel((x, y), (255, 255, 255))
+            one_screen.save(after)
+            with self.assertRaises(ValueError):
+                verify(before, after)
             Image.new("RGB", (256, 384), (0, 0, 0)).save(after)
             with self.assertRaises(ValueError):
                 verify(before, after)
