@@ -57,6 +57,32 @@ graphics into public source files.
 5. Build with the supported BlocksDS toolchain.
 6. Run private ROM acceptance and melonDS tests; keep the ROM and resource archive private.
 
+## Original animation-to-render acceptance
+
+Before building a private ROM, `tools/build_private.py` runs
+`tools/test_original_render.py --asset-zip PRIVATE_RESOURCES.zip`. This
+compiles and executes **two distinct host integration suites** with the
+authorized private assets:
+
+- **ANI1 sampled poses:** verifies existing male/female Wait00 source poses
+  render to images across the sampled timeline.
+- **MSP1 original clip frames:** loads the private original male/female BOD2
+  meshes and 53-clip MSP1 skeletal packs, resolves Wait00, Wait01, Wait02,
+  Wait03Pre, Wait03 and Wait04 by name for each rig, renders the start, middle
+  and final frames, and checks full-body visibility plus independent image and
+  posed-mesh variation.
+
+The asset ZIP is read only for exact known filenames into a temporary host
+workspace. Both suites remove temporary private bytes automatically on exit;
+no source files, images, meshes, proprietary hashes, or ROMs are committed.
+
+`python3 tools/test_original_render.py --compile-only` runs both native
+compiler/linker checks in public CI **without original resources**. Passing
+these asset-free checks is not evidence that private animation frames render
+correctly. A successful private host render is also not a melonDS ROM gameplay
+test; the full private ROM build, emulator screenshots, and live gameplay
+acceptance remain separate requirements.
+
 The project does not require `CFL.DB.dat` or `CFL_DB.dat`. Do not add either as a build prerequisite.
 
 ## Important
