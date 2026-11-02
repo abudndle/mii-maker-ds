@@ -23,6 +23,9 @@ checks = (
     ("pose refresh preserves last complete actor", "gallery_room.actor[local].refresh_pending=1;" in ui and
      "gallery_room.actor[local].refresh_pending||" in top and
      "mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);" in top),
+    ("clip switch preserves populated room until replacement poses arrive",
+     "gallery_room.actor[i].refresh_pending=gallery_room.actor[i].valid!=0;" in ui and
+     "gallery_invalidate_motion_previews();" in ui),
     ("retry only when no input waiting", "mds_ui_gallery_retry_pending()&&!input_waiting()" in main_redraw),
     ("redraw only in gallery or saved picker", "screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED" in main_redraw and "mds_ui_gallery_retry_pending()" in main_redraw),
 )

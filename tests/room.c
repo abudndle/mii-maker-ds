@@ -156,6 +156,14 @@ int main(void)
  assert(cache.actor[1].valid);
  cache.actor[1].refresh_pending=0;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==1);
+ /* Simulate switching to a new original animation: all valid actors
+  * remain drawable, while each awaits an updated pose. */
+ cache.actor[1].refresh_pending=cache.actor[1].valid!=0;
+ cache.actor[4].refresh_pending=cache.actor[4].valid!=0;
+ assert(cache.actor[1].valid&&cache.actor[4].valid);
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ cache.actor[1].refresh_pending=0;
+ cache.actor[4].refresh_pending=0;
  attempts[1]=3;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==4);
  cache.actor[4].valid=0;

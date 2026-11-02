@@ -232,8 +232,11 @@ static void gallery_invalidate_motion_previews(void)
    * The source clip and FPS still come from each original MSP1 rig. */
   mds_room_animation_start(&gallery_actor_motion[i],0,
                            (uint32_t)(0u-i*7u));
-  gallery_room.actor[i].valid=0;
-  gallery_room.actor[i].refresh_pending=0;
+  /* A clip/scene switch needs a fresh original pose, but clearing all
+   * ten completed sprites made the room appear empty until the slow
+   * software renderer rebuilt each one. Retain each matching actor's
+   * previous frame until its new pose is ready. */
+  gallery_room.actor[i].refresh_pending=gallery_room.actor[i].valid!=0;
   gallery_room_attempts[i]=0;
  }
  gallery_retry_pending=1;
