@@ -32,6 +32,13 @@ int main(void)
  assert(!mds_room_matches(&cache,19,0,&a));
  assert(mds_room_capture(&cache,19,0,&a,rendered));
  assert(mds_room_matches(&cache,19,0,&a));
+ /* A pose refresh keeps the previous complete frame visible until a
+  * successful capture atomically replaces its pixels. */
+ cache.actor[0].refresh_pending=1;
+ assert(cache.actor[0].valid);
+ assert(mds_room_matches(&cache,19,0,&a));
+ assert(mds_room_capture(&cache,19,0,&a,rendered));
+ assert(!cache.actor[0].refresh_pending&&cache.actor[0].valid);
  /* Preview resampling must preserve both source-image corners. This
   * catches off-by-one errors at the final source row/column. */
  for(unsigned i=0;i<MDS_ROOM_SOURCE*MDS_ROOM_SOURCE;i++)rendered[i]=0;
@@ -125,6 +132,7 @@ int main(void)
  assert(cache.actor[0].valid&&cache.actor[1].valid&&cache.actor[2].valid);
  mds_room_select(&cache,20);
  assert(cache.start==20);
+ assert(!cache.actor[0].refresh_pending);
  assert(!cache.actor[0].valid);
  assert(!mds_room_capture(&cache,20,10,&a,rendered));
  assert(!mds_room_blit(&cache,20,10,dst,256,192,0,0));
@@ -141,6 +149,13 @@ int main(void)
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==1);
  assert(mds_room_next_refresh(&cache,occupied,attempts,2)==4);
  assert(mds_room_next_refresh(&cache,occupied,attempts,5)==1);
+ /* A pending refresh blocks scheduling a second actor but must not
+  * discard the first actor's complete visible frame. */
+ cache.actor[1].refresh_pending=1;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==-1);
+ assert(cache.actor[1].valid);
+ cache.actor[1].refresh_pending=0;
+ assert(mds_room_next_refresh(&cache,occupied,attempts,0)==1);
  attempts[1]=3;
  assert(mds_room_next_refresh(&cache,occupied,attempts,0)==4);
  cache.actor[4].valid=0;
