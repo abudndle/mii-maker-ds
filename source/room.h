@@ -1,6 +1,7 @@
 #ifndef MDS_ROOM_MODULE_H
 #define MDS_ROOM_MODULE_H
 #include "save.h"
+#include "motion.h"
 #include <stdint.h>
 #define MDS_ROOM_SLOTS 10u
 #define MDS_ROOM_W 42u
@@ -23,6 +24,8 @@ void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int retu
 /* Per-actor animation clock; clip selection and start time survive room changes. */
 void mds_room_animation_start(MdsRoomAnimation *,unsigned clip,uint32_t tick);
 unsigned mds_room_animation_frame(const MdsRoomAnimation *,unsigned ticks,const uint32_t *counts,const uint8_t *fps,const uint8_t *loops,unsigned clip_count,int *ended);
+/* Resolve a private original MSP1 clip directly without reformatting its table. */
+unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *,uint32_t ticks,const MdsMotion *,int *ended);
 unsigned mds_room_start(unsigned selected);
 /* Source: Select.arc.files/blyt/SelectMii, 320x240 canvas to DS 256x192. */
 int mds_room_position(unsigned local,int *x,int *y);
