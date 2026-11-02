@@ -122,9 +122,12 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # Do not trust an on-disk TOML alone: melonDS 1.1 may select an AppImage
   # portable directory or an inherited XDG root. Inspect only the running
   # Qt process executable and HOME/config origin, never print private paths.
-  qt_pid="$(pgrep -n -x melonDS || true)"
-  if [ -z "$qt_pid" ]; then
-    echo "FAIL: no running melonDS Qt process for B mapping audit"
+  # AppImage Qt process names are not reliably "melonDS" in /proc;
+  # the previous trusted run had a live visible window but pgrep -x returned
+  # nothing. Read the actual owner PID from the Qt window's _NET_WM_PID.
+  qt_pid="$(timeout 5s xdotool getwindowpid "$win" 2>/dev/null || true)"
+  if ! [[ "$qt_pid" =~ ^[1-9][0-9]*$ ]] || [ ! -r "/proc/$qt_pid/environ" ]; then
+    echo "FAIL: visible melonDS window has no readable owner PID"
     exit 1
   fi
   python3 tools/verify_melonds_input_config.py --pid "$qt_pid" --expected-home "$HOME"
