@@ -88,6 +88,15 @@ for i, point in enumerate(line_measured["points"]):
     point["ds_center"] = [expected[0] * x + expected[1] * y + expected[2],
                           expected[3] * x + expected[4] * y + expected[5]]
 rejects(near_line, line_measured, "two-dimensional spread")
+# Finite but physically impossible source coordinates can overflow sums,
+# covariance and affine normal equations. Reject before numerical fitting.
+huge_source = copy.deepcopy(layout)
+huge_source["panes"][0]["ds_bounds"] = [1e308, 20, 10, 10]
+rejects(huge_source, measurements, "invalid source pane bounds")
+huge_source["panes"][0]["ds_bounds"] = [20, 20, 1e308, 10]
+rejects(huge_source, measurements, "invalid source pane bounds")
+huge_source["panes"][0]["ds_bounds"] = [999_999, 20, 100, 10]
+rejects(huge_source, measurements, "invalid source pane bounds")
 # Source panes may be well separated while measured screenshot coordinates
 # are collapsed or nearly collinear. These once fitted with zero residual,
 # but cannot reliably anchor the real 3DS scene on the DS screen.
