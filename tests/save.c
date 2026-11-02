@@ -63,4 +63,23 @@ int main(void){MdsAvatar a;
  for(unsigned k=0;k<4;k++)image[MDS_SAVE_BODY+k]=(uint8_t)(bad_crc>>(k*8));
  assert(!mds_gallery_load(&h,image,sizeof image));
  assert(h.active_bank==0&&h.generation==1&&h.used[0]&&!h.used[1]);
- memset(image,0,sizeof image);assert(!mds_gallery_load(&h,image,sizeof image));assert(!mds_gallery_load(&h,image,sizeof image-1));puts("PASS: 100 slots, personal protection, bank selection, torn-bank recovery, malformed images");}
+ memset(image,0,sizeof image);assert(!mds_gallery_load(&h,image,sizeof image));assert(!mds_gallery_load(&h,image,sizeof image-1));
+ /* Both directions of a 64K image/gallery alias must fail before writes.
+  * The surrounding padding keeps the entire aliased image in bounds. */
+ static struct {uint8_t prefix[MDS_SAVE_SIZE];MdsGallery gallery;uint8_t suffix[MDS_SAVE_SIZE];} alias;
+ mds_gallery_new(&alias.gallery);h=alias.gallery;
+ assert(!mds_gallery_commit(&alias.gallery,(uint8_t *)&alias.gallery,MDS_SAVE_SIZE));
+ assert(!memcmp(&alias.gallery,&h,sizeof h));
+ assert(!mds_gallery_commit(&alias.gallery,alias.prefix+MDS_SAVE_SIZE-1u,MDS_SAVE_SIZE));
+ assert(!memcmp(&alias.gallery,&h,sizeof h));
+ /* Make a genuinely valid bank, then place it over the gallery to prove
+  * the loader rejects aliasing even when the CRC checks would pass. */
+ mds_gallery_new(&g);mds_new(&a);a.value[51]=1;
+ assert(mds_gallery_store(&g,0,&a));
+ memset(image,0xff,sizeof image);
+ assert(mds_gallery_commit(&g,image,sizeof image));
+ memcpy((uint8_t *)&alias.gallery,image,sizeof image);
+ h=alias.gallery;
+ assert(!mds_gallery_load(&alias.gallery,(const uint8_t *)&alias.gallery,MDS_SAVE_SIZE));
+ assert(!memcmp(&alias.gallery,&h,sizeof h));
+ puts("PASS: 100 slots, personal protection, torn-bank recovery, malformed images and aliased buffers");}
