@@ -22,6 +22,19 @@ def mesh():
     return buf
 
 
+def wide_mesh():
+    buf = bytearray(56 + 3 * 18)
+    buf[:4] = b'BOD3'
+    struct.pack_into('<I', buf, 4, 3)
+    struct.pack_into('<12f', buf, 8,
+                     1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0)
+    for i in range(3):
+        struct.pack_into('<3i', buf, 56 + i * 18, 40000 + i, 0, 0)
+        buf[56 + i * 18 + 15] = i % 2
+        buf[56 + i * 18 + 16] = i
+    return buf
+
+
 def rejects(path, data):
     path.write_bytes(data)
     try:
@@ -56,4 +69,12 @@ with tempfile.TemporaryDirectory() as temp:
         struct.pack_into("<f", bad, 8, value)
         rejects(path, bad)
 
-print("PASS: original Mii body validator accepts valid BOD2 and rejects 13 corruptions")
+wide = wide_mesh()
+path.write_bytes(wide)
+assert inspect(path) == (3, 1)
+# Wide coordinates are accepted in BOD3 and the 18-byte vertex layout is enforced.
+bad = bytearray(wide)
+bad[56 + 16] = 18
+rejects(path, bad)
+rejects(path, wide[:-1])
+print("PASS: original Mii body validator accepts BOD2/BOD3 and rejects corrupt meshes")
