@@ -173,6 +173,14 @@ int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsi
     *source=(unsigned)start;
     return destination;
 }
+/* A shoulder edge and stylus-up in the same VBlank do not establish that
+ * the release coordinate belongs to the newly displayed destination room.
+ * Suppress that drop, including opposing L+R or a blocked boundary page.
+ * mds_gallery_drag_end still clears the grabbed source safely. */
+int mds_gallery_drag_release_destination(int destination,int shoulder_down)
+{
+    return shoulder_down?-1:destination;
+}
 int mds_gallery_drag_blocks_actions(int was_dragging,int dragging)
 {
     return was_dragging!=0||dragging!=0;

@@ -52,6 +52,12 @@ checks={
         "(input.held&KEY_TOUCH)!=0,(input.up&KEY_TOUCH)!=0" in gallery and
         "live_touch_x,live_touch_y,page" in gallery and
         "return touch_held!=0||touch_up!=0;" in (root/"source/menu.c").read_text(),
+    "simultaneous shoulder and stylus release never moves a saved Mii":
+        "mds_gallery_drag_release_destination(" in gallery and
+        "mds_gallery_touch(input.touch.px,input.touch.py,page)," in gallery and
+        "(down&(KEY_L|KEY_R))!=0),&source);" in gallery and
+        "return shoulder_down?-1:destination;" in (root/"source/menu.c").read_text() and
+        "int mds_gallery_drag_release_destination(int destination,int shoulder_down);" in (root/"source/menu.h").read_text(),
     "continuous touch drag browses rooms over arrows": "if((input.held&KEY_TOUCH)&&gallery_drag.source>=0)" in gallery and
                                       "mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow)" in gallery,
     "continuous arrow hover uses live VBlank coordinates": "mds_gallery_room_arrow(live_touch_x,live_touch_y,page)" in gallery,
