@@ -133,6 +133,14 @@ def check(layout, candidate, header, menu_source):
                 transformed[1] + transformed[3] > touch[1] + touch[3] + 0.01):
             raise ValueError("action outside live touch region: " + name)
         result[name] = transformed
+    # This tool also accepts a standalone candidate JSON file. Do not let a
+    # hand-written or stale fit bypass the screen-orientation checks in the
+    # calibration stage: transformed icons can be made to align with all
+    # provisional hitboxes even when the source pane order is mirrored.
+    if a <= 0 or d <= 0 or det <= 0:
+        raise ValueError("candidate reverses screen orientation")
+    if abs(b) > a * 0.5 or abs(c) > d * 0.5:
+        raise ValueError("candidate excessively skews gallery axes")
     return {"source_sha256": sha, "runtime_anchor_verified": False,
             "action_bounds_ds": {k: [round(v, 4) for v in rect]
                                  for k, rect in result.items()},
