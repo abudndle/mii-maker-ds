@@ -67,6 +67,28 @@ bad = copy.deepcopy(layout)
 for i, pane in enumerate(bad["panes"]):
     pane["ds_bounds"] = [i * 20, 20, 10, 10]
 rejects(bad, measurements, "collinear")
+# Four or more different panes in a tiny cluster can produce a zero-error
+# affine that wildly extrapolates to distant Favorite/Copy/Edit controls.
+clustered = copy.deepcopy(layout)
+cluster_positions = [(20, 20), (22, 20), (20, 22), (22, 22), (21, 21)]
+for pane, (x, y) in zip(clustered["panes"], cluster_positions):
+    pane["ds_bounds"] = [x - 5, y - 5, 10, 10]
+cluster_measured = copy.deepcopy(measurements)
+for point, (x, y) in zip(cluster_measured["points"], cluster_positions):
+    point["ds_center"] = [expected[0] * x + expected[1] * y + expected[2],
+                          expected[3] * x + expected[4] * y + expected[5]]
+rejects(clustered, cluster_measured, "two-dimensional spread")
+# A long but almost collinear cluster must fail even with exact targets.
+near_line = copy.deepcopy(layout)
+for i, pane in enumerate(near_line["panes"]):
+    pane["ds_bounds"] = [20 + 25 * i - 5, 20 + (i % 2) - 5, 10, 10]
+line_measured = copy.deepcopy(measurements)
+for i, point in enumerate(line_measured["points"]):
+    x, y = 20 + 25 * i, 20 + (i % 2)
+    point["ds_center"] = [expected[0] * x + expected[1] * y + expected[2],
+                          expected[3] * x + expected[4] * y + expected[5]]
+rejects(near_line, line_measured, "two-dimensional spread")
+
 bad = copy.deepcopy(measurements)
 bad["points"][0]["ds_center"] = [math.inf, 0]
 rejects(layout, bad, "measured center")
