@@ -39,6 +39,8 @@ export MELONDS_RECEIVED_GALLERY="$RUNNER_TEMP/melonds-received-gallery.png"
 export MELONDS_RECEIVED_MODAL="$RUNNER_TEMP/melonds-received-modal.png"
 export MELONDS_RECEIVED_CANCEL="$RUNNER_TEMP/melonds-received-cancel.png"
 export MELONDS_RECEIVED_EDITOR="$RUNNER_TEMP/melonds-received-editor.png"
+export MELONDS_RECEIVED_RETURN="$RUNNER_TEMP/melonds-received-return.png"
+export MELONDS_RECEIVED_POSTCOPY="$RUNNER_TEMP/melonds-received-postcopy.sav"
 export HOME="$RUNNER_TEMP/melonds-home-received"
 # Proven melonDS 1.1 Qt B key mapping; touch handles Yes/No on the source
 # CLYT B_BtnCommon_00 / B_BtnCommon_01 panes (28..228, y71..103/111..143).
@@ -143,11 +145,42 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   capture_received "$MELONDS_RECEIVED_EDITOR"
   timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_EDITOR"
   echo "Received acceptance: confirmed copy opened editor"
+  cp "$PWD/mii-ds.sav" "$MELONDS_RECEIVED_POSTCOPY"
+  # Copy is committed; B must leave the newly editable copy without another
+  # EEPROM transaction. Keep the synthetic key held across several VBlanks,
+  # but below the host auto-repeat delay.
+  timeout 5s xdotool windowfocus --sync "$win" || true
+  timeout 5s xdotool keydown --clearmodifiers z
+  sleep 0.12
+  timeout 5s xdotool keyup --clearmodifiers z
+  sleep 6
+  kill -0 "$emu_pid"
+  capture_received "$MELONDS_RECEIVED_RETURN"
+  if ! timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_RECEIVED_RETURN" "$MELONDS_RECEIVED_EDITOR"; then
+    echo "Received acceptance: B not observed; retrying after focusing game surface"
+    timeout 5s xdotool mousemove --window "$win" 128 65
+    timeout 5s xdotool mousedown 1
+    sleep 0.15
+    timeout 5s xdotool mouseup 1
+    timeout 5s xdotool windowfocus --sync "$win" || true
+    timeout 5s xdotool keydown --clearmodifiers z
+    sleep 0.12
+    timeout 5s xdotool keyup --clearmodifiers z
+    sleep 6
+    kill -0 "$emu_pid"
+    capture_received "$MELONDS_RECEIVED_RETURN"
+    timeout 15s python3 tools/check_melonds_edit_transition.py "$MELONDS_RECEIVED_RETURN" "$MELONDS_RECEIVED_EDITOR"
+  fi
+  echo "Received acceptance: B returned from editable copy"
 '
 python3 tools/check_gallery_received_copy_save.py \
   "$RUNNER_TEMP/melonds-received-before.sav" mii-ds.sav --mode copy
+cmp -s "$MELONDS_RECEIVED_POSTCOPY" "$PWD/mii-ds.sav" || {
+  echo "FAIL: received editable-copy cancellation changed EEPROM"
+  exit 1
+}
 if grep -Eiq 'segmentation fault|fatal error|failed to open rom|failed to load rom' "$MELONDS_RECEIVED_LOG"; then
   echo "FAIL: received emulator reported fatal/ROM error"
   exit 1
 fi
-echo "PASS: real melonDS received modal cancelled without write, then copied only editable Mii"
+echo "PASS: real melonDS received modal cancelled, copied editable Mii, then B returned without EEPROM write"

@@ -35,6 +35,17 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertLess(s.index('tap 128 "$((touch_origin+127))"'),
                         s.index('tap 128 "$((touch_origin+87))"'))
 
+    def test_received_editor_b_return_is_persistently_read_only(self):
+        s = SCRIPT.read_text()
+        self.assertIn('cp "$PWD/mii-ds.sav" "$MELONDS_RECEIVED_POSTCOPY"', s)
+        self.assertIn('xdotool keydown --clearmodifiers z', s)
+        self.assertIn('xdotool keyup --clearmodifiers z', s)
+        self.assertIn('capture_received "$MELONDS_RECEIVED_RETURN"', s)
+        self.assertIn('tools/check_melonds_edit_transition.py "$MELONDS_RECEIVED_RETURN" "$MELONDS_RECEIVED_EDITOR"', s)
+        self.assertIn('cmp -s "$MELONDS_RECEIVED_POSTCOPY" "$PWD/mii-ds.sav"', s)
+        self.assertLess(s.index('Received acceptance: confirmed copy opened editor'),
+                        s.index('Received acceptance: B returned from editable copy'))
+
     def test_private_runtime_is_bounded_and_no_raw_artifacts(self):
         s = SCRIPT.read_text()
         self.assertIn('timeout 170s xvfb-run', s)
@@ -51,7 +62,7 @@ class ReceivedRunnerTests(unittest.TestCase):
         w = WORKFLOW.read_text()
         self.assertIn('bash tools/run_melonds_received_restart.sh', w)
         self.assertIn('steps.melon_received.outcome', w)
-        for name in ("modal", "cancel", "editor"):
+        for name in ("modal", "cancel", "editor", "return"):
             self.assertIn('melonds-received-' + name + '.png.gpg', w)
         self.assertNotIn('            mii-ds.sav\n', w)
 
