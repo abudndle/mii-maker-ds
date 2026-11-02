@@ -88,6 +88,17 @@ for i, point in enumerate(line_measured["points"]):
     point["ds_center"] = [expected[0] * x + expected[1] * y + expected[2],
                           expected[3] * x + expected[4] * y + expected[5]]
 rejects(near_line, line_measured, "two-dimensional spread")
+# Source panes may be well separated while measured screenshot coordinates
+# are collapsed or nearly collinear. These once fitted with zero residual,
+# but cannot reliably anchor the real 3DS scene on the DS screen.
+collapsed_target = copy.deepcopy(measurements)
+for point, (x, y) in zip(collapsed_target["points"], positions):
+    point["ds_center"] = [120 + 0.02 * x, 80 + 0.02 * y]
+rejects(layout, collapsed_target, "measured panes lack two-dimensional spread")
+near_line_target = copy.deepcopy(measurements)
+for point, (x, y) in zip(near_line_target["points"], positions):
+    point["ds_center"] = [80 + 0.5 * x, 80 + 0.005 * y]
+rejects(layout, near_line_target, "measured panes lack two-dimensional spread")
 
 bad = copy.deepcopy(measurements)
 bad["points"][0]["ds_center"] = [math.inf, 0]
