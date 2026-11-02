@@ -19,6 +19,20 @@ class RoomRecallRolloverTests(unittest.TestCase):
         self.assertIn("mds_room_walk_tick(&room_walk[local],local,walk_ticks,walk_home_remaining!=0u);", source)
         self.assertNotIn("if(g->used[start+local])mds_room_walk_tick", source)
 
+    def test_first_draw_preserves_queued_recall_but_room_switch_cancels(self):
+        source = (ROOT / "source" / "ui.c").read_text(encoding="utf-8")
+        self.assertIn("unsigned previous_room_start=walk_room_start;", source)
+        self.assertIn("if(previous_room_start!=UINT32_MAX)walk_home_remaining=0;", source)
+        remaining = 24
+        previous = 0xffffffff
+        if previous != 0xffffffff:
+            remaining = 0
+        self.assertEqual(remaining, 24)
+        previous = 0
+        if previous != 0xffffffff:
+            remaining = 0
+        self.assertEqual(remaining, 0)
+
     def test_countdown_is_bounded_at_uint_rollover(self):
         for start in (0, 0xffffffff - 10, 0xffffffff):
             remaining = 24
