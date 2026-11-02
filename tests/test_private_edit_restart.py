@@ -1,5 +1,7 @@
 """Require real private Edit/cancel testing without exporting raw saves."""
 import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,33 @@ WORKFLOW = ROOT / ".github/workflows/private-original-rom-build.yml"
 class EditRestartRunnerTests(unittest.TestCase):
     def test_shell_syntax(self):
         subprocess.run(["bash", "-n", str(SCRIPT)], check=True)
+
+    def test_private_startup_diagnostics_never_echo_raw_paths(self):
+        classifier = ROOT / "tools/classify_melonds_startup.py"
+        samples = {
+            "qt-platform-plugin": "qt.qpa.plugin: Could not load the Qt platform plugin xcb",
+            "x11-display": "QXcbConnection: Could not connect to display",
+            "missing-shared-library": "error while loading shared libraries: libtest.so",
+            "existing-emulator-instance": "Another instance is already running",
+            "process-abort": "terminate called after throwing an exception",
+            "unclassified": "Private startup failure without recognized signature",
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            logfile = Path(folder) / "private.log"
+            for category, message in samples.items():
+                # The real emulator log can contain an owner-private ROM path.
+                logfile.write_text(message + "\\nSECRET_ROM_PATH=/owner/ROM.nds\\n")
+                result = subprocess.run(
+                    [sys.executable, str(classifier), str(logfile)],
+                    check=True, capture_output=True, text=True)
+                self.assertEqual(result.stdout.strip(),
+                                 "melonDS startup category: " + category)
+                self.assertNotIn("SECRET_ROM_PATH", result.stdout)
+                self.assertNotIn("/owner/", result.stdout)
+                self.assertNotIn(message, result.stdout)
+        self.assertIn(
+            'python3 tools/classify_melonds_startup.py "$MELONDS_EDIT_LOG"',
+            SCRIPT.read_text())
 
     def test_third_process_uses_touch_edit_and_byte_exact_rollback(self):
         s = SCRIPT.read_text()

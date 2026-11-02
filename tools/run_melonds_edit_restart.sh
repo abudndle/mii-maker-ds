@@ -78,6 +78,9 @@ timeout 150s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
           status=$?
           echo "FAIL: Edit emulator exited before capture (status $status)"
         fi
+        # Print only a fixed failure category, never raw emulator stderr,
+        # which can contain the owner-private ROM and runner paths.
+        python3 tools/classify_melonds_startup.py "$MELONDS_EDIT_LOG"
         return 1
       fi
       candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
