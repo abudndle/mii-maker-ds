@@ -73,7 +73,11 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   python3 tools/check_melonds_edit_transition.py "$MELONDS_EDIT_GALLERY" "$MELONDS_EDIT_IMAGE"
   # No draft changes: B must leave Edit without a cartridge mutation.
   timeout 5s xdotool windowfocus --sync "$win" || true
-  xdotool key --clearmodifiers z
+  # A one-shot xdotool key can last less than a DS VBlank and be missed.
+  # Hold the explicitly mapped B key across multiple 60 Hz samples.
+  xdotool keydown --clearmodifiers z
+  sleep 0.35
+  xdotool keyup --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
   import -window "$win" -depth 8 "$MELONDS_EDIT_RETURN"
