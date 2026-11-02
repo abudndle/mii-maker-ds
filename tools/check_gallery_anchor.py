@@ -116,6 +116,11 @@ def check(layout, candidate, header, menu_source):
             raise ValueError("action touch target too small: " + name)
         corners = ((x, y), (x + w, y), (x, y + h), (x + w, y + h))
         points = [(a * px + b * py + tx, c * px + d * py + ty) for px, py in corners]
+        # Finite inputs can overflow when transformed. Without this check,
+        # inf-inf produces NaN AABB dimensions, which evade screen, overlap
+        # and live-touch comparisons and may be serialized as invalid JSON.
+        if any(not math.isfinite(value) for point in points for value in point):
+            raise ValueError("non-finite transformed action bounds: " + name)
         xs, ys = zip(*points)
         transformed = (min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
         if (transformed[0] < -0.01 or transformed[1] < -0.01 or
