@@ -41,19 +41,19 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     wait "$emu_pid" 2>/dev/null || true
   }
   trap cleanup_emulator EXIT
-  # Qt window XGetImage can block indefinitely after a scene transition.
-  # Bound each new Edit capture and fall back to a validated Xvfb root crop,
-  # never to a raw full-desktop screenshot.
+  # Qt window XGetImage may hang even for the initial reopened Home.
+  # Capture ONLY the validated melonDS window rectangle from isolated Xvfb.
+  # The original window ID remains valid when the title changes; re-search
+  # only when that ID is gone. Never capture or upload the full desktop.
   capture_copy_edit() {
-    local destination="$1" candidate="" geometry="" x y width height
-    if timeout 8s import -window "$win" -depth 8 "$destination" 2>/dev/null &&
-       test -s "$destination"; then
-      return 0
+    local destination="$1" candidate="$win" geometry="" x y width height
+    geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null || true)"
+    if [ -z "$geometry" ]; then
+      candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
+      test -n "$candidate" || { echo "FAIL: no live Copy/Edit window"; return 1; }
+      geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)" ||
+        { echo "FAIL: no Copy/Edit window geometry"; return 1; }
     fi
-    candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
-    test -n "$candidate" || { echo "FAIL: no live Edit window"; return 1; }
-    geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)" ||
-      { echo "FAIL: no Edit window geometry"; return 1; }
     x="$(printf '%s\n' "$geometry" | sed -n 's/^X=//p')"
     y="$(printf '%s\n' "$geometry" | sed -n 's/^Y=//p')"
     width="$(printf '%s\n' "$geometry" | sed -n 's/^WIDTH=//p')"
@@ -62,11 +62,16 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
             "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] ||
        ! (( width >= 256 && height >= 384 &&
              x + width <= 1280 && y + height <= 960 )); then
-      echo "FAIL: unsafe Edit capture geometry"
+      echo "FAIL: unsafe Copy/Edit capture geometry"
       return 1
     fi
+    win="$candidate"
     timeout 12s import -window root -depth 8 -crop "${width}x${height}+${x}+${y}" +repage "$destination"
     test -s "$destination"
+    test "$(timeout 5s identify -format "%wx%h" "$destination")" = "${width}x${height}" || {
+      echo "FAIL: cropped Copy/Edit capture dimensions changed"
+      return 1
+    }
   }
   win=""
   for attempt in $(seq 1 25); do
