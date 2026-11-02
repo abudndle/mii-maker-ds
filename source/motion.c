@@ -75,8 +75,21 @@ int mds_motion_pose(MdsMotion*m,unsigned clip,unsigned frame,const void*base,siz
   if(v>4096*65536||v< -4096*65536)return 0;
   matrices[i][j]=v;
  }
- /* Preflight all references before writing any result. */
- for(unsigned i=0;i<vertices;i++)if(b[56+i*12+10]>=MDS_MOTION_BONES)return 0;
+ /* Preflight every transformed position and normal before writing any
+  * result. A bad final vertex must not leave a partially posed output mesh. */
+ for(unsigned i=0;i<vertices;i++){
+  const uint8_t*s=b+56+i*12;const int32_t*a=matrices[s[10]];
+  int v[3]={coord(s),coord(s+2),coord(s+4)},n[3];
+  for(unsigned k=0;k<3;k++){
+   int64_t p=(int64_t)a[k*4]*v[0]+(int64_t)a[k*4+1]*v[1]+(int64_t)a[k*4+2]*v[2]+(int64_t)a[k*4+3]*128;
+   p=p>=0?(p+32768)/65536:-((-p+32768)/65536);
+   if(p< -524288||p>524288)return 0;
+   int64_t q=(int64_t)a[k*4]*(int8_t)s[6]+(int64_t)a[k*4+1]*(int8_t)s[7]+(int64_t)a[k*4+2]*(int8_t)s[8];
+   q/=4096;if(q< -30000||q>30000)return 0;n[k]=(int)q;
+  }
+  unsigned length=root((unsigned)(n[0]*n[0])+(unsigned)(n[1]*n[1])+(unsigned)(n[2]*n[2]));
+  (void)length;
+ }
  uint8_t*d=out;memcpy(d,b,8);memcpy(d,"BOD3",4);memcpy(d+8,bytes,48);
  for(unsigned i=0;i<vertices;i++){
   const uint8_t*s=b+56+i*12;uint8_t*t=d+56+i*18;const int32_t*a=matrices[s[10]];
