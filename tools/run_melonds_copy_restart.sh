@@ -212,7 +212,7 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   echo "Edit acceptance: editor transition confirmed"
   timeout 5s xdotool windowfocus --sync "$win" || true
   # A valid Qt B mapping now reaches the DS. Keep the held key across
-  # several VBlanks but below the host's auto-repeat delay: repeated B
+  # several VBlanks but below the host auto-repeat delay: repeated B
   # edges could exit Edit and then immediately exit the gallery to Home.
   xdotool keydown --clearmodifiers z
   sleep 0.12
