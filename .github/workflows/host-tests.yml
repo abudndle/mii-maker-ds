@@ -33,6 +33,10 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_check_gallery_received_copy_save.py
       - name: Verify real multi-Mii emulator screenshot acceptance gate
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
+      - name: Verify received-Mii confirmation framebuffer gate
+        run: python3 -m unittest discover -s tests -p test_melonds_confirm_modal.py
+      - name: Verify trusted received-Mii emulator stage and encrypted artifact policy
+        run: python3 -m unittest discover -s tests -p test_private_received_restart.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
       - name: Run asset-free sanitizer tests
