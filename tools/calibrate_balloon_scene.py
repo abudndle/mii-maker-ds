@@ -51,6 +51,17 @@ def _solve3(rows, values):
     return (a, b, center - a * mx - b * my)
 
 
+def _weak_axis_variance(points):
+    """Rotation-invariant spread in the least-observed scene direction."""
+    mx = sum(x for x, _ in points) / len(points)
+    my = sum(y for _, y in points) / len(points)
+    xx = sum((x - mx) ** 2 for x, _ in points) / len(points)
+    yy = sum((y - my) ** 2 for _, y in points) / len(points)
+    xy = sum((x - mx) * (y - my) for x, y in points) / len(points)
+    major = (xx + yy + math.hypot(xx - yy, 2 * xy)) / 2
+    return max(0.0, (xx * yy - xy * xy) / major) if major else 0.0
+
+
 def calibrate(layout, measurements, max_error=2.0):
     if (not isinstance(layout, dict) or not isinstance(measurements, dict)):
         raise ValueError("invalid calibration inputs")
@@ -104,15 +115,14 @@ def calibrate(layout, measurements, max_error=2.0):
     # poorly spread samples even when their residual happens to be zero.
     # The minor covariance eigenvalue measures spread in the weakest axis;
     # it is rotation-invariant, unlike separate X/Y range thresholds.
-    mx = sum(x for x, _ in source) / len(source)
-    my = sum(y for _, y in source) / len(source)
-    xx = sum((x - mx) ** 2 for x, _ in source) / len(source)
-    yy = sum((y - my) ** 2 for _, y in source) / len(source)
-    xy = sum((x - mx) * (y - my) for x, y in source) / len(source)
-    major = (xx + yy + math.hypot(xx - yy, 2 * xy)) / 2
-    minor = max(0.0, (xx * yy - xy * xy) / major) if major else 0.0
-    if minor < 16.0:  # at least 4 DS pixels RMS on the weakest axis
+    if _weak_axis_variance(source) < 16.0:  # 4 source pixels RMS
         raise ValueError("calibration panes lack two-dimensional spread")
+    # The inverse problem also matters: wide source anchors can be fitted
+    # exactly onto a tiny cluster or near-line in the screenshot. Such a fit
+    # cannot distinguish the authentic scene placement from a misannotated
+    # or collapsed transform, even if residuals are exactly zero.
+    if _weak_axis_variance(target) < 16.0:  # 4 DS pixels RMS
+        raise ValueError("measured panes lack two-dimensional spread")
     determinant = a * d - b * c
     if (any(abs(v) > 16 for v in (a, b, c, d)) or
             any(abs(v) > 4096 for v in (tx, ty)) or
