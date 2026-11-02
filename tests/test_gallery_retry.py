@@ -20,6 +20,9 @@ checks = (
     ("thumbnail rendered only if ready", "if(ready)mds_thumbnail_capture(" in gallery),
     ("ten saved actors in source layout", "for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)" in top and "mds_room_position(local,&x,&y)" in top),
     ("individual actor cache per room", "mds_room_matches(&gallery_room" in top),
+    ("pose refresh preserves last complete actor", "gallery_room.actor[local].refresh_pending=1;" in ui and
+     "gallery_room.actor[local].refresh_pending||" in top and
+     "mds_room_blit(&gallery_room,selected,local,top,256,192,x,y);" in top),
     ("retry only when no input waiting", "mds_ui_gallery_retry_pending()&&!input_waiting()" in main_redraw),
     ("redraw only in gallery or saved picker", "screen==MDS_SCREEN_GALLERY||screen==MDS_SCREEN_SAVED" in main_redraw and "mds_ui_gallery_retry_pending()" in main_redraw),
 )
