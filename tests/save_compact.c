@@ -31,5 +31,16 @@ int main(void){
  strcpy(a.miis[99].name,"12345678901");
  assert(!mds_compact_encode(&a,image,sizeof image));
  for(size_t k=0;k<sizeof image;k++)assert(image[k]==0xa5);
- puts("PASS: 100 compact slots, all fields, Unicode round trip, limits, invalid UTF-8, corruption and truncation");
+ /* Overlapping the save image with live gallery RAM must be rejected
+  * without corrupting any saved Mii, even after validation succeeds. */
+ mds_gallery_new(&a);
+ b=a;
+ assert(!mds_compact_encode(&a,(uint8_t *)&a,MDS_COMPACT_SIZE));
+ assert(!memcmp(&a,&b,sizeof a));
+ assert((size_t)((uint8_t *)&a+sizeof a-(uint8_t *)&a.miis[0])>=MDS_COMPACT_SIZE);
+ assert(!mds_compact_encode(&a,(uint8_t *)&a.miis[0],MDS_COMPACT_SIZE));
+ assert(!memcmp(&a,&b,sizeof a));
+ assert(mds_compact_encode(&a,image,sizeof image));
+ assert(!memcmp(&a,&b,sizeof a));
+ puts("PASS: 100 compact slots, all fields, Unicode round trip, limits, invalid UTF-8, corruption, truncation and overlapping output");
 }
