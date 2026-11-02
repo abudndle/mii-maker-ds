@@ -102,6 +102,12 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     test -s "$dest"
   }
   tap() {
+    # Re-resolve the live Qt window before each click; stale XIDs can survive
+    # across modal transitions and silently send input to the wrong surface.
+    local current
+    current="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
+    test -n "$current" || { echo "FAIL: received touch has no visible melonDS window"; return 1; }
+    win="$current"
     timeout 5s xdotool windowfocus --sync "$win" || true
     timeout 5s xdotool mousemove --window "$win" "$1" "$2"
     timeout 5s xdotool mousedown 1
