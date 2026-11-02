@@ -38,13 +38,20 @@ class CopyRestartRunnerTests(unittest.TestCase):
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-copy-postcopy.sav" "$PWD/mii-ds.sav"', s)
         self.assertLess(s.index('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"'),
                         s.index('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"'))
+        self.assertEqual(s.count('capture_copy_edit "$MELONDS_COPY_EDIT_'), 3)
+        self.assertIn('timeout 8s import -window "$win" -depth 8 "$destination"', s)
+        self.assertIn('timeout 12s import -window root -depth 8 -crop', s)
+        self.assertIn('x + width <= 1280 && y + height <= 960', s)
+        self.assertNotIn('import -window root -depth 8 "$destination"', s)
+        for marker in ("capturing selected gallery", "capturing editor", "capturing B return"):
+            self.assertIn("Edit acceptance: " + marker, s)
         self.assertIn('melonds-edit.png.gpg', self.workflow)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-postcopy.sav"', self.workflow)
 
     def test_private_workflow_encrypts_copy_capture_and_cleans_saves(self):
         w = self.workflow
         self.assertNotIn("  pull_request:", w)
-        self.assertIn('run: bash tools/run_melonds_copy_restart.sh', w)
+        self.assertIn('run: timeout 180s bash tools/run_melonds_copy_restart.sh', w)
         self.assertIn("steps.melon_copy.outcome == 'failure'", w)
         self.assertIn('--output melonds-copy.png.gpg --encrypt', w)
         self.assertIn('"$RUNNER_TEMP/melonds-copy-before.sav"', w)
