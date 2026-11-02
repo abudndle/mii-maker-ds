@@ -9,7 +9,7 @@ typedef enum {
     MDS_BALLOON_DECIDE=2,
     MDS_BALLOON_UNDECIDE=3
 } MdsGalleryBalloonClip;
-typedef struct {uint32_t started;uint8_t active,clip,pending_select;} MdsGalleryBalloonClan;
+typedef struct {uint32_t started;uint8_t active,clip,pending_select,pending_decide;} MdsGalleryBalloonClan;
 typedef struct {
     uint32_t favorite_scale_q16;
     unsigned balloon_alpha,favorite_alpha;
@@ -23,6 +23,11 @@ void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now);
 void mds_gallery_balloon_clan_selection_changed(MdsGalleryBalloonClan *state,uint32_t now);
 /* Advance a queued transition; return 1 when Select begins (redraw). */
 int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now);
+/* DS Favorite gesture feedback uses source Decide on press, then source
+ * UnDecide on a successful persisted toggle; Decide restores the icon after
+ * the fade. The original 3DS runtime event table is still unverified. */
+void mds_gallery_balloon_clan_favorite_pressed(MdsGalleryBalloonClan *state,uint32_t now);
+void mds_gallery_balloon_clan_favorite_committed(MdsGalleryBalloonClan *state,uint32_t now);
 /* Exact numeric CLVC playback; call sites for new clips need scene validation. */
 void mds_gallery_balloon_clan_play(MdsGalleryBalloonClan *state,
                                    MdsGalleryBalloonClip clip,uint32_t now);
