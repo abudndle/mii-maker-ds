@@ -6,21 +6,6 @@ test "$(stat -c %s mii-ds.sav)" -eq 8192
 bin_dir="$RUNNER_TEMP/melonds-1.1"
 appimage="$(find "$bin_dir" -maxdepth 3 -type f -name '*.AppImage' -print -quit)"
 test -n "$appimage"
-# Extract the verified AppImage once and launch AppRun directly for the
-# third emulator process. The AppImage --appimage-extract-and-run wrapper
-# has intermittently exited with status 127 before the first Edit capture,
-# even though the preceding Favorite and Copy processes succeeded. Keep
-# this extraction in the trusted runner and never upload extracted files.
-edit_appdir="$RUNNER_TEMP/melonds-1.1/edit-apprun"
-mkdir -p "$edit_appdir"
-(
-  cd "$edit_appdir"
-  timeout 60s "$appimage" --appimage-extract >/dev/null
-)
-test -x "$edit_appdir/squashfs-root/AppRun"
-export APPDIR="$edit_appdir/squashfs-root"
-export MELONDS_APP="$APPDIR/AppRun"
-export MELONDS_ROM="$PWD/mii-ds.nds"
 # The two preceding isolated Xvfb stages must not leave a real Qt emulator
 # behind. AppImage child processes can detach from their launcher's process
 # group and redirect later ROM launches to a stale instance. This trusted
@@ -42,6 +27,21 @@ if pgrep -x melonDS >/dev/null 2>&1; then
     exit 1
   fi
 fi
+# Extract the verified AppImage once and launch AppRun directly for the
+# third emulator process. The AppImage --appimage-extract-and-run wrapper
+# has intermittently exited with status 127 before the first Edit capture,
+# even though the preceding Favorite and Copy processes succeeded. Keep
+# this extraction in the trusted runner and never upload extracted files.
+edit_appdir="$RUNNER_TEMP/melonds-1.1/edit-apprun"
+mkdir -p "$edit_appdir"
+(
+  cd "$edit_appdir"
+  timeout 60s "$appimage" --appimage-extract >/dev/null
+)
+test -x "$edit_appdir/squashfs-root/AppRun"
+export APPDIR="$edit_appdir/squashfs-root"
+export MELONDS_APP="$APPDIR/AppRun"
+export MELONDS_ROM="$PWD/mii-ds.nds"
 export MELONDS_EDIT_IMAGE="$RUNNER_TEMP/melonds-edit.png"
 export MELONDS_EDIT_LOG="$RUNNER_TEMP/melonds-edit.log"
 export MELONDS_EDIT_HOME="$RUNNER_TEMP/melonds-edit-home.png"
