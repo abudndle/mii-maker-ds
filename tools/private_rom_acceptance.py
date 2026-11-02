@@ -22,6 +22,17 @@ def commands(archive, docker=False, emulator=None):
     return steps
 
 
+def make_report(rom, archive, emulator_launched=False):
+    rom, archive = Path(rom), Path(archive)
+    return {
+        "private_rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
+        "private_rom_bytes": rom.stat().st_size,
+        "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "emulator_launched": bool(emulator_launched),
+        "gameplay_verified": False,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
@@ -34,13 +45,7 @@ def main():
         print("+", " ".join(command), flush=True)
         subprocess.run(command, cwd=ROOT, check=True)
     rom = ROOT / "mii-ds.nds"
-    report = {
-        "private_rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
-        "private_rom_bytes": rom.stat().st_size,
-        "archive_sha256": hashlib.sha256(args.archive.read_bytes()).hexdigest(),
-        "emulator_launched": bool(args.emulator),
-        "gameplay_verified": False,
-    }
+    report = make_report(rom, args.archive, emulator_launched=bool(args.emulator))
     report_path = ROOT / "build" / "private-acceptance-report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
