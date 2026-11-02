@@ -91,6 +91,9 @@ typedef struct { int source; } MdsGalleryDrag;
 void mds_gallery_drag_reset(MdsGalleryDrag *drag);
 int mds_gallery_drag_begin(MdsGalleryDrag *drag,unsigned page,int source,int occupied);
 int mds_gallery_drag_end(MdsGalleryDrag *drag,unsigned page,int destination,unsigned *source);
+/* Prevent an unintended persisted Mii move when L/R and stylus-up occur
+ * together: the release coordinates may refer to the previous room. */
+int mds_gallery_drag_release_destination(int destination,int shoulder_down);
 /* Physical gallery commands are ignored throughout a stylus drag, including
  * the release event where drag_end has already cleared the source. */
 int mds_gallery_drag_blocks_actions(int was_dragging,int dragging);
