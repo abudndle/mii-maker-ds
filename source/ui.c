@@ -164,8 +164,10 @@ static void load_animations(void)
  }
  /* Resolve the original clip names once instead of scanning all 53 entries
   * on every VBlank. -1 preserves the existing missing-clip behavior. */
+ int primary=mds_motion_primary(motions);
  for(unsigned i=0;i<6;i++)
-  gallery_idle_indices[i]=mds_motion_find(&motions[0],gallery_idle_names[i]);
+  gallery_idle_indices[i]=primary<0?-1:
+   mds_motion_find(&motions[primary],gallery_idle_names[i]);
  /* Original female/male pack indices differ. Resolve each clip by name. */
  for(unsigned i=0;i<MDS_MOTION_CLIPS;i++)gallery_female_by_male[i]=-1;
  for(unsigned i=0;i<motions[0].count;i++)
@@ -242,7 +244,9 @@ void mds_ui_motion_scene(int gallery)
 int mds_ui_motion_step(int direction)
 {
  if(!motion_scene)return 0;
- int next=mds_motion_cycle(&motions[0],gallery_selected_clip,direction);
+ int primary=mds_motion_primary(motions);
+ int next=primary<0?-1:
+  mds_motion_cycle(&motions[primary],gallery_selected_clip,direction);
  if(next<0||next==gallery_selected_clip)return 0;
  gallery_selected_clip=next;motion_started=animation_clock;
  animation_index=UINT32_MAX;animation_female_index=UINT32_MAX;
@@ -260,43 +264,60 @@ int mds_ui_motion_auto(void)
 int mds_ui_animation_tick(uint32_t ticks)
 {
  animation_clock=ticks;
- if(motions[0].file){
-  unsigned elapsed=ticks-motion_started,key=UINT32_MAX;
+ int primary=mds_motion_primary(motions);
+ if(primary>=0){
+  const MdsMotion *source=&motions[primary];
+  unsigned elapsed=ticks-motion_started;
   int clip=gallery_idle_indices[0];
   if(motion_scene&&gallery_selected_clip>=0)clip=gallery_selected_clip;
   else if(motion_scene){
    unsigned total=0;
-   for(unsigned i=0;i<6;i++){int c=gallery_idle_indices[i];if(c>=0)total+=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;}
+   for(unsigned i=0;i<6;i++){
+    int c=gallery_idle_indices[i];
+    if(c>=0)total+=(source->clips[c].count*60u+source->clips[c].fps-1)/source->clips[c].fps;
+   }
    if(total)elapsed%=total;
    for(unsigned i=0;i<6;i++){
-    int c=gallery_idle_indices[i];if(c<0)continue;
-    unsigned duration=(motions[0].clips[c].count*60u+motions[0].clips[c].fps-1)/motions[0].clips[c].fps;
-    if(elapsed<duration){clip=c;break;}elapsed-=duration;
+    int c=gallery_idle_indices[i];
+    if(c<0)continue;
+    unsigned duration=(source->clips[c].count*60u+source->clips[c].fps-1)/source->clips[c].fps;
+    if(elapsed<duration){clip=c;break;}
+    elapsed-=duration;
    }
   }
-  motion_clip_valid=clip>=0;
-  if(clip>=0){motion_clip=(unsigned)clip;motion_clip_ticks=elapsed;motion_frame=mds_motion_frame(&motions[0].clips[clip],elapsed,NULL);key=motion_clip*7200+motion_frame;}
-  /* Either rig can advance on a different VBlank when source FPS differs.
-   * Refresh the visible Mii if either original animation advances. */
-  unsigned female_key=UINT32_MAX;
-  if(clip>=0&&motions[1].file){
-   int female_clip=gallery_female_by_male[clip];
-   if(female_clip>=0)female_key=(unsigned)female_clip*7200u+
-    mds_motion_frame(&motions[1].clips[female_clip],motion_clip_ticks,NULL);
-  }else if(!motions[1].file){
-   /* Mixed resource bundles may contain the male MSP1 stream but only the
-    * older female ANI1 poses. Track female samples independently so a slow
-    * male clip never freezes the female gallery preview. */
+  unsigned male_key=UINT32_MAX,female_key=UINT32_MAX;
+  motion_clip_valid=clip>=0&&(unsigned)clip<source->count;
+  if(motion_clip_valid){
+   motion_clip=(unsigned)clip;
+   motion_clip_ticks=elapsed;
+   motion_frame=mds_motion_frame(&source->clips[clip],elapsed,NULL);
+   unsigned key=motion_clip*7200u+motion_frame;
+   if(primary==0)male_key=key;
+   else female_key=key;
+   if(primary==0&&motions[1].file){
+    /* Each original rig has its own clip table. Never share numeric IDs. */
+    int female_clip=gallery_female_by_male[clip];
+    if(female_clip>=0)female_key=(unsigned)female_clip*7200u+
+     mds_motion_frame(&motions[1].clips[female_clip],elapsed,NULL);
+   }
+  }
+  if(!motions[1].file){
+   /* Male original MSP1 can coexist with older sampled female ANI1. */
    unsigned sampled=0;
    if(mds_animation_pose(&animations[1],ticks,&sampled))female_key=sampled;
   }
-  int changed=key!=animation_index||female_key!=animation_female_index;
-  animation_index=key;animation_female_index=female_key;
+  if(!motions[0].file){
+   /* A missing male original MSP1 must not freeze valid female animation.
+    * Track the male sampled ANI1 timeline independently of female MSP1. */
+   unsigned sampled=0;
+   if(mds_animation_pose(&animations[0],ticks,&sampled))male_key=sampled;
+  }
+  int changed=male_key!=animation_index||female_key!=animation_female_index;
+  animation_index=male_key;animation_female_index=female_key;
   if(changed)gallery_advance_actor_pose();
   return changed;
  }
- /* Legacy ANI1 fallback can use different pose timing on each gender.
-  * Invalidate the preview when either sampled timeline advances. */
+ /* No original packs: preserve existing male/female ANI1 playback. */
  unsigned male_index=UINT32_MAX,female_index=UINT32_MAX,frame=0;
  if(mds_animation_pose(&animations[0],ticks,&frame))male_index=frame;
  if(mds_animation_pose(&animations[1],ticks,&frame))female_index=frame;
@@ -341,9 +362,12 @@ static int preview(const MdsAvatar *a,int mode)
   /* The gallery timeline is based on the male rig. Resolve the source
    * clip name on each gender's original rig, not its numeric table index. */
   int selected=-1;
-  if(motion_clip_valid&&gender==0&&motion_clip<motions[0].count)selected=(int)motion_clip;
-  else if(motion_clip_valid&&gender==1&&motion_clip<motions[0].count)
-   selected=gallery_female_by_male[motion_clip];
+  int primary=mds_motion_primary(motions);
+  if(motion_clip_valid&&primary>=0&&motion_clip<motions[primary].count){
+   if((unsigned)primary==gender)selected=(int)motion_clip;
+   else if(primary==0&&gender==1)
+    selected=gallery_female_by_male[motion_clip];
+  }
   if(selected>=0){
    unsigned clip=(unsigned)selected;
    /* Recompute from clip-local VBlank time; the two original rigs may
@@ -1009,9 +1033,10 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
            gallery_room_attempts[local]<3u)gallery_retry_pending=1;
     char title[42];snprintf(title,sizeof title,"Room %u / 10",start/10+1);
     label(8,3,title);
-    if(motion_scene&&motions[0].file){
+    if(motion_scene&&mds_motion_primary(motions)>=0){
+        int primary=mds_motion_primary(motions);
         const char *clip_name=gallery_selected_clip<0?"Auto":
-            motions[0].clips[gallery_selected_clip].name;
+            motions[primary].clips[gallery_selected_clip].name;
         char clip_label[48];
         snprintf(clip_label,sizeof clip_label,"Motion: %s",clip_name);
         label(8,150,clip_label);
