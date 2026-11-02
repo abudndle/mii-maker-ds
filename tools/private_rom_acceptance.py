@@ -28,8 +28,12 @@ def sha256_file(path):
     """Hash large private ROMs and archives without loading them into RAM."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as source:
+        before = os.fstat(source.fileno())
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
+        after = os.fstat(source.fileno())
+    if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+        raise ValueError("private evidence file changed while hashing")
     return digest.hexdigest()
 
 
