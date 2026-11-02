@@ -43,6 +43,7 @@ def make_report(rom, archive, emulator_launched=False):
         "private_rom_sha256": sha256_file(rom),
         "private_rom_bytes": rom.stat().st_size,
         "archive_sha256": sha256_file(archive),
+        "archive_bytes": archive.stat().st_size,
         "emulator_launched": bool(emulator_launched),
         "gameplay_verified": False,
     }
