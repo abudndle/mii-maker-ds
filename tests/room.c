@@ -169,6 +169,11 @@ int main(void)
    assert(actual.dx==expected.dx&&actual.dy==expected.dy&&actual.phase==expected.phase);
   }
  }
+ /* All ten actors must have distinct walking phases in the same frame;
+  * otherwise a populated room looks like ten synchronized clones. */
+ for(unsigned first=0;first<MDS_ROOM_SLOTS;first++)
+  for(unsigned second=first+1;second<MDS_ROOM_SLOTS;second++)
+   assert(walks[first].phase!=walks[second].phase);
  assert(walks[0].phase!=walks[1].phase);
  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++){
   mds_room_walk_tick(&walks[slot],slot,768,1);
