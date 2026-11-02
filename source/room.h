@@ -11,6 +11,8 @@ typedef struct {
  uint8_t appearance[MDS_FIELDS];
  uint16_t pixels[MDS_ROOM_W*MDS_ROOM_H];
  uint8_t valid;
+ /* A new pose is requested, but the previous complete frame stays visible. */
+ uint8_t refresh_pending;
 } MdsRoomActor;
 typedef struct {
  unsigned start;

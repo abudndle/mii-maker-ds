@@ -215,7 +215,10 @@ static void gallery_advance_actor_pose(void)
  int local=mds_room_next_refresh(&gallery_room,gallery_room_occupied,
                                gallery_room_attempts,next_actor);
  if(local<0)return;
- gallery_room.actor[local].valid=0;
+ /* Keep the last completed pose on-screen while the next frame renders.
+  * Invalidation here made a walking Mii disappear whenever the costly
+  * software rasterizer was interrupted by a stylus or button event. */
+ gallery_room.actor[local].refresh_pending=1;
  gallery_room_attempts[local]=0;
  next_actor=((unsigned)local+1u)%MDS_ROOM_SLOTS;
  gallery_retry_pending=1;
@@ -230,6 +233,7 @@ static void gallery_invalidate_motion_previews(void)
   mds_room_animation_start(&gallery_actor_motion[i],0,
                            (uint32_t)(0u-i*7u));
   gallery_room.actor[i].valid=0;
+  gallery_room.actor[i].refresh_pending=0;
   gallery_room_attempts[i]=0;
  }
  gallery_retry_pending=1;
@@ -888,6 +892,7 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
          * slot should start a fresh render instead of retaining a stale pose. */
         if(gallery_room_last_start==start&&gallery_room_occupied[local]!=occupied){
             gallery_room.actor[local].valid=0;
+            gallery_room.actor[local].refresh_pending=0;
             gallery_room_attempts[local]=0;
         }
         gallery_room_occupied[local]=occupied;
@@ -923,9 +928,11 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
         if(gallery_room.actor[local].valid&&
            !mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
             gallery_room.actor[local].valid=0;
+            gallery_room.actor[local].refresh_pending=0;
             gallery_room_attempts[local]=0;
         }
-        if(!mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
+        if(gallery_room.actor[local].refresh_pending||
+           !mds_room_matches(&gallery_room,selected,local,&g->miis[slot])){
             unfinished=1;
             if(!rendered_one_actor&&gallery_room_attempts[local]<3u){
                 unsigned before=render_cancelled_count;
@@ -1005,7 +1012,8 @@ void mds_ui_gallery_top(const MdsGallery *g,unsigned page,unsigned selected,cons
     }
     if(unfinished)for(unsigned local=0;local<MDS_ROOM_SLOTS;local++)
         if(g->used[start+local]&&
-           !mds_room_matches(&gallery_room,selected,local,&g->miis[start+local])&&
+           (gallery_room.actor[local].refresh_pending||
+            !mds_room_matches(&gallery_room,selected,local,&g->miis[start+local]))&&
            gallery_room_attempts[local]<3u)gallery_retry_pending=1;
     char title[42];snprintf(title,sizeof title,"Room %u / 10",start/10+1);
     label(8,3,title);
