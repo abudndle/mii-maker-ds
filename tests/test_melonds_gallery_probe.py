@@ -67,6 +67,20 @@ class GalleryProbeTests(unittest.TestCase):
             resized.save(self.after)
         with self.assertRaisesRegex(ValueError,"capture window geometry changed"):
             verify(self.before,self.after)
+    def test_same_size_menu_bar_offset_is_supported(self):
+        self.paint(2)
+        # Both captures have the same 19px menu-bar padding; the DS
+        # viewport remains the bottom 384 pixels of each screenshot.
+        result=verify(self.before,self.after,require_native_width=True)
+        self.assertGreaterEqual(len(result["changed_mii_pane_slots"]),2)
+    def test_different_menu_bar_height_rejected(self):
+        self.paint(2)
+        with Image.open(self.after) as source:
+            shifted=Image.new("RGB",(256,420),"white")
+            shifted.paste(source,(0,17))
+            shifted.save(self.after)
+        with self.assertRaisesRegex(ValueError,"capture window geometry changed"):
+            verify(self.before,self.after)
     def test_tiny_capture_rejected(self):
         Image.new("RGB",(16,16)).save(self.after)
         with self.assertRaisesRegex(ValueError,"smaller"):verify(self.before,self.after)
