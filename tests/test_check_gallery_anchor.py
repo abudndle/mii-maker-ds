@@ -82,4 +82,32 @@ with tempfile.TemporaryDirectory() as tmp:
                     str(source), str(candidate), "--output", str(output)],
                    check=True, capture_output=True)
     assert json.loads(output.read_text()) == result
+# The private calibration command can optionally enforce this geometry gate
+# before it writes a candidate transform. It must never certify authenticity.
+cal_layout = copy.deepcopy(layout)
+cal_layout["panes"].append({"name": "Marker", "ds_bounds": [80, 30, 18, 18]})
+cal_measurements = {"source_sha256": SHA, "points": [
+    {"pane": p["name"],
+     "ds_center": [p["ds_bounds"][0] + p["ds_bounds"][2] / 2,
+                   p["ds_bounds"][1] + p["ds_bounds"][3] / 2]}
+    for p in cal_layout["panes"]]}
+with tempfile.TemporaryDirectory() as tmp:
+    temp = Path(tmp)
+    source, measured, output = (temp / n for n in ("layout.json", "measured.json", "fit.json"))
+    source.write_text(json.dumps(cal_layout))
+    measured.write_text(json.dumps(cal_measurements))
+    command = [sys.executable, str(ROOT / "tools/calibrate_balloon_scene.py"),
+               str(source), str(measured), "--check-gallery-controls",
+               "--output", str(output)]
+    subprocess.run(command, check=True, capture_output=True)
+    assert json.loads(output.read_text())["runtime_anchor_verified"] is False
+    output.unlink()
+    bad_layout = copy.deepcopy(cal_layout)
+    bad_layout["panes"][0]["ds_bounds"][0] = 245
+    bad_measurements = copy.deepcopy(cal_measurements)
+    bad_measurements["points"][0]["ds_center"][0] = 254
+    source.write_text(json.dumps(bad_layout))
+    measured.write_text(json.dumps(bad_measurements))
+    failed = subprocess.run(command, capture_output=True)
+    assert failed.returncode != 0 and not output.exists()
 print("PASS: synthetic scene action bounds, overlap, screen clipping, hash and CLI")

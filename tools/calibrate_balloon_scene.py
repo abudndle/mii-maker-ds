@@ -125,10 +125,20 @@ def main():
     parser.add_argument("runtime_measurements", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-error", type=float, default=2.0)
+    parser.add_argument("--check-gallery-controls", action="store_true",
+                        help="reject fitted Favorite/Copy/Edit bounds overlapping DS controls")
+    parser.add_argument("--menu-header", type=Path,
+                        default=Path(__file__).resolve().parents[1] / "source/menu_generated.h")
+    parser.add_argument("--menu-source", type=Path,
+                        default=Path(__file__).resolve().parents[1] / "source/menu.c")
     args = parser.parse_args()
-    result = calibrate(json.loads(args.layout_report.read_text()),
-                       json.loads(args.runtime_measurements.read_text()),
+    layout = json.loads(args.layout_report.read_text())
+    result = calibrate(layout, json.loads(args.runtime_measurements.read_text()),
                        args.max_error)
+    if args.check_gallery_controls:
+        from check_gallery_anchor import check
+        # A passing preflight is NOT evidence of the original runtime anchor.
+        check(layout, result, args.menu_header.read_text(), args.menu_source.read_text())
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print("PASS: scene affine candidate fitted; runtime anchor NOT verified")
 
