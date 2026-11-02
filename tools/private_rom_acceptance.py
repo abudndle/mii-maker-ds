@@ -41,10 +41,14 @@ def main():
     args = parser.parse_args()
     if not args.archive.is_file():
         parser.error("private resource archive not found")
+    if args.emulator and not Path(args.emulator).is_file():
+        parser.error("emulator executable not found; provide an existing melonDS executable path")
     for command in commands(args.archive, docker=args.docker, emulator=args.emulator):
         print("+", " ".join(command), flush=True)
         subprocess.run(command, cwd=ROOT, check=True)
     rom = ROOT / "mii-ds.nds"
+    if rom.is_symlink() or not rom.is_file() or rom.stat().st_size == 0:
+        raise ValueError("private ROM build did not produce a valid ROM")
     report = make_report(rom, args.archive, emulator_launched=bool(args.emulator))
     report_path = ROOT / "build" / "private-acceptance-report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
