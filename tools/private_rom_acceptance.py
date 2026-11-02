@@ -42,6 +42,8 @@ def make_report(rom, archive, emulator_launched=False):
 def write_report(report_path, report):
     """Replace acceptance evidence atomically to avoid partial JSON files."""
     report_path = Path(report_path)
+    if report_path.is_symlink():
+        raise ValueError("refusing to overwrite symlinked private acceptance report")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
