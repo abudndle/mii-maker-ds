@@ -94,6 +94,15 @@ class CopyRestartRunnerTests(unittest.TestCase):
                         s.index('Copy acceptance: capturing reopened Home'))
         self.assertNotIn('cat "$MELONDS_COPY_LOG"', s)
         self.assertNotIn('export XDG_CONFIG_HOME=', s)
+        # A real owner-private run reached a live Qt window, but the process
+        # had an inherited XDG root that overrode HOME/.config. Clear it
+        # before the mapping is written and before the emulator launches.
+        self.assertIn('unset XDG_CONFIG_HOME', s)
+        self.assertIn('if [ -n "${XDG_CONFIG_HOME:-}" ]; then', s)
+        self.assertLess(s.index('unset XDG_CONFIG_HOME'),
+                        s.index('cat >"$HOME/.config/melonDS/melonDS.toml"'))
+        self.assertLess(s.index('unset XDG_CONFIG_HOME'),
+                        s.index("xvfb-run -a"))
         self.assertIn('cp "$PWD/mii-ds.sav" "$RUNNER_TEMP/melonds-copy-postcopy.sav"', s)
         self.assertIn('xdotool mousemove --window "$win" 210 "$((touch_origin+179))"', s)
         self.assertIn('python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"', s)
