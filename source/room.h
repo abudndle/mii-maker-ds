@@ -17,8 +17,9 @@ typedef struct {
 } MdsRoomCache;
 /* Ten source-layout Mii positions form each 3DS SelectMii room. */
 typedef struct { int16_t dx,dy; uint8_t phase; } MdsRoomWalk;
+typedef struct { uint32_t start_tick; uint8_t clip, playing; } MdsRoomAnimation;
 /* Deterministic bounded wandering; return_home immediately resets displacement. */
-void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home);
+void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home);\n/* Per-actor animation clock; clip selection and start time survive room changes. */\nvoid mds_room_animation_start(MdsRoomAnimation *,unsigned clip,uint32_t tick);\nunsigned mds_room_animation_frame(const MdsRoomAnimation *,unsigned ticks,const uint32_t *counts,const uint8_t *fps,const uint8_t *loops,unsigned clip_count,int *ended);
 unsigned mds_room_start(unsigned selected);
 /* Source: Select.arc.files/blyt/SelectMii, 320x240 canvas to DS 256x192. */
 int mds_room_position(unsigned local,int *x,int *y);
