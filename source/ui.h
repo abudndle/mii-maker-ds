@@ -41,6 +41,8 @@ void mds_ui_gallery_drag_follow(int x,int y);
 void mds_ui_gallery_clan_reset(void);
 int mds_ui_gallery_actions_visible(uint32_t now);
 int mds_ui_gallery_favorite_visible(uint32_t now);
+void mds_ui_gallery_favorite_press(uint32_t now);
+void mds_ui_gallery_favorite_committed(uint32_t now);
 int mds_ui_gallery_clan_tick(unsigned page,unsigned selected,uint32_t now);
 /* Actual original EDITSelectBase ScrollL/ScrollR and SelectMii Decide
  * channel feedback; UI resource bytes are supplied only in private NitroFS. */

@@ -30,14 +30,14 @@ static unsigned duration(const MdsGalleryBalloonClan *state)
 
 void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state)
 {
-    if(state){state->active=0;state->started=0;state->clip=MDS_BALLOON_SELECT;state->pending_select=0;}
+    if(state){state->active=0;state->started=0;state->clip=MDS_BALLOON_SELECT;state->pending_select=0;state->pending_decide=0;}
 }
 void mds_gallery_balloon_clan_play(MdsGalleryBalloonClan *state,
                                    MdsGalleryBalloonClip clip,uint32_t now)
 {
     if(!state||(unsigned)clip>(unsigned)MDS_BALLOON_UNDECIDE)return;
     state->active=1;state->started=now;state->clip=(uint8_t)clip;
-    state->pending_select=0;
+    state->pending_select=0;state->pending_decide=0;
 }
 void mds_gallery_balloon_clan_select(MdsGalleryBalloonClan *state,uint32_t now)
 {
@@ -55,14 +55,34 @@ void mds_gallery_balloon_clan_selection_changed(MdsGalleryBalloonClan *state,uin
     mds_gallery_balloon_clan_play(state,MDS_BALLOON_UNSELECT,now);
     state->pending_select=1;
 }
+void mds_gallery_balloon_clan_favorite_pressed(MdsGalleryBalloonClan *state,uint32_t now)
+{
+    /* A queued selection change owns the balloon until its source fade ends. */
+    if(!state||state->pending_select||state->pending_decide)return;
+    mds_gallery_balloon_clan_play(state,MDS_BALLOON_DECIDE,now);
+}
+void mds_gallery_balloon_clan_favorite_committed(MdsGalleryBalloonClan *state,uint32_t now)
+{
+    if(!state)return;
+    mds_gallery_balloon_clan_play(state,MDS_BALLOON_UNDECIDE,now);
+    state->pending_decide=1;
+}
 int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now)
 {
-    if(!state||!state->pending_select||state->clip!=MDS_BALLOON_UNSELECT||
-       (uint32_t)(now-state->started)<SHORT_TICKS)return 0;
+    if(!state||(uint32_t)(now-state->started)<SHORT_TICKS)return 0;
     /* Preserve elapsed time if a frame was skipped; VBlank wrap is safe. */
     uint32_t started=state->started+SHORT_TICKS;
-    mds_gallery_balloon_clan_select(state,started);
-    return 1;
+    if(state->pending_select&&state->clip==MDS_BALLOON_UNSELECT){
+        mds_gallery_balloon_clan_select(state,started);
+        return 1;
+    }
+    if(state->pending_decide&&state->clip==MDS_BALLOON_UNDECIDE){
+        /* UnDecide fades Favorite only. Restore it with the source Decide
+         * constant-opacity clip; never hide Copy/Edit's parent balloon. */
+        mds_gallery_balloon_clan_play(state,MDS_BALLOON_DECIDE,started);
+        return 1;
+    }
+    return 0;
 }
 int mds_gallery_balloon_clan_active(const MdsGalleryBalloonClan *state,uint32_t now)
 {

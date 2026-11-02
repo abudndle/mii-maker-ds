@@ -9,6 +9,10 @@ source=(root/"source/gallery_balloon_clan.c").read_text()
 main=(root/'source/main.c').read_text()
 assert 'mds_gallery_balloon_clan_selection_changed(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_tick(&gallery_balloon_state,now)' in ui
+assert 'mds_gallery_balloon_clan_favorite_pressed(&gallery_balloon_state,now)' in ui
+assert 'mds_gallery_balloon_clan_favorite_committed(&gallery_balloon_state,now)' in ui
+assert 'mds_ui_gallery_favorite_press(animation_vblanks)' in main
+assert main.count('mds_ui_gallery_favorite_committed(animation_vblanks)') == 2
 assert 'changed||balloon_transition||' in ui
 assert 'mds_gallery_balloon_clan_active(&gallery_balloon_state,now)' in ui
 assert 'mds_gallery_balloon_clan_reset(&gallery_balloon_state)' in ui

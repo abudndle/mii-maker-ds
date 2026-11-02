@@ -86,6 +86,14 @@ int mds_ui_gallery_favorite_visible(uint32_t now)
 {
     return mds_gallery_balloon_clan_favorite_visible(&gallery_balloon_state,now);
 }
+void mds_ui_gallery_favorite_press(uint32_t now)
+{
+    mds_gallery_balloon_clan_favorite_pressed(&gallery_balloon_state,now);
+}
+void mds_ui_gallery_favorite_committed(uint32_t now)
+{
+    mds_gallery_balloon_clan_favorite_committed(&gallery_balloon_state,now);
+}
 static uint32_t gallery_clan_painted=UINT32_MAX;
 static int gallery_clan_was_active;
 void mds_ui_gallery_clan_reset(void)

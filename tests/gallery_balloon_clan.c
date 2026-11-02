@@ -87,6 +87,40 @@ int main(void)
     assert(!mds_gallery_balloon_clan_tick(&state,7u));
     assert(mds_gallery_balloon_clan_tick(&state,8u));
     assert(state.started==8u&&state.clip==MDS_BALLOON_SELECT);
+    /* A Favorite press uses the original Decide constant-opacity clip.
+     * A successful persisted toggle plays UnDecide, which fades Favorite
+     * alone, then restores it with Decide (Copy/Edit never disappear). */
+    mds_gallery_balloon_clan_reset(&state);
+    mds_gallery_balloon_clan_favorite_pressed(&state,300u);
+    assert(state.clip==MDS_BALLOON_DECIDE&&!state.pending_decide);
+    assert(mds_gallery_balloon_clan_favorite_visible(&state,300u));
+    mds_gallery_balloon_clan_favorite_committed(&state,305u);
+    assert(state.clip==MDS_BALLOON_UNDECIDE&&state.pending_decide);
+    assert(mds_gallery_balloon_clan_actions_visible(&state,315u));
+    assert(!mds_gallery_balloon_clan_favorite_visible(&state,315u));
+    assert(!mds_gallery_balloon_clan_tick(&state,316u));
+    assert(mds_gallery_balloon_clan_tick(&state,317u));
+    assert(state.clip==MDS_BALLOON_DECIDE&&state.started==317u);
+    assert(!state.pending_decide&&mds_gallery_balloon_clan_favorite_visible(&state,317u));
+    assert(mds_gallery_balloon_clan_actions_visible(&state,317u));
+    /* Presses during a queued fade must not interrupt its completion. */
+    mds_gallery_balloon_clan_favorite_committed(&state,320u);
+    mds_gallery_balloon_clan_favorite_pressed(&state,322u);
+    assert(state.clip==MDS_BALLOON_UNDECIDE&&state.started==320u);
+    assert(mds_gallery_balloon_clan_tick(&state,332u));
+    /* Selection changes supersede Favorite feedback and still reveal a
+     * new selected Mii after Unselect, even if the old icon was fading. */
+    mds_gallery_balloon_clan_favorite_committed(&state,340u);
+    mds_gallery_balloon_clan_selection_changed(&state,342u);
+    assert(state.clip==MDS_BALLOON_UNSELECT&&state.pending_select);
+    assert(!state.pending_decide);
+    assert(mds_gallery_balloon_clan_tick(&state,354u));
+    assert(state.clip==MDS_BALLOON_SELECT);
+    /* Favorite fade/reveal must remain correct through VBlank rollover. */
+    mds_gallery_balloon_clan_favorite_committed(&state,UINT32_MAX-3u);
+    assert(!mds_gallery_balloon_clan_tick(&state,7u));
+    assert(mds_gallery_balloon_clan_tick(&state,8u));
+    assert(state.clip==MDS_BALLOON_DECIDE&&state.started==8u);
     /* Direct source clip playback cancels an unfinished queued transition. */
     mds_gallery_balloon_clan_selection_changed(&state,10u);
     assert(state.pending_select);
