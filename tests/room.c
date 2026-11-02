@@ -272,6 +272,30 @@ int main(void)
  assert(mds_room_animation_gallery_frame(&animation[0],0u,NULL,
                                          &animation_ended)==0&&animation_ended);
  fclose(original.file);
+ /* Rooms retain their own walking phase after L/R navigation, without
+  * advancing offscreen rooms or borrowing the destination's phase. */
+ unsigned phase_per_room[MDS_SLOTS/MDS_ROOM_SLOTS]={0};
+ assert(mds_room_walk_resume(phase_per_room,UINT_MAX,0,0)==0);
+ assert(mds_room_walk_resume(phase_per_room,0,10,123)==0);
+ assert(phase_per_room[0]==123);
+ assert(mds_room_walk_resume(phase_per_room,10,20,310)==0);
+ assert(phase_per_room[1]==310);
+ assert(mds_room_walk_resume(phase_per_room,20,0,500)==123);
+ assert(phase_per_room[2]==500);
+ MdsRoomWalk returned={0},prior={0};
+ mds_room_walk_tick(&prior,2,123,0);
+ mds_room_walk_tick(&returned,2,
+                    mds_room_walk_resume(phase_per_room,0,10,123),0);
+ /* Re-entering room 2 resumes precisely where it stopped. */
+ mds_room_walk_tick(&prior,2,310,0);
+ assert(prior.dx==returned.dx&&prior.dy==returned.dy);
+ assert(mds_room_walk_resume(phase_per_room,10,20,768u*3u+41u)==500);
+ assert(phase_per_room[1]==41u);
+ /* Invalid room selections may not corrupt any saved walking phase. */
+ assert(mds_room_walk_resume(phase_per_room,20,5,90)==90);
+ assert(phase_per_room[2]==500);
+ assert(mds_room_walk_resume(NULL,0,10,25)==25);
+ assert(mds_room_walk_resume(phase_per_room,UINT_MAX,0,0)==123);
  /* Walking stays inside a small bounded area and resets on demand. */
  MdsRoomWalk walks[MDS_ROOM_SLOTS]={0};
  for(unsigned tick=0;tick<768;tick++){
