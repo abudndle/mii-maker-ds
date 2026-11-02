@@ -396,7 +396,8 @@ int main(void)
              * The move itself is committed only when released on a box. */
             if((input.held&KEY_TOUCH)&&gallery_drag.source>=0){
                 int arrow=mds_gallery_room_arrow(live_touch_x,live_touch_y,page);
-                if(arrow&&arrow!=gallery_drag_arrow_latch){
+                if(mds_gallery_drag_arrow_page_allowed(arrow,gallery_drag_arrow_latch,
+                    (down&(KEY_L|KEY_R))!=0)){
                     int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                     if(next>=0&&(unsigned)next/10!=page){page=(unsigned)next/10;mds_ui_gallery_navigation(arrow,animation_vblanks);drawn_screen=-1;}
                 }
@@ -425,7 +426,8 @@ int main(void)
                 if(gallery_drag.source>=0&&arrow){
                     /* A stylus release on an arrow cancels the drag rather
                      * than leaving a ghost Mii permanently attached. */
-                    if(gallery_drag_arrow_latch!=arrow){
+                    if(mds_gallery_drag_arrow_page_allowed(arrow,gallery_drag_arrow_latch,
+                        (down&(KEY_L|KEY_R))!=0)){
                         int next=mds_gallery_page_step(page,(unsigned)gallery_drag.source,arrow);
                         if(next>=0){page=(unsigned)next/10;mds_ui_gallery_navigation(arrow,animation_vblanks);drawn_screen=-1;}
                     }

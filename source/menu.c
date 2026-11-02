@@ -113,6 +113,14 @@ int mds_gallery_room_arrow(int x,int y,unsigned page)
 /* When L/R changes the destination room during a stylus drag, latch the
  * arrow currently under the stylus. Otherwise the next VBlank sees that
  * same held arrow as a new entry and unintentionally skips another room. */
+/* A physical shoulder edge has priority over an arrow hovered by the
+ * same drag, even when the requested physical page is blocked at room 1/10
+ * or both shoulders are pressed. Otherwise one VBlank can page in the
+ * opposite direction or bypass the shoulder boundary via stylus-up. */
+int mds_gallery_drag_arrow_page_allowed(int arrow,int latched,int shoulder_down)
+{
+    return arrow!=0&&arrow!=latched&&!shoulder_down;
+}
 int mds_gallery_touch_arrow_latch_active(int touch_held,int touch_up)
 {
     return touch_held!=0||touch_up!=0;
