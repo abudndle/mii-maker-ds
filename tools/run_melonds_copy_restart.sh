@@ -41,6 +41,33 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     wait "$emu_pid" 2>/dev/null || true
   }
   trap cleanup_emulator EXIT
+  # Qt window XGetImage can block indefinitely after a scene transition.
+  # Bound each new Edit capture and fall back to a validated Xvfb root crop,
+  # never to a raw full-desktop screenshot.
+  capture_copy_edit() {
+    local destination="$1" candidate="" geometry="" x y width height
+    if timeout 8s import -window "$win" -depth 8 "$destination" 2>/dev/null &&
+       test -s "$destination"; then
+      return 0
+    fi
+    candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
+    test -n "$candidate" || { echo "FAIL: no live Edit window"; return 1; }
+    geometry="$(timeout 5s xdotool getwindowgeometry --shell "$candidate" 2>/dev/null)" ||
+      { echo "FAIL: no Edit window geometry"; return 1; }
+    x="$(printf '%s\\n' "$geometry" | sed -n 's/^X=//p')"
+    y="$(printf '%s\\n' "$geometry" | sed -n 's/^Y=//p')"
+    width="$(printf '%s\\n' "$geometry" | sed -n 's/^WIDTH=//p')"
+    height="$(printf '%s\\n' "$geometry" | sed -n 's/^HEIGHT=//p')"
+    if ! [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ &&
+            "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] ||
+       ! (( width >= 256 && height >= 384 &&
+             x + width <= 1280 && y + height <= 960 )); then
+      echo "FAIL: unsafe Edit capture geometry"
+      return 1
+    fi
+    timeout 12s import -window root -depth 8 -crop "${width}x${height}+${x}+${y}" +repage "$destination"
+    test -s "$destination"
+  }
   win=""
   for attempt in $(seq 1 25); do
     if ! kill -0 "$emu_pid" 2>/dev/null; then
@@ -91,7 +118,8 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   sleep 0.25
   xdotool mouseup 1
   sleep 3
-  import -window "$win" -depth 8 "$MELONDS_COPY_EDIT_GALLERY"
+  echo "Edit acceptance: capturing selected gallery"
+  capture_copy_edit "$MELONDS_COPY_EDIT_GALLERY"
   # Tap actual gallery Edit strip; selection-only changes are excluded from
   # the transition baseline by capturing AFTER selection.
   xdotool mousemove --window "$win" 210 "$((touch_origin+179))"
@@ -100,7 +128,8 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   xdotool mouseup 1
   sleep 6
   kill -0 "$emu_pid"
-  import -window "$win" -depth 8 "$MELONDS_COPY_EDIT_IMAGE"
+  echo "Edit acceptance: capturing editor"
+  capture_copy_edit "$MELONDS_COPY_EDIT_IMAGE"
   python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_GALLERY" "$MELONDS_COPY_EDIT_IMAGE"
   echo "Edit acceptance: editor transition confirmed"
   xdotool windowfocus --sync "$win" || true
@@ -109,7 +138,8 @@ xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   xdotool keyup --clearmodifiers z
   sleep 6
   kill -0 "$emu_pid"
-  import -window "$win" -depth 8 "$MELONDS_COPY_EDIT_RETURN"
+  echo "Edit acceptance: capturing B return"
+  capture_copy_edit "$MELONDS_COPY_EDIT_RETURN"
   python3 tools/melonds_gallery_probe.py "$MELONDS_COPY_HOME" "$MELONDS_COPY_EDIT_RETURN"
   python3 tools/check_melonds_edit_transition.py "$MELONDS_COPY_EDIT_RETURN" "$MELONDS_COPY_EDIT_IMAGE"
   echo "Edit acceptance: returned to gallery"
