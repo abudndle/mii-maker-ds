@@ -38,7 +38,8 @@ typedef enum {
 } MdsGalleryTouchAction;
 MdsGalleryTouchAction mds_gallery_action_touch(int x,int y);
 /* An action activates only on release over its original pressed button.
- * Leaving its bounds cancels; sliding back does not re-arm the action. */
+ * Leaving its bounds cancels and clears its bound slot; sliding back does
+ * not re-arm the action, even if the selection later changes. */
 typedef struct { MdsGalleryTouchAction pressed; int target_slot; } MdsGalleryActionPress;
 void mds_gallery_action_press_reset(MdsGalleryActionPress *gesture);
 /* A physical button's press OR release cancels a pending stylus command. */
