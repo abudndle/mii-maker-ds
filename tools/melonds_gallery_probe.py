@@ -35,6 +35,11 @@ def different(a,b,box,threshold=28):
     return count
 
 def verify(home_path,gallery_path,minimum_actors=2,require_native_width=False):
+    # A window resize between captures changes the sampled viewport and
+    # can masquerade as gameplay movement. Fail rather than compare it.
+    with Image.open(home_path) as before, Image.open(gallery_path) as after:
+        if before.size != after.size:
+            raise ValueError(f"capture window geometry changed ({before.size} vs {after.size})")
     home=ds_pixels(home_path,require_native_width);gallery=ds_pixels(gallery_path,require_native_width)
     if home.tobytes()==gallery.tobytes():
         raise ValueError("gallery capture is identical to home; the input did not reach the game")
