@@ -16,3 +16,5 @@ jobs:
 
       - name: Reject stale private ROM outputs (synthetic fixtures)
         run: python3 -m unittest discover -s tests -p test_private_rom_freshness.py -v
+      - name: Test private ROM acceptance orchestration without proprietary assets
+        run: python3 -m unittest discover -s tests -p test_private_rom_acceptance.py -v
