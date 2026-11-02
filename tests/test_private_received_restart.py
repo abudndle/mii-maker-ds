@@ -64,6 +64,20 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
         self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
 
+    def test_second_received_modal_reselects_source_and_matches_first(self):
+        s = SCRIPT.read_text()
+        self.assertIn('export MELONDS_RECEIVED_FIRST_MODAL=', s)
+        self.assertIn('cp "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_FIRST_MODAL"', s)
+        after_no = s[s.index('Received acceptance: cancellation left cartridge byte-identical'):
+                     s.index('Received acceptance: confirming copy-to-edit via original Yes pane')]
+        self.assertIn('tap 82 "$((touch_origin+71))"', after_no)
+        self.assertLess(after_no.index('tap 82 "$((touch_origin+71))"'),
+                        after_no.index('tap 210 "$((touch_origin+179))"'))
+        self.assertIn('tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_FIRST_MODAL" "$MELONDS_RECEIVED_MODAL"', after_no)
+        self.assertLess(after_no.index('capture_received "$MELONDS_RECEIVED_MODAL"'),
+                        after_no.index('tools/check_melonds_modal_still_open.py'))
+        self.assertIn('sleep 0.15\\n    timeout 5s xdotool mousedown 1', s)
+
     def test_yes_retry_requires_unchanged_eeprom_and_same_visible_modal(self):
         s = SCRIPT.read_text()
         self.assertEqual(s.count('tap 128 "$((touch_origin+87))"'), 2)
