@@ -39,12 +39,11 @@ def derived_icons(archive) -> dict[str, bytes]:
     """
     members = set(archive.namelist())
     found = [name for name in ICONS if SOURCE + name + ".bclim.rgb555" in members]
-    if not found:
-        return {}
-    if len(found) != len(ICONS):
+    if found and len(found) != len(ICONS):
         raise ValueError("incomplete original SelectBalloonButton icon set")
     result = {}
-    for name, (width, height) in ICONS.items():
+    for name in found:
+        width, height = ICONS[name]
         path = SOURCE + name + ".bclim.rgb555"
         pixels = archive.read(path)
         if len(pixels) != 2 * width * height:
