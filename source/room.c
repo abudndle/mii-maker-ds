@@ -114,6 +114,21 @@ unsigned mds_room_animation_frame(const MdsRoomAnimation *state,unsigned ticks,
  return mds_motion_frame(&clip,(uint32_t)(ticks-state->start_tick),ended);
 }
 
+unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *state,uint32_t ticks,
+ const MdsMotion *motion,int *ended)
+{
+ if(ended)*ended=0;
+ if(!state||!state->playing||!motion||!motion->file||
+    state->clip>=motion->count||motion->count>MDS_MOTION_CLIPS){
+  if(ended)*ended=1;
+  return 0;
+ }
+ /* Keep each actor's start tick independent. uint32_t subtraction also
+  * makes a running VBlank clock wrap without losing animation continuity. */
+ return mds_motion_frame(&motion->clips[state->clip],
+                         (uint32_t)(ticks-state->start_tick),ended);
+}
+
 void mds_room_walk_tick(MdsRoomWalk *walk,unsigned local,unsigned ticks,int return_home)
 {
  if(!walk||local>=MDS_ROOM_SLOTS)return;
