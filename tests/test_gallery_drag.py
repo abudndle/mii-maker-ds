@@ -46,11 +46,11 @@ checks={
         "return (right_down!=0)-(left_down!=0);" in (root/"source/menu.c").read_text(),
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
-    "simultaneous shoulder page suppresses fresh stylus box/arrow press":
+    "simultaneous physical commands suppress fresh stylus box/arrow press":
         "mds_gallery_touch_press_allowed(" in gallery and
-        "(down&KEY_TOUCH)!=0,(down&(KEY_L|KEY_R))!=0" in gallery and
-        "int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);" in (root/"source/menu.h").read_text() and
-        "return touch_down!=0&&shoulder_down==0;" in (root/"source/menu.c").read_text(),
+        "(down&(KEY_L|KEY_R|KEY_A|KEY_B|KEY_X|KEY_Y|KEY_START|KEY_SELECT))!=0" in gallery and
+        "int mds_gallery_touch_press_allowed(int touch_down,int physical_down);" in (root/"source/menu.h").read_text() and
+        "return touch_down!=0&&physical_down==0;" in (root/"source/menu.c").read_text(),
     "physical page consumes held or just-released touchscreen arrow":
         "gallery_drag_arrow_latch=mds_gallery_drag_arrow_latch_after_page(" in gallery and
         "mds_gallery_touch_arrow_latch_active(" in gallery and

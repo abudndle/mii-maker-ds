@@ -80,9 +80,10 @@ int mds_gallery_room_arrow(int x,int y,unsigned page);
 int mds_gallery_drag_arrow_page_allowed(int arrow,int latched,int shoulder_down);
 int mds_gallery_touch_arrow_latch_active(int touch_held,int touch_up);
 int mds_gallery_drag_arrow_latch_after_page(int touch_held,int x,int y,unsigned page);
-/* When L/R and a fresh stylus press arrive in one VBlank, shoulder paging
- * takes priority. Do not select or grab a box in the newly displayed room. */
-int mds_gallery_touch_press_allowed(int touch_down,int shoulder_down);
+/* A physical command and fresh stylus press in one VBlank must not select
+ * a different Mii before X/Y/SELECT shortcuts execute; L/R also wins over
+ * a room/box tap. Only a standalone stylus press may change selection. */
+int mds_gallery_touch_press_allowed(int touch_down,int physical_down);
 /* Simultaneous opposite shoulder edges cancel instead of arbitrarily
  * paging left; this also applies while dragging a Mii between rooms. */
 int mds_gallery_shoulder_direction(int left_down,int right_down);

@@ -54,13 +54,16 @@ assert(mds_gallery_page_step(10,0,1)==-1);
 assert(mds_gallery_page_step(3,35,0)==-1);
 assert(mds_gallery_page_step(0,100,1)==-1);
 assert(mds_gallery_page_step(5,UINT_MAX,-1)==-1);
-/* A simultaneous L/R edge wins over a fresh touchscreen press, so a
- * touched room arrow cannot advance a second room in the same VBlank. */
+/* A simultaneous physical command wins over a fresh touchscreen press.
+ * A/X/Y/SELECT cannot retarget an unintended Mii through a same-frame tap,
+ * and L/R cannot advance a second room via the touched room arrow. */
 assert(mds_gallery_touch_press_allowed(1,0));
 assert(!mds_gallery_touch_press_allowed(1,1));
 assert(!mds_gallery_touch_press_allowed(0,1));
 assert(!mds_gallery_touch_press_allowed(0,0));
 assert(mds_gallery_touch_press_allowed(-1,0));
+assert(!mds_gallery_touch_press_allowed(1,-1));
+assert(!mds_gallery_touch_press_allowed(-1,2));
 /* Empty boxes are selectable, but cannot begin a stylus drag. */
 assert(mds_gallery_box_press(-1,1)==MDS_GALLERY_BOX_NONE);
 assert(mds_gallery_box_press(100,1)==MDS_GALLERY_BOX_NONE);
