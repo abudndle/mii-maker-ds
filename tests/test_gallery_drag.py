@@ -34,6 +34,11 @@ checks={
     "room tab touch uses recovered original pane": "mds_gallery_room_touch(input.touch.px,input.touch.py)" in gallery,
     "room arrow hover is latched": "gallery_drag_arrow_latch=arrow;" in gallery and "arrow!=gallery_drag_arrow_latch" in gallery,
     "physical L/R navigate rooms when idle": "mds_gallery_page_step(page,editor.slot,direction)" in gallery,
+    "opposing L/R inputs do not page either a room or a drag":
+        "int shoulder_direction=mds_gallery_shoulder_direction(" in gallery and
+        "(down&KEY_L)!=0,(down&KEY_R)!=0" in gallery and
+        "if(shoulder_direction){" in gallery and
+        "return (right_down!=0)-(left_down!=0);" in (root/"source/menu.c").read_text(),
     "physical L/R browse destination while dragging": "mds_gallery_page_step(page,gallery_drag.source,direction)" in gallery and
                                       "gallery_drag.source>=0" in gallery,
     "simultaneous shoulder page suppresses fresh stylus box/arrow press":
