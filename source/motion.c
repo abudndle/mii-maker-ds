@@ -78,7 +78,7 @@ int mds_motion_pose(MdsMotion*m,unsigned clip,unsigned frame,const void*base,siz
  /* Preflight every transformed position and normal before writing any
   * result. A bad final vertex must not leave a partially posed output mesh. */
  for(unsigned i=0;i<vertices;i++){
-  const uint8_t*s=b+56+i*12;const int32_t*a=matrices[s[10]];
+  const uint8_t*s=b+56+i*12;if(s[10]>=MDS_MOTION_BONES)return 0;const int32_t*a=matrices[s[10]];
   int v[3]={coord(s),coord(s+2),coord(s+4)},n[3];
   for(unsigned k=0;k<3;k++){
    int64_t p=(int64_t)a[k*4]*v[0]+(int64_t)a[k*4+1]*v[1]+(int64_t)a[k*4+2]*v[2]+(int64_t)a[k*4+3]*128;
