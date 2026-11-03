@@ -46,7 +46,7 @@ int main(void)
     }
     /* Source-derived, privately staged: not included in public builds. */
     if(!NE_ModelLoadDSMFAT(scene.model,"nitro:/models/MiiBody_dsm.bin")||
-       !NE_AnimationLoadFAT(clip,"nitro:/models/MiiBody_base_pose_dsa.bin")){
+       !NE_AnimationLoadFAT(clip,"nitro:/models/MiiBody_dsa.bin")){
         iprintf("Private DSM / DSA absent\n");
         iprintf("Run dsma-private-model\n");
         for(;;)swiWaitForVBlank();
