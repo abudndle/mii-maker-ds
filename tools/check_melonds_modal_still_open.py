@@ -18,19 +18,22 @@ def verify(modal_path, after_path, threshold=28):
         a = modal.convert("RGB").crop((0, origin, 256, origin + 192))
         b = after.convert("RGB").crop((0, origin, 256, origin + 192))
     ma, ab = a.load(), b.load()
-    for choice, (x0, y0, x1, y1) in enumerate(CHOICE_PANES):
-        changed = sum(
+    changed_total = 0
+    area_total = 0
+    for x0, y0, x1, y1 in CHOICE_PANES:
+        changed_total += sum(
             max(abs(ma[x, y][channel] - ab[x, y][channel])
                 for channel in range(3)) >= threshold
             for y in range(y0, y1) for x in range(x0, x1)
         )
-        area = (x1 - x0) * (y1 - y0)
-        # A highlighted button can animate; a replaced dialog cannot.
-        if changed * 100 >= area * 35:
-            # Only numeric pane-change evidence leaves the trusted runner.
-            raise ValueError(
-                "received confirmation no longer looks open "
-                f"(choice={choice}, changed={changed}, area={area})")
+        area_total += (x1 - x0) * (y1 - y0)
+    # Selecting the other choice may legitimately repaint one pane. Judge
+    # both panes together: a single highlight transition is tolerated, while
+    # a dismissed/replaced dialog changes most of the combined choice area.
+    if changed_total * 100 >= area_total * 35:
+        raise ValueError(
+            "received confirmation no longer looks open "
+            f"(changed={changed_total}, area={area_total})")
     return {"verified": True, "modal_still_open": True}
 
 
