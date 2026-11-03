@@ -15,6 +15,9 @@ void mds_new(MdsAvatar *a);
  * Presets are provisional pending original 3DS field-by-field calibration;
  * preserve Personal Mii, nickname, metadata and save permissions. */
 int mds_creation_default(MdsAvatar *avatar,unsigned gender);
+/* Prepare a visual-only copy for the gender chooser without changing the
+ * unsaved draft or its Personal Mii / permission metadata. */
+int mds_creation_preview(const MdsAvatar *draft,unsigned gender,MdsAvatar *out);
 int mds_valid(const MdsAvatar *a);
 void mds_adjust(MdsAvatar *a,unsigned field,int delta);
 int mds_encode(const MdsAvatar *a,uint8_t *out,size_t size);

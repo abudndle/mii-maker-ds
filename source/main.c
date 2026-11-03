@@ -91,6 +91,7 @@ int main(void)
     static MdsPhotoCandidates photo_candidates;
     MdsPhotoTouch photo_touch;mds_photo_touch_reset(&photo_touch);
     static MdsAvatar photo_generated[3];
+    static MdsAvatar gender_preview;
     /* On a writable blank cartridge, first launch must create the
      * console's Personal Mii before ordinary home/gallery navigation. */
     if(save_ready&&mds_gallery_empty(&gallery)&&
@@ -658,8 +659,8 @@ int main(void)
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_GENDER){
-            if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
-            if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
+            if(k&KEY_LEFT){mds_profile_choice_step(&profile,-1);drawn_screen=-1;}
+            if(k&KEY_RIGHT){mds_profile_choice_step(&profile,1);drawn_screen=-1;}
             int chosen=-1;
             if(down&KEY_A)chosen=profile.choice;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
@@ -831,7 +832,16 @@ int main(void)
                             editor.status,mds_editor_dirty(&editor));
             }
             else if(screen==MDS_SCREEN_CREATE_METHOD){mds_ui_create_method(create_method_selection,isDSiMode());}
-            else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
+            else if(screen==MDS_SCREEN_GENDER){
+                /* The selected default Mii is shown before confirmation,
+                 * without changing the unsaved Personal Mii draft. */
+                const MdsAvatar *shown=&editor.draft;
+                if(mds_creation_preview(&editor.draft,(unsigned)profile.choice,
+                                        &gender_preview))shown=&gender_preview;
+                mds_ui_gender(1,profile.choice);
+                mds_ui_info(shown,editor.slot,45,
+                            "Select a starting Mii.",0);
+            }
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}
             if(editor.pending)mds_ui_confirm(
@@ -846,7 +856,15 @@ int main(void)
             if(screen==MDS_SCREEN_GALLERY)mds_ui_gallery_top(&gallery,page,editor.slot,editor.status);
             else if(screen==MDS_SCREEN_SAVED)mds_ui_gallery_top(&gallery,page,(unsigned)(saved_selected<0?0:saved_selected),"Choose a saved Mii");
             else if(screen==MDS_SCREEN_EDITOR||screen==MDS_SCREEN_ACCESSORIES)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));
-            else if(screen==MDS_SCREEN_PROFILE||screen==MDS_SCREEN_GENDER)mds_ui_info(&editor.draft,editor.slot,45,profile.status[0]?profile.status:editor.status,mds_editor_dirty(&editor));
+            else if(screen==MDS_SCREEN_GENDER){
+                const MdsAvatar *shown=&editor.draft;
+                if(mds_creation_preview(&editor.draft,(unsigned)profile.choice,
+                                        &gender_preview))shown=&gender_preview;
+                mds_ui_info(shown,editor.slot,45,"Select a starting Mii.",0);
+            }else if(screen==MDS_SCREEN_PROFILE)
+                mds_ui_info(&editor.draft,editor.slot,45,
+                            profile.status[0]?profile.status:editor.status,
+                            mds_editor_dirty(&editor));
             mds_ui_present_top();
         }else if(!camera_open){
             mds_ui_scene_transition_step(animation_vblanks,0);

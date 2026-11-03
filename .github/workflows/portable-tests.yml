@@ -149,6 +149,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_camera_creation_defaults.py
+      - name: Verify gender chooser previews distinct default Miis without changing drafts
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_gender_starter_preview.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
