@@ -1,5 +1,6 @@
 #include <nds.h>
 #include "camera_ds.h"
+#include "photo_quality.h"
 #include <string.h>
 #define CHANNEL 0
 static uint16_t frame[256*192] __attribute__((aligned(32)));
@@ -57,6 +58,14 @@ void mds_camera_freeze(void)
     if(!active || camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW)return;
     if(!frozen){
         if(!have_frame){status="Camera warming up. Try again.";return;}
+        MdsPhotoQuality quality=mds_photo_quality(display,256u,192u);
+        if(quality!=MDS_PHOTO_USABLE){
+            status=quality==MDS_PHOTO_TOO_DARK?"Photo too dark. Improve lighting.":
+                   quality==MDS_PHOTO_TOO_BRIGHT?"Photo too bright. Reduce glare.":
+                   quality==MDS_PHOTO_LOW_CONTRAST?"Photo lacks contrast. Reframe.":
+                   "Invalid photo frame.";
+            return; /* Keep live preview; do not freeze an unusable photo. */
+        }
         /* display holds the last complete frame; stop the in-flight DMA
          * so a later update cannot overwrite the captured snapshot. */
         if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
