@@ -1,6 +1,7 @@
 #include <nds.h>
 #include "camera_ds.h"
 #include "photo_quality.h"
+#include "face_hint.h"
 #include <string.h>
 #define CHANNEL 0
 static uint16_t frame[256*192] __attribute__((aligned(32)));
@@ -70,12 +71,28 @@ void mds_camera_freeze(void)
          * so a later update cannot overwrite the captured snapshot. */
         if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
         frozen=1;
-        status="Photo captured. A retake / B back";
+        status="Photo captured. X framing / A retake";
     }else{
         frozen=0;
         have_frame=0; /* Do not show the old snapshot after retake. */
         status="A capture / B back";
     }
+}
+int mds_camera_check_face_hint(void)
+{
+    /* Never infer a face from a live DMA buffer, QR scan or unready frame. */
+    if(!active||camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW||!frozen||!have_frame){
+        status="Capture photo before checking framing";
+        return 0;
+    }
+    MdsFaceHint hint=mds_face_hint_rgb555(display,256u,192u);
+    if(hint==MDS_FACE_HINT_POSSIBLE_PAIR){
+        status="Eye-pair cue only. Face recognition unavailable";
+        return 1;
+    }
+    status=hint==MDS_FACE_HINT_NO_PAIR?
+        "No eye-pair cue. A retake / B back":"Invalid photo frame";
+    return 0;
 }
 const uint16_t *mds_camera_frame(void){return active&&have_frame?display:NULL;}
 const char *mds_camera_status(void){return status;}
