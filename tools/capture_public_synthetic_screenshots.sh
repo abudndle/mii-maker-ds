@@ -2,7 +2,7 @@
 # Public screenshots are allowed ONLY from the synthetic compiler-placeholder ROM.
 set -euo pipefail
 test "${MDS_SYNTHETIC_COMPILE_ONLY:-}" = yes
-test -s mii-ds.nds
+test -s public-demo/public-demo.nds
 mkdir -p public-screenshots
 bin_dir="$RUNNER_TEMP/public-melonds"
 mkdir -p "$bin_dir"
@@ -14,7 +14,7 @@ unzip -q "$archive" -d "$bin_dir"
 app="$(find "$bin_dir" -maxdepth 3 -type f -name '*.AppImage' -print -quit)"
 test -n "$app"
 chmod +x "$app"
-export MELONDS_APP="$app" MELONDS_ROM="$PWD/mii-ds.nds"
+export MELONDS_APP="$app" MELONDS_ROM="$PWD/public-demo/public-demo.nds"
 export MELONDS_IMAGE="$PWD/public-screenshots/synthetic-boot.png"
 export HOME="$RUNNER_TEMP/public-melonds-home"
 mkdir -p "$HOME"
