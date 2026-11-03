@@ -28,8 +28,10 @@ int main(void)
  for(unsigned i=0;i<256u*192u;i++)frame[i]=rgb(0u);
  assert(mds_photo_suggest_diagnose(frame,256,192,&seed,out)==MDS_PHOTO_SUGGEST_BAD_QUALITY);
  assert(!memcmp(out,sentinel,sizeof out));
- for(unsigned i=0;i<256u*192u;i++)frame[i]=rgb(20u);
- /* Make a usable exposure distribution with only one dark patch. */
+ for(unsigned y=0;y<192u;y++)for(unsigned x=0;x<256u;x++)
+  frame[y*256u+x]=rgb(((y/8u)%2u)?14u:25u);
+ /* Stripe illumination provides real exposure variance with only one dark
+  * patch; 32-pixel separated samples retain equal stripe phases. */
  for(unsigned y=64u;y<84u;y++)
   for(unsigned x=72u;x<108u;x++)frame[y*256u+x]=rgb(8u);
  assert(mds_photo_suggest_diagnose(frame,256,192,&seed,out)==MDS_PHOTO_SUGGEST_NO_PAIR);
