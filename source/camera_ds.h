@@ -11,6 +11,8 @@ int mds_camera_update(void);
 int mds_camera_switch(void); /* Legacy API: sensor switching disabled. */
 int mds_camera_has_frame(void); /* True only when completed frame exists. */
 void mds_camera_freeze(void);
+/* Evaluate only the frozen photo; no Mii editing or recognition occurs. */
+int mds_camera_check_photo(void);
 const uint16_t *mds_camera_frame(void);
 const char *mds_camera_status(void);
 #endif
