@@ -23,7 +23,7 @@ int mds_photo_candidates_begin(MdsPhotoCandidates *s,MdsEditor *e,
     if(!s||!e||!choices||s->active||!e->gallery||
        e->slot>=MDS_SLOTS||e->pending||
        (e->gallery->used[e->slot]&&
-        mds_editor_locked(&e->gallery->miis[e->slot])))return 0;
+        (e->gallery->miis[e->slot].value[61]&3u)))return 0;
     for(unsigned i=0;i<MDS_PHOTO_CANDIDATE_COUNT;i++)
         if(!mds_valid(&choices[i]))return 0;
     if(!mds_valid(&e->draft))return 0;
