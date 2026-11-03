@@ -170,7 +170,10 @@ with tempfile.TemporaryDirectory() as tmp:
 # The private calibration command can optionally enforce this geometry gate
 # before it writes a candidate transform. It must never certify authenticity.
 cal_layout = copy.deepcopy(layout)
-cal_layout["panes"].append({"name": "Marker", "ds_bounds": [80, 30, 18, 18]})
+cal_layout["panes"].extend([
+    {"name": "Marker", "ds_bounds": [80, 30, 18, 18]},
+    {"name": "Marker2", "ds_bounds": [145, 105, 18, 18]},
+])
 cal_measurements = {"source_sha256": SHA, "points": [
     {"pane": p["name"],
      "ds_center": [p["ds_bounds"][0] + p["ds_bounds"][2] / 2,

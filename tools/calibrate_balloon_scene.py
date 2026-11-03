@@ -80,8 +80,8 @@ def calibrate(layout, measurements, max_error=2.0):
     panes = layout.get("panes")
     observations = measurements.get("points")
     if (not isinstance(panes, list) or not isinstance(observations, list) or
-            not 4 <= len(observations) <= 64):
-        raise ValueError("four to 64 independent pane measurements required")
+            not 5 <= len(observations) <= 64):
+        raise ValueError("five to 64 independent pane measurements required for leave-one-out validation")
     pane_map = {}
     for pane in panes:
         if not isinstance(pane, dict) or not isinstance(pane.get("name"), str):
@@ -153,34 +153,32 @@ def calibrate(layout, measurements, max_error=2.0):
     # A distant, high-leverage mismeasured pane can pull the least-squares
     # affine toward itself while leaving every in-sample residual below the
     # threshold. Independently predict each held-out pane from the others.
-    # Four points remain valid *candidates*, but cannot supply this stronger
-    # five-point check; neither result certifies an authentic runtime anchor.
-    holdout_max = None
-    if len(source) >= 5:
-        holdout_errors = []
-        for omitted in range(len(source)):
-            training_source = source[:omitted] + source[omitted + 1:]
-            training_target = target[:omitted] + target[omitted + 1:]
-            if (_weak_axis_variance(training_source) < 16.0 or
-                    _weak_axis_variance(training_target) < 16.0):
-                raise ValueError("leave-one-out panes lack two-dimensional spread")
-            ha, hb, htx = _solve3(training_source, [p[0] for p in training_target])
-            hc, hd, hty = _solve3(training_source, [p[1] for p in training_target])
-            x, y = source[omitted]
-            u, v = target[omitted]
-            holdout_errors.append(math.hypot(ha * x + hb * y + htx - u,
-                                             hc * x + hd * y + hty - v))
-        holdout_max = max(holdout_errors)
-        if not math.isfinite(holdout_max) or holdout_max > max_error:
-            raise ValueError("runtime measurements fail leave-one-out consistency")
+    # Require at least five independent panes so every emitted candidate
+    # includes an actual leave-one-out check; never emit a four-point fit
+    # with a null holdout metric.
+    holdout_errors = []
+    for omitted in range(len(source)):
+        training_source = source[:omitted] + source[omitted + 1:]
+        training_target = target[:omitted] + target[omitted + 1:]
+        if (_weak_axis_variance(training_source) < 16.0 or
+                _weak_axis_variance(training_target) < 16.0):
+            raise ValueError("leave-one-out panes lack two-dimensional spread")
+        ha, hb, htx = _solve3(training_source, [p[0] for p in training_target])
+        hc, hd, hty = _solve3(training_source, [p[1] for p in training_target])
+        x, y = source[omitted]
+        u, v = target[omitted]
+        holdout_errors.append(math.hypot(ha * x + hb * y + htx - u,
+                                         hc * x + hd * y + hty - v))
+    holdout_max = max(holdout_errors)
+    if not math.isfinite(holdout_max) or holdout_max > max_error:
+        raise ValueError("runtime measurements fail leave-one-out consistency")
     return {"source_sha256": source_hash,
             "scene_affine_ds": [round(v, 8) for v in (a, b, tx, c, d, ty)],
             "pane_count": len(observations),
             "maximum_residual_px": round(max(errors), 5),
             "rms_residual_px": round(math.sqrt(sum(e * e for e in errors) /
                                                len(errors)), 5),
-            "holdout_max_residual_px": (round(holdout_max, 5)
-                                        if holdout_max is not None else None),
+            "holdout_max_residual_px": round(holdout_max, 5),
             "runtime_anchor_verified": False,
             "note": "A consistent affine is a hypothesis; verify against the actual 3DS scene and DS hitbox collisions before enabling gameplay."}
 
