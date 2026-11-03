@@ -132,8 +132,10 @@ int main(void)
                      * Only the frozen inward camera buffer may seed draft choices. */
                     if(mds_camera_photo_frozen()){
                         const uint16_t *snapshot=mds_camera_frame();
-                        if(mds_photo_suggest(snapshot,256u,192u,
-                                             &editor.draft,photo_generated)&&
+                        MdsPhotoSuggestResult suggestion=
+                            mds_photo_suggest_diagnose(snapshot,256u,192u,
+                                                       &editor.draft,photo_generated);
+                        if(suggestion==MDS_PHOTO_SUGGEST_READY&&
                            mds_photo_candidates_begin(&photo_candidates,&editor,
                                                       photo_generated)){
                             editor.status="Photo suggestions are experimental";
@@ -141,7 +143,9 @@ int main(void)
                             mds_camera_close();camera_open=0;
                             mds_ui_restore_top();drawn_screen=-1;
                             screen=MDS_SCREEN_PHOTO_CANDIDATES;
-                        }else mds_camera_check_face_hint();
+                        }else{
+                            mds_camera_photo_suggestion_notice(suggestion);
+                        }
                     }else mds_camera_check_face_hint();
                 }
                 if(camera_open){
