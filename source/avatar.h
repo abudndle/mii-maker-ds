@@ -11,6 +11,10 @@ typedef struct { char name[MDS_NAME],creator[MDS_NAME]; uint8_t value[MDS_FIELDS
 typedef struct { const char *name; uint8_t maximum,initial; } MdsField;
 extern const MdsField mds_fields[MDS_FIELDS];
 void mds_new(MdsAvatar *a);
+/* Load different male/female starting appearances for CREATE-from-scratch.
+ * Presets are provisional pending original 3DS field-by-field calibration;
+ * preserve Personal Mii, nickname, metadata and save permissions. */
+int mds_creation_default(MdsAvatar *avatar,unsigned gender);
 int mds_valid(const MdsAvatar *a);
 void mds_adjust(MdsAvatar *a,unsigned field,int delta);
 int mds_encode(const MdsAvatar *a,uint8_t *out,size_t size);
