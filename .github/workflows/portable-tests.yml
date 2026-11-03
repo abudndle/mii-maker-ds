@@ -161,6 +161,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_create_method_atomic.py
+      - name: Verify birthday arrows recover malformed and unset Mii dates
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_profile_birthday_edges.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}

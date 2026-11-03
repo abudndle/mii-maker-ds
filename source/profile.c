@@ -58,8 +58,23 @@ int mds_profile_done(MdsProfile*p,MdsAvatar*a)
 void mds_profile_cancel(MdsProfile*p){p->mode=MDS_PROFILE_ROOT;p->status="";memset(p->text,0,sizeof p->text);}
 void mds_profile_date_step(MdsProfile*p,int month,int delta)
 {
- if(month){p->month=(p->month-1+delta+12)%12+1;if(p->day>(int)days((unsigned)p->month))p->day=(int)days((unsigned)p->month);}
- else{int n=(int)days((unsigned)p->month);p->day=(p->day-1+delta+n)%n+1;}p->status="";
+ if(!p)return;
+ /* Input normally comes from +/-1 touch arrows, but malformed or unset
+  * birthday editor state must never reach a modulo-zero or negative
+  * remainder. Clamp the source date before applying a single arrow step. */
+ if(p->month<1||p->month>12)p->month=1;
+ int limit=(int)days((unsigned)p->month);
+ if(p->day<1)p->day=1;
+ if(p->day>limit)p->day=limit;
+ int step=(delta>0)-(delta<0);
+ if(month){
+  p->month=((p->month-1+step+12)%12)+1;
+  limit=(int)days((unsigned)p->month);
+  if(p->day>limit)p->day=limit;
+ }else{
+  p->day=((p->day-1+step+limit)%limit)+1;
+ }
+ p->status="";
 }
 int mds_profile_favorite(MdsAvatar*a,unsigned other_favorites){
  if(a->value[51]){a->value[46]=1;return 0;}if(!a->value[46]&&other_favorites>=10)return 0;a->value[46]^=1;return 1;}
