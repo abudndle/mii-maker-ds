@@ -163,6 +163,10 @@ unsigned mds_room_walk_resume(unsigned phases[MDS_SLOTS/MDS_ROOM_SLOTS],
  /* Treat invalid selections transactionally: neither the active walk phase
   * nor any room's saved phase may be changed on an invalid room switch. */
  if(!phases||next_start>=MDS_SLOTS||next_start%MDS_ROOM_SLOTS)return ticks;
+ /* Re-selecting a Mii in the same room is not a page transition.
+  * Keep the live walk clock: restoring the saved entry phase here would
+  * rewind all ten actors on every selection change. */
+ if(previous_start==next_start)return ticks;
  if(previous_start<MDS_SLOTS && previous_start%MDS_ROOM_SLOTS==0)
   phases[previous_start/MDS_ROOM_SLOTS]=ticks%768u;
  return phases[next_start/MDS_ROOM_SLOTS]%768u;
