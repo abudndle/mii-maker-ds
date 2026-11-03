@@ -133,6 +133,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_photo_touch_release.py
+      - name: Verify sampled VBlank photo touch paths cannot re-arm on release
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_photo_touch_vblank.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
