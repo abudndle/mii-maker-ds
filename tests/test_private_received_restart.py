@@ -102,7 +102,6 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('cp "$MELONDS_RECEIVED_YES_T3" "$MELONDS_RECEIVED_EDITOR"', yes)
         self.assertIn('Received acceptance: retrying verified unobserved Yes touch once', yes)
         self.assertIn('kill -0 "$emu_pid"', yes)
-        self.assertIn('Received acceptance: retrying unobserved Yes touch once', yes)
         self.assertEqual(yes.count('tap 128 "$((touch_origin+87))"'), 2)
         self.assertIn('tools/check_gallery_received_copy_save.py "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" --mode copy', yes)
         self.assertLess(yes.index('--mode copy'),
