@@ -844,6 +844,11 @@ void mds_ui_info(const MdsAvatar *a,unsigned slot,int field,const char *status,i
 void mds_ui_camera(const uint16_t *frame)
 {
     if(frame)memcpy(top,frame,256*192*2);
+    else{
+        /* Do not retain an earlier captured portrait on the LCD while
+         * the camera is warming up or immediately after A retake. */
+        memset(top,0,256*192*2);
+    }
 }
 void mds_ui_restore_top(void)
 {
