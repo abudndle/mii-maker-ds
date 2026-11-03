@@ -33,14 +33,20 @@ def verify(gallery_path, modal_path, after_path, threshold=28):
         )
 
     counts = []
-    for pane in CHOICE_PANES:
+    for choice, pane in enumerate(CHOICE_PANES):
         appeared = changed(ga, mb, pane)
         dismissed = changed(mb, ac, pane)
         residual = changed(ga, ac, pane)
         # A mere press highlight can change hundreds of pixels without
         # dismissing the modal. Require substantial return toward gallery.
         if appeared < 64 or dismissed * 2 < appeared or residual >= dismissed:
-            raise ValueError("received confirmation remains visible after No touch")
+            # Report aggregate pixel counts, never screenshots or source art.
+            # These numbers distinguish an ignored tap from a changed pane
+            # that did not actually return to the gallery.
+            raise ValueError(
+                "received confirmation remains visible after No touch "
+                f"(choice={choice}, appeared={appeared}, "
+                f"changed={dismissed}, residual={residual})")
         counts.append((appeared, dismissed, residual))
     return {"verified": True, "choice_panes": 2,
             "modal_changed_pixels": sum(v[0] for v in counts),
