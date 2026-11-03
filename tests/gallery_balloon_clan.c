@@ -152,6 +152,25 @@ int main(void)
     assert(!mds_gallery_balloon_clan_active(&state,2));
     assert(mds_gallery_balloon_clan_actions_visible(&state,2));
     assert(mds_gallery_balloon_clan_favorite_visible(&state,2));
+    /* A stale VBlank sample taken before a scheduled animation start
+     * must not underflow, complete a fade, or start its successor early. */
+    mds_gallery_balloon_clan_reset(&state);
+    mds_gallery_balloon_clan_selection_changed(&state,400u);
+    mds_gallery_balloon_clan_selection_changed(&state,401u);
+    assert(state.clip==MDS_BALLOON_UNSELECT&&state.pending_select);
+    assert(!mds_gallery_balloon_clan_tick(&state,400u));
+    assert(state.clip==MDS_BALLOON_UNSELECT&&state.started==401u);
+    assert(mds_gallery_balloon_clan_style(&state,400u,&s));
+    assert(s.balloon_alpha==255u&&s.favorite_alpha==255u);
+    assert(mds_gallery_balloon_clan_tick(&state,413u));
+    assert(state.clip==MDS_BALLOON_SELECT&&state.started==413u);
+    mds_gallery_balloon_clan_favorite_committed(&state,500u);
+    assert(!mds_gallery_balloon_clan_tick(&state,499u));
+    assert(mds_gallery_balloon_clan_style(&state,499u,&s));
+    assert(s.favorite_alpha==255u&&s.balloon_alpha==255u);
+    assert(state.pending_decide&&state.clip==MDS_BALLOON_UNDECIDE);
+    assert(mds_gallery_balloon_clan_tick(&state,512u));
+    assert(state.clip==MDS_BALLOON_DECIDE&&state.started==512u);
     puts("PASS: source Select/Unselect/Decide/UnDecide CLAN numeric playback");
     return 0;
 }

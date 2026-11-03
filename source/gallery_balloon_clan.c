@@ -27,6 +27,13 @@ static unsigned duration(const MdsGalleryBalloonClan *state)
 {
     return state->clip==MDS_BALLOON_SELECT?SELECT_TICKS:SHORT_TICKS;
 }
+/* A sample just before a queued clip starts must remain at frame zero.
+ * Signed modular deltas still advance short clips across VBlank rollover. */
+static uint32_t elapsed_ticks(const MdsGalleryBalloonClan *state,uint32_t now)
+{
+    int32_t delta=(int32_t)(now-state->started);
+    return delta<0?0u:(uint32_t)delta;
+}
 
 void mds_gallery_balloon_clan_reset(MdsGalleryBalloonClan *state)
 {
@@ -72,7 +79,7 @@ void mds_gallery_balloon_clan_favorite_committed(MdsGalleryBalloonClan *state,ui
 }
 int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now)
 {
-    if(!state||!state->active||(uint32_t)(now-state->started)<SHORT_TICKS)return 0;
+    if(!state||!state->active||elapsed_ticks(state,now)<SHORT_TICKS)return 0;
     /* Preserve elapsed time if a frame was skipped; VBlank wrap is safe. */
     uint32_t started=state->started+SHORT_TICKS;
     if(state->pending_select&&state->clip==MDS_BALLOON_UNSELECT){
@@ -89,7 +96,7 @@ int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now)
 }
 int mds_gallery_balloon_clan_active(const MdsGalleryBalloonClan *state,uint32_t now)
 {
-    return state&&state->active&&(uint32_t)(now-state->started)<duration(state);
+    return state&&state->active&&elapsed_ticks(state,now)<duration(state);
 }
 static unsigned alpha8(const MdsClanKey *keys,size_t count,int32_t frame)
 {
@@ -110,7 +117,7 @@ int mds_gallery_balloon_clan_style(const MdsGalleryBalloonClan *state,
         /* Non-looping clips hold their final source CLVC opacity until the
          * next clip starts; otherwise the icon flashes at clip completion. */
         if(state&&state->active&&
-           (uint32_t)(now-state->started)>=duration(state)){
+           elapsed_ticks(state,now)>=duration(state)){
             if(state->clip==MDS_BALLOON_UNSELECT){
                 out->balloon_alpha=0u;out->favorite_alpha=0u;
             }else if(state->clip==MDS_BALLOON_UNDECIDE){
@@ -119,7 +126,7 @@ int mds_gallery_balloon_clan_style(const MdsGalleryBalloonClan *state,
         }
         return 0;
     }
-    int32_t frame=(int32_t)((uint32_t)(now-state->started)*32768u);
+    int32_t frame=(int32_t)(elapsed_ticks(state,now)*32768u);
     if(state->clip==MDS_BALLOON_UNSELECT){
         out->balloon_alpha=alpha8(fade_out,N(fade_out),frame);
         out->favorite_alpha=out->balloon_alpha;
