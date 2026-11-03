@@ -24,6 +24,16 @@ int main(void)
  /* New valid press is unaffected by a previous canceled gesture. */
  assert(!sample(&g,1,1,0,165,175));
  assert(sample(&g,0,0,1,165,175));
+ /* Single queued DOWN+UP is a full tap, not an abandoned press.
+  * The producer accepts its release only in the same hit region. */
+ assert(sample(&g,1,1,1,115,175));
+ assert(g.pressed==MDS_PHOTO_INPUT_NONE);
+ assert(!sample(&g,0,0,1,115,175));
+ assert(!sample(&g,1,1,1,115,140));
+ /* A coalesced tap on each of the five provisional buttons is valid. */
+ const int x[5]={7,55,110,160,205};
+ for(unsigned i=0;i<5u;i++)
+  assert(sample(&g,1,1,1,x[i],180));
  /* A release without down, an out-of-region down, and null state reject. */
  assert(!sample(&g,0,0,1,165,175));
  assert(!sample(&g,1,1,0,25,130));
