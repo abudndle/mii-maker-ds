@@ -13,6 +13,7 @@
 #include "menu.h"
 #include "saved_select.h"
 #include "qr_scan.h"
+#include "audio_ds.h"
 static MdsGallery gallery;
 static MdsEditor editor;
 static int save_ready;
@@ -84,7 +85,7 @@ static int persist(MdsGallery *g,void *ctx){(void)ctx;return save_ready&&mds_car
 int main(void)
 {
     powerOn(POWER_ALL_2D);irqSet(IRQ_VBLANK,animation_vblank);irqEnable(IRQ_VBLANK);keysSetRepeat(20,5);
-    int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
+    int ui_ready=mds_ui_init();if(ui_ready)mds_audio_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
     int create_method_selection=0;
@@ -219,6 +220,9 @@ int main(void)
             focus=home_result.focus;
             if(focus!=previous_focus)mds_ui_home_focus_start(animation_vblanks);
             int action=home_result.action;
+            if(home_result.cancel)mds_audio_play(MDS_AUDIO_CANCEL);
+            else if(action!=MDS_HOME_NONE)mds_audio_play(MDS_AUDIO_CONFIRM);
+            else if(focus!=previous_focus)mds_audio_play(MDS_AUDIO_MOVE);
             if(input.up&(KEY_TOUCH|KEY_LEFT|KEY_RIGHT|KEY_A))
                 mds_ui_editor_adjust_release(animation_vblanks,input.up);
             if(action==MDS_HOME_VIEW){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;notice="";}

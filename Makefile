@@ -11,7 +11,9 @@ NITROFSDIR := nitrofiles
 # Keep the shipping software renderer until the source skeleton/UVs and
 # 3D framebuffer ownership are validated. Nitro Engine links in the
 # separately opt-in hardware backend build, not the current ROM.
-LIBS := -lnds9 -lm
+# BlocksDS default ARM7 core includes Maxmod; soundbank is optional.
+LIBS := -lmm9 -lnds9 -lm
+LIBDIRS += $(BLOCKSDS)/libs/maxmod
 CFLAGS := -Wextra -Werror $(EXTRA_CFLAGS)
 ifeq ($(SDK_STAGE),1)
 include $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile
