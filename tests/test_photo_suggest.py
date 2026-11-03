@@ -31,7 +31,7 @@ class PhotoSuggestTests(unittest.TestCase):
         self.assertIn("mds_photo_candidates_cancel(",main)
         self.assertIn("mds_photo_candidates_accept(",main)
         self.assertIn("Photo suggestions are experimental",main)
-        self.assertIn("if(!camera_qr&&(down&KEY_X))",main)
+        self.assertIn("if(camera_action==MDS_CAMERA_ACTION_SUGGEST)",main)
         self.assertIn("mds_camera_photo_frozen()",main)
 
 if __name__=="__main__":
