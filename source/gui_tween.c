@@ -5,13 +5,18 @@ void mds_gui_tween_start(MdsGuiTween *t,uint32_t now,uint16_t duration,int16_t f
  t->started=now;t->duration=duration;t->from=from;t->to=to;t->active=1;
 }
 int mds_gui_tween_done(const MdsGuiTween *t,uint32_t now){
- return !t||!t->active||!t->duration||(uint32_t)(now-t->started)>=t->duration;
+ return !t||!t->active||!t->duration||
+        ((int32_t)(now-t->started)>=0 && (uint32_t)(now-t->started)>=t->duration);
 }
 int16_t mds_gui_tween_value(const MdsGuiTween *t,uint32_t now){
  if(!t)return 0;
  if(!t->active)return t->to;
  if(!t->duration)return t->to;
- uint32_t elapsed=(uint32_t)(now-t->started);
+ /* Signed modular difference distinguishes a clock sample before the start
+  * from a genuine UINT32_MAX rollover during this short tween. */
+ int32_t ticks=(int32_t)(now-t->started);
+ if(ticks<0)return t->from;
+ uint32_t elapsed=(uint32_t)ticks;
  if(elapsed>=t->duration)return t->to;
  /* Signed difference is at most 65535; multiply by duration <=65535 in int64. */
  int64_t delta=(int64_t)t->to-t->from;

@@ -6,6 +6,8 @@ static void test_timing(void)
 {
  MdsGuiTween t={0};
  mds_gui_tween_start(&t,100,10,0,100);
+ assert(mds_gui_tween_value(&t,99)==0);
+ assert(!mds_gui_tween_done(&t,99));
  assert(mds_gui_tween_value(&t,100)==0);
  assert(mds_gui_tween_value(&t,105)==50);
  assert(mds_gui_tween_value(&t,110)==100);
@@ -14,6 +16,8 @@ static void test_timing(void)
  mds_gui_tween_start(&t,20,4,100,0);
  assert(mds_gui_tween_value(&t,22)==50);
  mds_gui_tween_start(&t,UINT32_MAX-1,6,-100,100);
+ assert(mds_gui_tween_value(&t,UINT32_MAX-2)==-100);
+ assert(!mds_gui_tween_done(&t,UINT32_MAX-2));
  assert(mds_gui_tween_value(&t,1)==0);
  assert(mds_gui_tween_value(&t,4)==100);
  mds_gui_tween_start(&t,20,0,1,5);
@@ -22,6 +26,11 @@ static void test_timing(void)
  mds_gui_tween_start(&t,0,65535,-32768,32767);
  assert(mds_gui_tween_value(&t,0)==-32768);
  assert(mds_gui_tween_value(&t,65535)==32767);
+ /* A clock reset before a scheduled transition must not jump to its end. */
+ mds_gui_tween_start(&t,5000,12,120,-80);
+ assert(mds_gui_tween_value(&t,0)==120);
+ assert(!mds_gui_tween_done(&t,0));
+ assert(mds_gui_tween_value(&t,5006)==20);
  assert(mds_gui_tween_done(NULL,0));
  assert(mds_gui_tween_value(NULL,0)==0);
 }
