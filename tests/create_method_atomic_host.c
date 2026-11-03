@@ -17,7 +17,7 @@ int main(void)
  /* As in the main loop, the caller applies the navigation result before
   * the next frame; the input helper does not mutate its input argument. */
  i.selection=r.selection;
- /* DSi and ordinary DS have the same navigation, different feature gate. */
+ /* A selection copied from DSi remains disabled on an ordinary DS. */
  i.confirm=1;i.right=0;i.dsi_enabled=0;
  r=evaluate(i);assert(r.choice==MDS_CREATE_NONE&&r.selection==1);
  i.dsi_enabled=1;r=evaluate(i);
@@ -37,15 +37,29 @@ int main(void)
  i.dsi_enabled=0;i.confirm=0;i.touch=1;i.x=100;i.y=140;i.up=0;
  r=evaluate(i);
  assert(r.choice==MDS_CREATE_NONE&&r.selection==1);
- /* Invalid touch plus A uses the already highlighted menu item. */
+ /* A rejected/disabled touch wins over A: do not accidentally start
+  * Scratch while tapping a disabled camera option. */
  i.confirm=1;i.x=0;i.y=0;
  r=evaluate(i);
  assert(r.choice==MDS_CREATE_NONE&&r.selection==1);
  i.selection=0;
  r=evaluate(i);
+ assert(r.choice==MDS_CREATE_NONE&&r.selection==0);
+ i.touch=0;
+ r=evaluate(i);
  assert(r.choice==MDS_CREATE_SCRATCH&&r.selection==0);
+ /* On a non-DSi system directional input must never highlight photo. */
+ memset(&i,0,sizeof i);i.selection=0;i.dsi_enabled=0;i.right=1;
+ r=evaluate(i);assert(r.selection==0&&r.choice==MDS_CREATE_NONE);
+ i.selection=1;i.left=1;i.right=0;
+ r=evaluate(i);assert(r.selection==0&&r.choice==MDS_CREATE_NONE);
+ i.selection=0;i.confirm=1;i.right=1;
+ r=evaluate(i);assert(r.selection==0&&r.choice==MDS_CREATE_SCRATCH);
+ /* An out-of-range touch and A must not invoke a method on DSi either. */
+ i.dsi_enabled=1;i.right=0;i.touch=1;i.x=-1;i.y=70;
+ r=evaluate(i);assert(r.selection==0&&r.choice==MDS_CREATE_NONE);
  /* Opposing directions on an axis must not toggle twice or once. */
- memset(&i,0,sizeof i);i.selection=0;i.up=i.down=1;
+ memset(&i,0,sizeof i);i.dsi_enabled=1;i.selection=0;i.up=i.down=1;
  r=evaluate(i);assert(r.selection==0);
  i.up=i.down=0;i.left=i.right=1;
  r=evaluate(i);assert(r.selection==0);

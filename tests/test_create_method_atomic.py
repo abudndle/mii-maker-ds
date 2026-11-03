@@ -18,6 +18,14 @@ class CreateMethodAtomicTests(unittest.TestCase):
                            cwd=ROOT,check=True,timeout=30)
             subprocess.run([str(exe)],cwd=ROOT,check=True,timeout=30)
 
+    def test_disabled_camera_and_invalid_touch_are_atomic(self):
+        source=(ROOT/"source/create_method.c").read_text()
+        decision=source.split("MdsCreateOutcome mds_create_method_input(",1)[1]
+        self.assertIn("result.selection=input.dsi_enabled?(input.selection^1):0;",decision)
+        touch=decision.split("if(input.touch){",1)[1].split("if(input.confirm){",1)[0]
+        self.assertIn("return result;",touch)
+        self.assertNotIn("if(result.choice!=MDS_CREATE_NONE)return result;",touch)
+
     def test_main_uses_single_input_decision_before_routing(self):
         main=(ROOT/"source/main.c").read_text()
         menu=main.split("}else if(screen==MDS_SCREEN_CREATE_METHOD){",1)[1].split(
