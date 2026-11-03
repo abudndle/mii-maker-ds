@@ -13,6 +13,14 @@ int main(void){
  assert(mds_profile_date_valid(2,29)&&!mds_profile_date_valid(2,30)&&!mds_profile_date_valid(4,31)&&mds_profile_date_valid(0,0)&&!mds_profile_date_valid(0,1));
  mds_profile_open(&p,&a,MDS_PROFILE_BIRTHDAY);p.month=1;p.day=31;mds_profile_date_step(&p,1,1);assert(p.month==2&&p.day==29);assert(mds_profile_done(&p,&a)&&a.value[49]==2&&a.value[50]==29);
  mds_profile_open(&p,&a,MDS_PROFILE_BIRTHDAY);p.month=4;p.day=31;assert(!mds_profile_done(&p,&a));mds_profile_cancel(&p);
+ /* Birthday picker handles multi-step changes, year wrap, and bad saved dates. */
+ mds_profile_open(&p,&a,MDS_PROFILE_BIRTHDAY);p.month=1;p.day=31;
+ mds_profile_date_step(&p,1,-13);assert(p.month==12&&p.day==31);
+ mds_profile_date_step(&p,1,25);assert(p.month==1&&p.day==31);
+ mds_profile_date_step(&p,0,-32);assert(p.day==30);
+ p.month=0;p.day=0;mds_profile_date_step(&p,0,-1);assert(p.month==1&&p.day==31);
+ p.month=255;p.day=255;mds_profile_date_step(&p,1,1);assert(p.month==2&&p.day==29);
+ mds_profile_cancel(&p);
  mds_profile_open(&p,&a,MDS_PROFILE_GENDER);p.choice=1;assert(mds_profile_done(&p,&a)&&a.value[0]==1);
  mds_profile_open(&p,&a,MDS_PROFILE_SHARING);p.choice=0;mds_profile_cancel(&p);assert(a.value[47]==1);
  mds_profile_open(&p,&a,MDS_PROFILE_SHARING);mds_profile_touch(&p,&a,128,147,0);assert(a.value[47]==0&&p.mode==MDS_PROFILE_ROOT);
