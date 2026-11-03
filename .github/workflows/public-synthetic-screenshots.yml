@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install screenshot tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick unzip python3-pil
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick unzip python3-pil libegl1 libgl1 libopengl0 libxkbcommon-x11-0
       - name: Build independent asset-free homebrew ROM
         run: |
           docker run --rm --network none --cap-drop ALL \
