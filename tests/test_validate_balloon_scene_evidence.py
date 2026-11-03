@@ -118,8 +118,8 @@ class IndependentHoldouts(unittest.TestCase):
                     struct.pack(">I", zlib.crc32(content) & 0xffffffff))
         def make_png(width=256, height=192):
             header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-            raw = b"".join(b"\\x00" + b"\\0" * (width * 3) for _ in range(height))
-            return (b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", header) +
+            raw = b"".join(b"\x00" + b"\0" * (width * 3) for _ in range(height))
+            return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) +
                     chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
