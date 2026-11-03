@@ -2,6 +2,19 @@
 #define MDS_MENU_H
 typedef enum {MDS_SCREEN_HOME,MDS_SCREEN_EDITOR,MDS_SCREEN_GALLERY,MDS_SCREEN_PROFILE,MDS_SCREEN_GENDER,MDS_SCREEN_ACCESSORIES,MDS_SCREEN_IMPORT,MDS_SCREEN_QR,MDS_SCREEN_SAVED,MDS_SCREEN_CREATE_METHOD,MDS_SCREEN_PHOTO_CANDIDATES} MdsScreen;
 typedef enum {MDS_HOME_NONE,MDS_HOME_VIEW,MDS_HOME_CREATE,MDS_HOME_TRANSFER,MDS_HOME_QR,MDS_HOME_HELP} MdsHomeAction;
+/* Exactly one home action per queued input frame. B and an explicit
+ * stylus hit take priority over A, and confirmation cannot select an
+ * option reached by a simultaneous up/down navigation edge. */
+typedef struct {
+    int cancel,confirm,touch,up,down;
+    int x,y,focus;
+} MdsHomeInput;
+typedef struct {
+    MdsHomeAction action;
+    int focus;
+    int cancel;
+} MdsHomeResult;
+MdsHomeResult mds_home_input(MdsHomeInput input);
 /* Gallery A recalls walkers; SELECT+A edits the selected Mii.
  * A plain SELECT release exports its image without firing during a chord. */
 typedef enum {
