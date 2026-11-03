@@ -285,6 +285,13 @@ int main(void)
   * advancing offscreen rooms or borrowing the destination's phase. */
  unsigned phase_per_room[MDS_SLOTS/MDS_ROOM_SLOTS]={0};
  assert(mds_room_walk_resume(phase_per_room,UINT_MAX,0,0)==0);
+ /* Switching selected Miis without changing rooms must not rewind
+  * the live animation clock to the room's saved entry phase. */
+ phase_per_room[0]=37u;
+ assert(mds_room_walk_resume(phase_per_room,0,0,211u)==211u);
+ assert(phase_per_room[0]==37u);
+ assert(mds_room_walk_resume(phase_per_room,10,10,333u)==333u);
+ assert(phase_per_room[1]==0u);
  assert(mds_room_walk_resume(phase_per_room,0,10,123)==0);
  assert(phase_per_room[0]==123);
  assert(mds_room_walk_resume(phase_per_room,10,20,310)==0);
