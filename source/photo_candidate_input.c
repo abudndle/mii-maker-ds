@@ -32,3 +32,19 @@ MdsPhotoInput mds_photo_touch_release(MdsPhotoTouch *g,int x,int y)
         pressed==mds_photo_candidate_touch(x,y)?
         pressed:MDS_PHOTO_INPUT_NONE;
 }
+
+/* The main input FIFO only stores key edges/repeats, so tracking motion in
+ * the consumer misses leave-and-return paths when no edge is generated.
+ * Sample every VBlank, and attach this decision to the queued release. */
+int mds_photo_touch_sample(MdsPhotoTouch *g,int down,int held,int up,
+                           int x,int y)
+{
+ if(!g)return 0;
+ if(down)mds_photo_touch_begin(g,x,y);
+ else if(held)mds_photo_touch_hold(g,x,y);
+ if(up){
+  int valid=mds_photo_touch_release(g,x,y)!=MDS_PHOTO_INPUT_NONE;
+  return valid;
+ }
+ return 0;
+}
