@@ -6,6 +6,25 @@ int mds_home_touch(int x,int y)
     for(unsigned i=0;i<sizeof home_hits/sizeof home_hits[0];i++)if(inside(&home_hits[i],x,y))return home_hits[i].action;
     return MDS_HOME_NONE;
 }
+MdsHomeResult mds_home_input(MdsHomeInput input)
+{
+    MdsHomeResult result={MDS_HOME_NONE,input.focus,0};
+    if(input.cancel){result.cancel=1;return result;}
+    /* Even an invalid tap consumes the event; it must not fall through
+     * to A on a different option or to directional navigation. */
+    if(input.touch){
+        result.action=(MdsHomeAction)mds_home_touch(input.x,input.y);
+        return result;
+    }
+    if(input.confirm){
+        if(input.focus>=0&&input.focus<=3)
+            result.action=(MdsHomeAction)(input.focus+1);
+        return result;
+    }
+    if(input.up!=input.down&&(input.up||input.down))
+        result.focus=mds_home_focus_step(input.focus,input.down?1:-1);
+    return result;
+}
 int mds_gallery_touch(int x,int y,unsigned page)
 {
     if(page>=10)return -1;
