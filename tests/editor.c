@@ -207,5 +207,34 @@ int main(void){
     e.slot=10;assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
     assert(mds_editor_toggle_favorite(&e,saved,NULL));
     assert(g.miis[10].value[46]&&!mds_editor_dirty(&e));
-    puts("PASS: dirty navigation, failed-save/delete/move rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, Favorite transactions, wrap");
+    /* Import must never overwrite a dirty draft or an active confirmation.
+     * This also protects the caller from invalid/null editor state. */
+    mds_gallery_new(&g);mds_editor_begin(&e,&g);
+    MdsAvatar incoming;mds_new(&incoming);
+    strcpy(incoming.name,"Incoming");
+    assert(!mds_editor_import(NULL,&incoming,saved,NULL));
+    assert(!mds_editor_import(&e,NULL,saved,NULL));
+    assert(!g.used[0]&&e.slot==0);
+    e.draft.value[5]=21;
+    MdsAvatar dirty_import_draft=e.draft;
+    assert(mds_editor_dirty(&e));
+    assert(!mds_editor_import(&e,&incoming,saved,NULL));
+    assert(!memcmp(&e.draft,&dirty_import_draft,sizeof e.draft));
+    assert(!g.used[0]&&e.slot==0&&g.generation==0&&g.active_bank==-1);
+    e.draft=e.baseline;
+    e.pending=MDS_EDIT_DELETE;
+    assert(!mds_editor_import(&e,&incoming,saved,NULL));
+    assert(e.pending==MDS_EDIT_DELETE&&!g.used[0]);
+    e.pending=MDS_EDIT_NONE;
+    MdsGallery *original_gallery=e.gallery;e.gallery=NULL;
+    assert(!mds_editor_import(&e,&incoming,saved,NULL));
+    e.gallery=original_gallery;
+    e.slot=MDS_SLOTS;assert(!mds_editor_import(&e,&incoming,saved,NULL));
+    e.slot=0;
+    assert(!mds_editor_import(&e,&incoming,failed,NULL));
+    assert(!g.used[0]&&!mds_editor_dirty(&e));
+    assert(mds_editor_import(&e,&incoming,saved,NULL));
+    assert(g.used[0]&&e.slot==0&&!mds_editor_dirty(&e));
+    assert(!strcmp(g.miis[0].name,"Incoming")&&mds_editor_locked(&g.miis[0]));
+    puts("PASS: dirty navigation, failed-save/delete/move/import rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, Favorite transactions, wrap");
 }

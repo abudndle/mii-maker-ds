@@ -205,6 +205,13 @@ int mds_editor_copy(MdsEditor*e,MdsPersist persist,void*ctx)
 
 int mds_editor_import(MdsEditor*e,const MdsAvatar*source,MdsPersist persist,void*ctx)
 {
+ if(!e||!e->gallery||e->slot>=MDS_SLOTS)return 0;
+ /* Importing a received Mii selects the new saved slot on success.
+  * Never replace the active unsaved draft or bypass a pending modal. */
+ if(e->pending||mds_editor_dirty(e)){
+  e->status="Discard unsaved edits before importing.";
+  return 0;
+ }
  if(!source||!mds_valid(source)){e->status="Invalid Mii data.";return 0;}
  static const unsigned days[]={0,31,29,31,30,31,30,31,31,30,31,30,31};
  unsigned month=source->value[49],day=source->value[50];uint8_t name[20];
