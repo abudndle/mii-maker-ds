@@ -173,7 +173,19 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # visibly open. A changed/dismissed modal or unexpected save is fatal.
   for no_retry in 1 2; do
     if timeout 15s python3 tools/check_melonds_modal_dismissal.py \
-        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1; then
+        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1 && \
+       timeout 15s python3 tools/check_melonds_modal_sequence.py \
+        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" \
+        "$MELONDS_RECEIVED_CANCEL_T3" "$MELONDS_RECEIVED_CANCEL_T6" --expect dismissed; then
+      cp "$MELONDS_RECEIVED_CANCEL_T6" "$MELONDS_RECEIVED_CANCEL"
+      break
+    fi
+    # An early exit-animation frame may fail the original single-frame test.
+    # Independently accept only two matching late *gallery* frames.
+    if timeout 15s python3 tools/check_melonds_modal_sequence.py \
+        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" \
+        "$MELONDS_RECEIVED_CANCEL_T3" "$MELONDS_RECEIVED_CANCEL_T6" --expect dismissed; then
+      cp "$MELONDS_RECEIVED_CANCEL_T6" "$MELONDS_RECEIVED_CANCEL"
       break
     fi
     cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
@@ -186,15 +198,29 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
       # frame can land during its exit animation. Never click again in that
       # ambiguous state: wait for a settled frame and test dismissal first.
       sleep 3
-      capture_received "$MELONDS_RECEIVED_CANCEL"
+      capture_received "$MELONDS_RECEIVED_CANCEL_T3"
+      sleep 2
+      capture_received "$MELONDS_RECEIVED_CANCEL_T6"
       if timeout 15s python3 tools/check_melonds_modal_dismissal.py \
-          "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"; then
+          "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL_T6" && \
+         timeout 15s python3 tools/check_melonds_modal_sequence.py \
+          "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" \
+          "$MELONDS_RECEIVED_CANCEL_T3" "$MELONDS_RECEIVED_CANCEL_T6" --expect dismissed; then
+        cp "$MELONDS_RECEIVED_CANCEL_T6" "$MELONDS_RECEIVED_CANCEL"
         echo "Received acceptance: No dismissal confirmed after transition settled"
         break
       fi
       echo "FAIL: No touch changed the choice panes but did not prove dismissal; refusing another touch"
       exit 1
     fi
+    # Two settled captures must still show the SAME original dialog.
+    # A changed/replaced or ambiguous modal is never safe to tap again.
+    timeout 15s python3 tools/check_melonds_modal_sequence.py \
+        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" \
+        "$MELONDS_RECEIVED_CANCEL_T3" "$MELONDS_RECEIVED_CANCEL_T6" --expect open || {
+      echo "FAIL: No retry blocked by ambiguous settled modal"
+      exit 1
+    }
     kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before No retry"; exit 1; }
     echo "Received acceptance: No not observed; guarded retry $no_retry/2"
     candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
@@ -206,6 +232,10 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
     tap 128 "$((touch_origin+127))"
     sleep 5
     capture_received "$MELONDS_RECEIVED_CANCEL"
+    sleep 2
+    capture_received "$MELONDS_RECEIVED_CANCEL_T3"
+    sleep 3
+    capture_received "$MELONDS_RECEIVED_CANCEL_T6"
   done
   timeout 15s python3 tools/check_melonds_modal_dismissal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
   timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"
