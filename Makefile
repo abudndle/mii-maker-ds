@@ -37,6 +37,12 @@ dsma-private-model:
 	python3 tools/export_bod2_md5.py --input "$(BOD2_INPUT)" --output "$(DSMA_STAGE)" --name "$(DSMA_NAME)"
 	python3 "$(NITRO_ENGINE_MD5_TOOL)" --model "$(DSMA_STAGE)/$(DSMA_NAME).md5mesh" --name "$(DSMA_NAME)" --output "$(DSMA_STAGE)" --texture 8 8 --export-base-pose --bin
 
+# Separate GPU test ROM: never links Nitro Engine into the existing 2D game
+# until the original source UVs, bind hierarchy and screen compositor work.
+.PHONY: nitro-3d-preview
+nitro-3d-preview:
+	+$(MAKE) -C hardware3d
+
 .DEFAULT_GOAL := all
 .PHONY: all $(NAME).nds clean dump
 all: $(NAME).nds
