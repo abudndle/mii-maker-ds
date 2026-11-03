@@ -35,6 +35,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_melonds_gallery_probe.py
       - name: Verify received-Mii confirmation framebuffer gate
         run: python3 -m unittest discover -s tests -p test_melonds_confirm_modal.py
+      - name: Reject ambiguous received-Mii modal frames before touch retries
+        run: python3 -m unittest discover -s tests -p test_melonds_modal_sequence.py
       - name: Verify trusted received-Mii emulator stage and encrypted artifact policy
         run: python3 -m unittest discover -s tests -p test_private_received_restart.py
       - name: Verify original CLAN numeric build-parity gate
