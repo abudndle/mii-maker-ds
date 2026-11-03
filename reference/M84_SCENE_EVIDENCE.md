@@ -43,9 +43,9 @@ The pane identifiers and coordinates above are **invented schema examples only**
 Run:
 
 ```sh
-python3 tools/validate_balloon_scene_evidence.py private-layout.json private-evidence.json --output private-candidate-report.json --max-error 2
+python3 tools/validate_balloon_scene_evidence.py private-layout.json private-evidence.json --capture private-normalized-bottom.png --output private-candidate-report.json --max-error 2
 ```
 
-The validator checks hash agreement, capture metadata, unique pane IDs, plausible coordinates, at least five fit points with leave-one-out checks, at least two separate held-out points, transform conditioning and per-holdout errors. The output records the canonical evidence SHA-256, capture hash, affine transform, residuals and determinant, and **always** marks the anchor unverified. Keep the report private because fitted coordinates may derive from owner-supplied original resources.
+The CLI requires the actual private normalized 256×192 PNG and checks its file SHA-256 against the evidence record and its PNG IHDR dimensions/CRC before writing a report. A plausible hash written in JSON is not enough, and these checks do not prove original-console provenance. The private image must never be committed or uploaded in plaintext.\n\nThe validator checks hash agreement, capture metadata, unique pane IDs, plausible coordinates, at least five fit points with leave-one-out checks, at least two separate held-out points, transform conditioning and per-holdout errors. The output records the canonical evidence SHA-256, capture hash, affine transform, residuals and determinant, and **always** marks the anchor unverified. Keep the report private because fitted coordinates may derive from owner-supplied original resources.
 
 Next: independently audit the actual 3DS runtime capture provenance, compare fitted pane corners and real button bounding boxes against melonDS and original frames, then verify original `SelectBalloonButton` clip dispatch/timing. Do not enable original-geometry hitboxes on the strength of synthetic or unaudited reports.
