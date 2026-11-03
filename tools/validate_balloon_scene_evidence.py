@@ -165,6 +165,7 @@ def main():
     args = p.parse_args()
     result = validate(json.loads(args.source_layout.read_text()),
                       json.loads(args.private_evidence.read_text()), args.max_error)
+    verify_capture_file(args.capture, result["capture_sha256"])
     args.output.write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
     print("PASS: independent holdouts consistent; original 3DS runtime anchor NOT verified")
 
