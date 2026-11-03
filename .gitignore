@@ -27,3 +27,10 @@ __pycache__/
 *.bcres
 *.bcsar
 *.arc
+
+# Private intermediate original model/animation conversion; never commit.
+*.md5mesh
+*.md5anim
+*.dsm
+*.dsa
+/m86-private/
