@@ -1,5 +1,6 @@
 """Portable actual-C touch geometry plus camera retry source wiring."""
 import ctypes
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -12,7 +13,7 @@ class PhotoCandidateInputTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temp=tempfile.TemporaryDirectory()
         so=Path(cls.temp.name)/"candidate-input.so"
-        subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror",
+        subprocess.run([os.environ.get("CC","cc"),"-std=c11","-Wall","-Wextra","-Werror",
                         "-shared","-fPIC",str(ROOT/"source/photo_candidate_input.c"),
                         "-o",str(so)],check=True)
         lib=ctypes.CDLL(str(so))
