@@ -153,6 +153,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_gender_starter_preview.py
+      - name: Verify gender cancel atomicity and Personal Mii creation baseline
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_gender_atomic_creation.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
