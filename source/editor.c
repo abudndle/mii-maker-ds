@@ -94,11 +94,14 @@ int mds_editor_create(MdsEditor *e,unsigned slot)
   return 0;
  }
  e->slot=slot;e->field=2;e->pending=MDS_EDIT_NONE;
- mds_new(&e->draft);e->baseline=e->draft;
+ mds_new(&e->draft);
  unsigned personal=0;
  for(unsigned i=0;i<MDS_SLOTS;i++)
   if(e->gallery->used[i]&&e->gallery->miis[i].value[51])personal++;
  if(!personal){e->draft.value[51]=1;e->draft.value[46]=1;}
+ /* Personal/Favorite flags are creation defaults. Record them in the
+  * baseline so untouched new Miis are not falsely marked as edited. */
+ e->baseline=e->draft;
  e->status="New draft: START to save";
  return 1;
 }
