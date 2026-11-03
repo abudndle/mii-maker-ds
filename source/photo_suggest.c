@@ -16,14 +16,18 @@ static unsigned patch_luma(const uint16_t *image,unsigned x0,unsigned x1,
         }
     return count?total/count:0;
 }
-int mds_photo_suggest(const uint16_t *image,unsigned width,unsigned height,
+MdsPhotoSuggestResult mds_photo_suggest_diagnose(const uint16_t *image,unsigned width,unsigned height,
                       const MdsAvatar *seed,MdsAvatar out[3])
 {
-    if(!image||!seed||!out||width!=256u||height!=192u||!mds_valid(seed))return 0;
+    if(!image||!seed||!out||width!=256u||height!=192u)
+        return MDS_PHOTO_SUGGEST_INVALID;
+    if(!mds_valid(seed))return MDS_PHOTO_SUGGEST_BAD_DRAFT;
+    if(mds_photo_quality(image,width,height)!=MDS_PHOTO_USABLE)
+        return MDS_PHOTO_SUGGEST_BAD_QUALITY;
     MdsEyePair pair;
-    if(mds_photo_quality(image,width,height)!=MDS_PHOTO_USABLE||
-       mds_eye_pair_locate_rgb555(image,width,height,&pair)!=
-           MDS_FACE_HINT_POSSIBLE_PAIR)return 0;
+    if(mds_eye_pair_locate_rgb555(image,width,height,&pair)!=
+           MDS_FACE_HINT_POSSIBLE_PAIR)
+        return MDS_PHOTO_SUGGEST_NO_PAIR;
     /* Fixed regions, NOT localized skin, hair or facial landmarks.
      * These are experimental appearance alternatives, not recognized Miis. */
     unsigned cheek=patch_luma(image,84,172,109,137);
@@ -48,8 +52,14 @@ int mds_photo_suggest(const uint16_t *image,unsigned width,unsigned height,
         if(height<0)height=0;else if(height>18)height=18;
         candidates[i].value[13]=(uint8_t)spacing;
         candidates[i].value[14]=(uint8_t)height;
-        if(!mds_valid(&candidates[i]))return 0;
+        if(!mds_valid(&candidates[i]))return MDS_PHOTO_SUGGEST_BAD_DRAFT;
     }
     for(unsigned i=0;i<3u;i++)out[i]=candidates[i];
-    return 1;
+    return MDS_PHOTO_SUGGEST_READY;
+}
+int mds_photo_suggest(const uint16_t *frame,unsigned width,unsigned height,
+                      const MdsAvatar *seed,MdsAvatar out[3])
+{
+    return mds_photo_suggest_diagnose(frame,width,height,seed,out)==
+           MDS_PHOTO_SUGGEST_READY;
 }
