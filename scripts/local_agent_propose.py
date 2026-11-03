@@ -13,6 +13,23 @@ import urllib.request
 TASKS = {"tween":{"source":"source/gui_tween.c","test":"tests/gui_tween.c","goal":"Fix a genuine integer fade or timing edge case in UI animation and add one new assertion.","command":["sh","-c","cc -std=c11 -Wall -Wextra -Werror -Isource source/gui_tween.c tests/gui_tween.c -o /tmp/mds-agent-tween && /tmp/mds-agent-tween"]},"face":{"source":"source/face_hint.c","test":"tests/face_hint_host.c","goal":"Fix a synthetic DSi eye-pair framing preview cue boundary bug with regression; this is not verified face detection.","command":["python3","tests/test_face_hint.py"]}}
 ENDPOINT = "http://127.0.0.1:11434/api/generate"
 
+# Compare C tokens rather than raw text: comments and whitespace are not fixes.
+# Preserve quoted strings and character constants so meaningful literal changes count.
+_C_TOKEN = re.compile(r'''(?P<skip>\s+|//[^\n]*|/\*[\s\S]*?\*/)|(?P<token>"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[A-Za-z_]\w*|(?:0[xX][0-9A-Fa-f]+|\d+(?:\.\d+)?)|[^\s])''')
+
+def c_tokens(source: str) -> tuple[str, ...]:
+    tokens = []
+    offset = 0
+    for match in _C_TOKEN.finditer(source):
+        if match.start() != offset:
+            raise ValueError("Unrecognized C token span")
+        offset = match.end()
+        if match.lastgroup == "token":
+            tokens.append(match.group())
+    if offset != len(source):
+        raise ValueError("Unrecognized C source suffix")
+    return tuple(tokens)
+
 def validate_and_apply(root: Path, focus: str, plan: object) -> list[str]:
     if focus not in TASKS or not isinstance(plan, dict):
         raise ValueError("Unknown focus or malformed response")
@@ -45,6 +62,8 @@ def validate_and_apply(root: Path, focus: str, plan: object) -> list[str]:
         proposed[path] = before.replace(old, new, 1)
     if set(proposed) != allowed:
         raise ValueError("Both source and regression must be modified")
+    if c_tokens(originals[task["source"]]) == c_tokens(proposed[task["source"]]):
+        raise ValueError("Comment-only or formatting-only source edit")
     # Duplicate existing assertions do not test a new behavior.
     assertion_pattern = r"(?m)^[ \t]*assert\s*\([^;\n]*\)\s*;[ \t]*(?://[^\n]*)?$"
     previous_asserts = set(re.findall(assertion_pattern, originals[task["test"]]))
