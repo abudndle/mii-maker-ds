@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "camera_ds.h"
 #include "camera_action.h"
+#include "gender_input.h"
 #include "photo_candidates.h"
 #include "photo_candidate_input.h"
 #include "photo_suggest.h"
@@ -661,26 +662,34 @@ int main(void)
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT){mds_profile_choice_step(&profile,-1);drawn_screen=-1;}
             if(k&KEY_RIGHT){mds_profile_choice_step(&profile,1);drawn_screen=-1;}
+            int touch_choice=-1;
+            if(down&KEY_TOUCH){
+                const char *hit=mds_profile_hit(2,input.touch.px,input.touch.py);
+                if(!strcmp(hit,"B_Male"))touch_choice=0;
+                else if(!strcmp(hit,"B_Female"))touch_choice=1;
+            }
             int chosen=-1;
-            if(down&KEY_A)chosen=profile.choice;
-            if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
-            if(chosen>=0){
+            /* B wins over A/touch on the same frame. First boot cannot
+             * skip the Personal Mii chooser or confirm it accidentally. */
+            MdsGenderAction action=mds_gender_action(
+                (down&KEY_B)!=0,(down&KEY_A)!=0,touch_choice,profile.choice,
+                save_ready&&mds_gallery_empty(&gallery),&chosen);
+            if(action==MDS_GENDER_CHOOSE){
                 profile.choice=chosen;
-                /* The stock Mii Maker starts new male and female Miis from
-                 * distinct default appearances, not only a gender toggle. */
+                /* Commit only a confirmed selection; the preview never
+                 * mutates the draft or the Personal crown metadata. */
                 mds_creation_default(&editor.draft,(unsigned)chosen);
                 mds_profile_done(&profile,&editor.draft);
                 editor_return_screen=gender_return_screen;
                 screen=MDS_SCREEN_EDITOR;
-            }
-            if(down&KEY_B){
+            }else if(action==MDS_GENDER_BACK||
+                     action==MDS_GENDER_MANDATORY){
                 if(save_ready&&mds_gallery_empty(&gallery)){
-                    /* First-boot Personal Mii setup is mandatory, but a
-                     * missing or unreadable save never traps the player. */
                     editor.status="Choose your first Mii to continue.";
-                }else{
+                }else if(action==MDS_GENDER_BACK){
                     mds_profile_cancel(&profile);
-                    /* Cancel optional new-Mii creation cleanly. */
+                    /* Cancel optional creation without partially committing
+                     * a starting gender or losing the baseline draft. */
                     editor.draft=editor.baseline;editor.pending=MDS_EDIT_NONE;
                     editor.status="Creation cancelled";
                     screen=gender_return_screen;
