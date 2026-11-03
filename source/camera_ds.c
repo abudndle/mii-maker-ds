@@ -11,6 +11,20 @@ static int active,inflight,frames,have_frame,frozen;
 static CameraDevice selected;
 static MdsCameraPurpose camera_purpose;
 static const char *status="Camera closed";
+/* Privacy-sensitive RGB555 frames must be overwritten even if a compiler
+ * considers their contents dead after camera shutdown. Unlike memset(),
+ * writes through a volatile pointer cannot be removed as dead stores.
+ * Only scrub after stopping NDMA, or a transfer could race the overwrite. */
+static void scrub_pixels(uint16_t *pixels,size_t count)
+{
+    volatile uint16_t *p=(volatile uint16_t *)pixels;
+    for(size_t i=0;i<count;i++)p[i]=0;
+}
+static void scrub_captured_frames(void)
+{
+    scrub_pixels(frame,sizeof frame/sizeof frame[0]);
+    scrub_pixels(display,sizeof display/sizeof display[0]);
+}
 int mds_camera_open_for(MdsCameraPurpose purpose)
 {
     if(purpose!=MDS_CAMERA_PHOTO_PREVIEW && purpose!=MDS_CAMERA_QR_SCAN){status="Invalid camera purpose";return 0;}
@@ -32,8 +46,7 @@ void mds_camera_close(void)
     /* Never leave a captured portrait or scanned QR frame resident after
      * the sensor is closed. Stop NDMA first; wipe both the DMA destination
      * and the complete display snapshot, including on capture failure. */
-    memset(frame,0,sizeof frame);
-    memset(display,0,sizeof display);
+    scrub_captured_frames();
     active=0;inflight=0;frames=0;have_frame=0;frozen=0;status="Camera closed";
 }
 int mds_camera_update(void)
@@ -85,8 +98,7 @@ void mds_camera_freeze(void)
          * transfer is in flight while a frozen snapshot is shown. */
         frozen=0;
         have_frame=0;
-        memset(display,0,sizeof display);
-        memset(frame,0,sizeof frame);
+        scrub_captured_frames();
         status="A capture / B back";
     }
 }
