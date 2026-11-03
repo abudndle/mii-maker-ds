@@ -43,6 +43,37 @@ int main(void)
     memcpy(prior,choices,sizeof prior);
     assert(!mds_photo_suggest(picture,256,192,&source,choices));
     assert(!memcmp(choices,prior,sizeof choices));
+    /* Position and spacing of synthetic dark regions affect the suggested
+     * eye spacing (Mii field 13) and vertical placement (field 14). */
+    image();
+    assert(mds_photo_suggest(picture,256,192,&source,choices));
+    unsigned narrow_spacing=choices[0].value[13];
+    unsigned upper_eye_height=choices[0].value[14];
+    image();
+    for(unsigned y=64;y<84;y++)for(unsigned x=72;x<108;x++)
+        picture[y*256u+x]=gray(20);
+    for(unsigned y=64;y<84;y++)for(unsigned x=148;x<184;x++)
+        picture[y*256u+x]=gray(20);
+    for(unsigned y=72;y<96;y++)for(unsigned x=64;x<100;x++)
+        picture[y*256u+x]=gray(8);
+    for(unsigned y=72;y<96;y++)for(unsigned x=172;x<208;x++)
+        picture[y*256u+x]=gray(8);
+    assert(mds_photo_suggest(picture,256,192,&source,choices));
+    assert(choices[0].value[13]>narrow_spacing);
+    assert(choices[0].value[14]<upper_eye_height);
+    for(unsigned i=0;i<3u;i++){
+        assert(choices[i].value[13]<=12);
+        assert(choices[i].value[14]<=18);
+        assert(choices[i].value[0]==source.value[0]);
+        assert(choices[i].value[51]==source.value[51]);
+    }
+    /* A stripe-like upper shadow must not be mistaken for a pair. */
+    image();
+    for(unsigned y=64;y<86;y++)for(unsigned x=48;x<208;x++)
+        picture[y*256u+x]=gray(8);
+    memcpy(prior,choices,sizeof prior);
+    assert(!mds_photo_suggest(picture,256,192,&source,choices));
+    assert(!memcmp(prior,choices,sizeof prior));
     image();source.value[5]=255;
     assert(!mds_photo_suggest(picture,256,192,&source,choices));
     return 0;
