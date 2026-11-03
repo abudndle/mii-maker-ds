@@ -165,6 +165,8 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_profile_birthday_edges.py
+      - name: Verify source-derived Nitro Engine DSMA body export (synthetic only)
+        run: python3 -m unittest discover -s tests -p test_export_bod2_md5.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
