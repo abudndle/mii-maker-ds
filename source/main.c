@@ -106,13 +106,23 @@ int main(void)
                 if(down&KEY_A){
                     if(camera_qr){
                         MdsMiiRecord received;
-                        if(mds_qr_scan_rgb555(&received,mds_camera_frame(),256,192)){
+                        if(!mds_camera_has_frame())editor.status="Camera warming up. Try again.";
+                        else if(mds_qr_scan_rgb555(&received,mds_camera_frame(),256,192)){
                             if(mds_editor_import(&editor,&received.avatar,persist,NULL)){mds_camera_close();camera_open=0;mds_ui_restore_top();screen=MDS_SCREEN_GALLERY;page=editor.slot/10;drawn_screen=-1;}
                         }else editor.status="No valid Mii QR found. Try again.";
                     }else mds_camera_freeze();
                 }
-                if(!camera_qr&&(down&KEY_X))mds_camera_switch();
-                if(camera_open){camera_open=mds_camera_update();mds_ui_camera(mds_camera_frame());if(!camera_qr)editor.status=mds_camera_status();mds_ui_camera_notice(editor.status);mds_ui_present_top();}
+                if(camera_open){
+                    camera_open=mds_camera_update();
+                    if(camera_open){
+                        mds_ui_camera(mds_camera_frame());
+                        if(!camera_qr)editor.status=mds_camera_status();
+                        mds_ui_camera_notice(editor.status);mds_ui_present_top();
+                    }else{
+                        mds_ui_restore_top();drawn_screen=-1;
+                        editor.status=mds_camera_status();notice=editor.status;
+                    }
+                }
             }
         }else if(editor.pending){
             int response=-1;
