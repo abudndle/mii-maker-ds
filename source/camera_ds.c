@@ -56,7 +56,10 @@ void mds_camera_freeze(void)
 {
     if(!active || camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW)return;
     if(!frozen){
-        if(!have_frame || inflight){status="Camera warming up. Try again.";return;}
+        if(!have_frame){status="Camera warming up. Try again.";return;}
+        /* display holds the last complete frame; stop the in-flight DMA
+         * so a later update cannot overwrite the captured snapshot. */
+        if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
         frozen=1;
         status="Photo captured. A retake / B back";
     }else{
