@@ -107,6 +107,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_photo_quality.py
+      - name: Verify three photo candidates preserve profile and cancel without saves
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_photo_candidates_host.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
