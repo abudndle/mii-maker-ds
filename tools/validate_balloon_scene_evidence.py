@@ -47,7 +47,7 @@ def verify_capture_file(capture_path, expected_hash):
     data = capture_path.read_bytes()
     if not 33 <= len(data) <= 30_000_000:
         raise ValueError("private capture PNG size outside supported range")
-    if data[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or data[12:16] != b"IHDR" or data[8:12] != b"\\x00\\x00\\x00\\x0d":
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR" or data[8:12] != b"\x00\x00\x00\x0d":
         raise ValueError("private capture is not a supported PNG")
     if zlib.crc32(data[12:29]) & 0xffffffff != struct.unpack(">I", data[29:33])[0]:
         raise ValueError("private capture PNG header CRC mismatch")
