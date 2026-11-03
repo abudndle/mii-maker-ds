@@ -55,6 +55,18 @@ class RuntimeAssets(unittest.TestCase):
         self.assertEqual(summary['verified_art_sprites'],26)
         self.assertEqual(summary['runtime_assets'],40)
 
+    def test_optional_maxmod_soundbank_does_not_block_private_rom(self):
+        # Original archive predates Maxmod; absence means silent fallback.
+        source = self.root / 'source' / 'audio_ds.c'
+        source.write_text('FILE *f=fopen("nitro:/soundbank.bin","rb");')
+        paths, _ = module.source_paths(self.root)
+        self.assertNotIn('soundbank.bin', paths)
+        module.verify(self.write_archive(), self.root)
+        # An additional optional soundbank is not a substitute for required art.
+        self.packed.pop('ui/home-bottom.rgb555')
+        with self.assertRaisesRegex(ValueError, 'missing'):
+            module.verify(self.write_archive(), self.root)
+
     def test_corrupt_payload_crc_is_rejected_even_when_metadata_is_valid(self):
         self.write_archive(compression=zipfile.ZIP_STORED)
         target = 'nitrofiles/ui/home-bottom.rgb555'
