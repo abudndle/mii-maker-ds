@@ -1,7 +1,11 @@
 """Synthetic-only independent 3DS scene measurements; no original assets."""
 import copy
+import hashlib
 import json
 import math
+import struct
+import subprocess
+import zlib
 import sys
 import tempfile
 import unittest
@@ -9,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from validate_balloon_scene_evidence import validate
+from validate_balloon_scene_evidence import validate, verify_capture_file
 
 SHA = "a" * 64
 CAPTURE_SHA = "b" * 64
@@ -106,6 +110,54 @@ class IndependentHoldouts(unittest.TestCase):
         original = validate(self.layout, self.evidence)["evidence_sha256"]
         self.evidence["provenance"]["capture_method"] = "different synthetic procedure"
         self.assertNotEqual(original, validate(self.layout, self.evidence)["evidence_sha256"])
+
+    def test_private_capture_png_bytes_required_and_bound(self):
+        def chunk(kind, payload):
+            content = kind + payload
+            return (struct.pack(">I", len(payload)) + content +
+                    struct.pack(">I", zlib.crc32(content) & 0xffffffff))
+        def make_png(width=256, height=192):
+            header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+            raw = b"".join(b"\\x00" + b"\\0" * (width * 3) for _ in range(height))
+            return (b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", header) +
+                    chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            capture = root / "original-test-fixture.png"
+            data = make_png()
+            capture.write_bytes(data)
+            sha = hashlib.sha256(data).hexdigest()
+            self.assertEqual(verify_capture_file(capture, sha), sha)
+            with self.assertRaisesRegex(ValueError, "SHA256 does not match"):
+                verify_capture_file(capture, "b" * 64)
+            capture.write_bytes(make_png(width=255))
+            with self.assertRaisesRegex(ValueError, "dimensions mismatch"):
+                verify_capture_file(capture, hashlib.sha256(capture.read_bytes()).hexdigest())
+            broken = bytearray(data)
+            broken[29] ^= 1
+            capture.write_bytes(broken)
+            with self.assertRaisesRegex(ValueError, "CRC mismatch"):
+                verify_capture_file(capture, hashlib.sha256(broken).hexdigest())
+            capture.write_bytes(b"not a PNG")
+            with self.assertRaisesRegex(ValueError, "PNG size"):
+                verify_capture_file(capture, sha)
+            # The CLI will not write a result when capture bytes do not
+            # correspond to the hash in the private measurement record.
+            layout_path, evidence_path = root / "layout.json", root / "evidence.json"
+            output = root / "report.json"
+            layout_path.write_text(json.dumps(self.layout))
+            self.evidence["capture"]["sha256"] = sha
+            evidence_path.write_text(json.dumps(self.evidence))
+            script = ROOT / "tools/validate_balloon_scene_evidence.py"
+            command = [sys.executable, str(script), str(layout_path), str(evidence_path),
+                       "--capture", str(capture), "--output", str(output)]
+            bad = subprocess.run(command, capture_output=True)
+            self.assertNotEqual(bad.returncode, 0)
+            self.assertFalse(output.exists())
+            capture.write_bytes(data)
+            subprocess.run(command, capture_output=True, check=True)
+            self.assertFalse(json.loads(output.read_text())["runtime_anchor_verified"])
+
 
 
 if __name__ == "__main__":
