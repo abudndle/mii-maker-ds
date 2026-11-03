@@ -15,5 +15,16 @@ class CameraDsLifetimeTests(unittest.TestCase):
                             "source/photo_quality.c","source/face_hint.c",
                             "-o",str(exe)],cwd=ROOT,check=True,timeout=30)
             subprocess.run([str(exe)],cwd=ROOT,check=True,timeout=30)
+    def test_preview_clears_old_image_if_frame_is_unavailable(self):
+        code=(ROOT/"source/ui.c").read_text()
+        start=code.index("void mds_ui_camera(const uint16_t *frame)")
+        end=code.index("void mds_ui_restore_top(void)",start)
+        body=code[start:end]
+        self.assertIn("if(frame)memcpy(top,frame,256*192*2)",body)
+        self.assertIn("memset(top,0,256*192*2)",body)
+        camera=(ROOT/"source/camera_ds.c").read_text()
+        self.assertIn("memset(display,0,sizeof display);",camera)
+        self.assertIn("memset(frame,0,sizeof frame);",camera)
+
 if __name__=="__main__":
     unittest.main()

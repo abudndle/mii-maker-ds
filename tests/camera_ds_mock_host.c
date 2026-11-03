@@ -82,6 +82,15 @@ int main(void)
  mds_camera_freeze();assert(mds_camera_photo_frozen());
  mds_camera_freeze();assert(!mds_camera_photo_frozen());
  assert(!mds_camera_has_frame()&&mds_camera_frame()==0);
+ /* The pointer from the previous, valid capture is no longer usable, and
+  * even a stale pointer must not retain the portrait after retaking. */
+ for(unsigned i=0;i<256u*192u;i++)assert(photo[i]==0u);
+ for(unsigned i=0;i<256u*192u;i++)assert(dma_ptr[i]==0u);
+ assert(mds_camera_update()); /* Start a new transfer after scrubbing. */
+ assert(!mds_camera_has_frame());
+ assert(mds_camera_update()); /* Fresh photo becomes visible only now. */
+ assert(mds_camera_has_frame());
+ assert(mds_camera_frame()[0]!=0u);
  mds_camera_close();closed_and_scrubbed(photo);
 
  /* The rear QR camera cannot freeze or claim photo readiness. */
