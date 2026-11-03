@@ -125,6 +125,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_photo_candidate_input.py
+      - name: Verify adaptive eye-pair geometry, position and stripe rejection
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_eye_pair.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
