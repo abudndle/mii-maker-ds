@@ -33,7 +33,8 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('tap 128 "$((touch_origin+87))"', s)
         self.assertIn('tools/check_melonds_confirm_modal.py', s)
         self.assertIn('tools/check_melonds_edit_transition.py', s)
-        self.assertEqual(s.count('tools/check_melonds_modal_dismissal.py'), 2)
+        # Initial dismissal probe, guarded retry probe, and final settled-state proof.
+        self.assertEqual(s.count('tools/check_melonds_modal_dismissal.py'), 3)
 
     def test_exact_cancel_and_confirm_save_gates(self):
         s = SCRIPT.read_text()
