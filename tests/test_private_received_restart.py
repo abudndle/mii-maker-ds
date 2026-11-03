@@ -48,21 +48,28 @@ class ReceivedRunnerTests(unittest.TestCase):
 
     def test_no_touch_retry_is_bounded_and_preserves_received_source(self):
         s = SCRIPT.read_text()
-        # A transient dropped No touch must not fail a real private run, but
-        # only an unchanged modal AND byte-identical EEPROM authorize retry.
+        # One initial touch plus at most two guarded retries; the loop must
+        # not replay No after an observed dismissal or a cartridge write.
         self.assertEqual(s.count('tap 128 "$((touch_origin+127))"'), 2)
-        retry = s[s.index('if ! timeout 15s python3 tools/check_melonds_modal_dismissal.py '
-                          '"$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"'):
+        retry = s[s.index('for no_retry in 1 2; do'):
                   s.index('timeout 15s python3 tools/melonds_gallery_probe.py '
                           '"$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"')]
+        self.assertIn('for no_retry in 1 2; do', retry)
+        self.assertIn('if timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertIn('      break', retry)
         self.assertIn('cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"', retry)
+        self.assertIn('tools/check_melonds_modal_still_open.py', retry)
+        self.assertLess(retry.index('cmp -s'), retry.index('tools/check_melonds_modal_still_open.py'))
+        self.assertLess(retry.index('tools/check_melonds_modal_still_open.py'),
+                        retry.index('tap 128 "$((touch_origin+127))"'))
         self.assertIn('kill -0 "$emu_pid"', retry)
         self.assertIn('xdotool search --onlyvisible --name "melonDS"', retry)
         self.assertIn('win="$candidate"', retry)
+        self.assertIn('xdotool mousemove --window "$win" 128 60', retry)
         self.assertIn('tap 128 "$((touch_origin+127))"', retry)
         self.assertIn('capture_received "$MELONDS_RECEIVED_CANCEL"', retry)
-        self.assertIn('fi\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
-        self.assertNotIn('|| true\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertIn('  done' + chr(10) + '  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertNotIn('|| true' + chr(10) + '  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
 
     def test_second_received_modal_reselects_source_and_matches_first(self):
         s = SCRIPT.read_text()
