@@ -39,6 +39,9 @@ export MELONDS_RECEIVED_GALLERY="$RUNNER_TEMP/melonds-received-gallery.png"
 export MELONDS_RECEIVED_MODAL="$RUNNER_TEMP/melonds-received-modal.png"
 export MELONDS_RECEIVED_FIRST_MODAL="$RUNNER_TEMP/melonds-received-first-modal.png"
 export MELONDS_RECEIVED_CANCEL="$RUNNER_TEMP/melonds-received-cancel.png"
+export MELONDS_RECEIVED_CANCEL_T1="$RUNNER_TEMP/melonds-received-cancel-t1.png"
+export MELONDS_RECEIVED_CANCEL_T3="$RUNNER_TEMP/melonds-received-cancel-t3.png"
+export MELONDS_RECEIVED_CANCEL_T6="$RUNNER_TEMP/melonds-received-cancel-t6.png"
 export MELONDS_RECEIVED_EDITOR="$RUNNER_TEMP/melonds-received-editor.png"
 export MELONDS_RECEIVED_RETURN="$RUNNER_TEMP/melonds-received-return.png"
 export MELONDS_RECEIVED_POSTCOPY="$RUNNER_TEMP/melonds-received-postcopy.sav"
@@ -150,6 +153,16 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   tap 128 "$((touch_origin+127))"
   sleep 5
   capture_received "$MELONDS_RECEIVED_CANCEL"
+  # Preserve a private time series around the No transition. These are passive
+  # observations only; no additional stylus input is sent while state is
+  # ambiguous. The encrypted artifact can distinguish highlight, animation,
+  # and a genuinely persistent dialog.
+  sleep 1
+  capture_received "$MELONDS_RECEIVED_CANCEL_T1"
+  sleep 2
+  capture_received "$MELONDS_RECEIVED_CANCEL_T3"
+  sleep 3
+  capture_received "$MELONDS_RECEIVED_CANCEL_T6"
   # Qt may accept focus while dropping the first stylus release after a
   # screenshot/window refresh. Retry ONLY if the modal has not visibly
   # changed and the cartridge is still byte-identical to the pre-copy save.
