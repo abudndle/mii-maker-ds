@@ -77,6 +77,27 @@ class PhotoQualityTests(unittest.TestCase):
     def test_ignores_rgb555_alpha_bit(self):
         self.assertEqual(self.check_frame(lambda x, y: pixel(9 if x < 128 else 23) | 0x8000), USABLE)
 
+    def test_textured_border_cannot_hide_dark_center(self):
+        def image(x, y):
+            if 48 <= x < 208 and 24 <= y < 168:
+                return pixel(2)
+            return pixel(9 if (x // 8 + y // 8) % 2 else 23)
+        self.assertEqual(self.check_frame(image), DARK)
+
+    def test_dark_border_does_not_reject_good_center(self):
+        def image(x, y):
+            if 48 <= x < 208 and 24 <= y < 168:
+                return pixel(9 if x < 128 else 23)
+            return pixel(0)
+        self.assertEqual(self.check_frame(image), USABLE)
+
+    def test_textured_border_cannot_hide_uniform_center(self):
+        def image(x, y):
+            if 48 <= x < 208 and 24 <= y < 168:
+                return pixel(16)
+            return pixel(9 if (x // 8 + y // 8) % 2 else 23)
+        self.assertEqual(self.check_frame(image), FLAT)
+
     def test_no_face_detection_claim(self):
         header = (ROOT / "source" / "photo_quality.h").read_text()
         self.assertIn("does NOT detect a face", header)
