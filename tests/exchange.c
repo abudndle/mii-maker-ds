@@ -18,6 +18,24 @@ int main(int argc,char**argv){
  assert(mds_import_step(&browser,1)&&browser.selected==1&&browser.valid&&!strcmp(browser.record.avatar.name,"CodecTest"));
  assert(mds_import_step(&browser,-2)&&browser.selected==2);assert(!mds_import_select(&browser,100));assert(!browser.valid);
  for(unsigned i=0;i<105;i++){snprintf(path,sizeof path,"%s/overflow%03u.cfsd",argv[1],i);write_file(path,cfs_fixture,96);}
+ /* Created after saturation, but sorts ahead of 01-valid. Old readdir-first
+  * truncation silently hid this file on FAT filesystems. */
+ snprintf(path,sizeof path,"%s/00-early-late.cfsd",argv[1]);write_file(path,cfs_fixture,96);
  mds_import_scan(&browser,argv[1]);assert(browser.count==100&&browser.truncated);
- puts("PASS: CFSD/FFSD scan, extension filtering, folders ignored, sorting, malformed selection, wrapping, file cap and missing directory");
+ /* The top 100 filenames must be stable, even if readdir() enumerates the
+  * source files in a different order on a different SD FAT implementation. */
+ assert(!strcmp(browser.files[0],"00-broken.cfsd"));
+ assert(!strcmp(browser.files[1],"00-early-late.cfsd"));
+ assert(!strcmp(browser.files[2],"01-valid.FFSD"));
+ assert(!strcmp(browser.files[3],"02-valid.cfsd"));
+ assert(!strcmp(browser.files[4],"overflow000.cfsd"));
+ assert(!strcmp(browser.files[99],"overflow095.cfsd"));
+ assert(mds_import_select(&browser,99));
+ assert(!strcmp(browser.record.avatar.name,"CodecTest"));
+ mds_import_scan(&browser,argv[1]);
+ assert(browser.count==100&&browser.truncated);
+ assert(!strcmp(browser.files[1],"00-early-late.cfsd"));
+ assert(!strcmp(browser.files[4],"overflow000.cfsd"));
+ assert(!strcmp(browser.files[99],"overflow095.cfsd"));
+ puts("PASS: CFSD/FFSD scan, extension filtering, folders ignored, sorting, stable top-100 cap, malformed selection, wrapping and missing directory");
 }

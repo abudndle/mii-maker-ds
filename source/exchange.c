@@ -33,8 +33,19 @@ int mds_import_scan(MdsImport*b,const char*directory)
   if(!supported(entry->d_name))continue;
   char path[256];struct stat st;snprintf(path,sizeof path,"%.95s/%.95s",directory,entry->d_name);
   if(stat(path,&st)||!S_ISREG(st.st_mode))continue;
-  if(b->count==MDS_IMPORT_FILES){b->truncated=1;continue;}
-  strcpy(b->files[b->count++],entry->d_name);
+  if(b->count<MDS_IMPORT_FILES){
+   strcpy(b->files[b->count++],entry->d_name);
+  }else{
+   /* Directory iteration order is not stable across SD cards and libfat.
+    * Keep the lexicographically earliest 100 supported names even when
+    * the folder has more entries, so rescans preserve the visible roster. */
+   b->truncated=1;
+   unsigned worst=0;
+   for(unsigned i=1;i<b->count;i++)
+    if(strcmp(b->files[i],b->files[worst])>0)worst=i;
+   if(strcmp(entry->d_name,b->files[worst])<0)
+    strcpy(b->files[worst],entry->d_name);
+  }
  }
  closedir(d);qsort(b->files,b->count,sizeof b->files[0],compare);
  if(!b->count){b->status="No .cfsd or .ffsd files found.";return 0;}
