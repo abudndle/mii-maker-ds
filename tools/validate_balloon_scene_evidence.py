@@ -11,6 +11,8 @@ import hashlib
 import json
 import math
 import re
+import struct
+import zlib
 from pathlib import Path
 
 from calibrate_balloon_scene import calibrate
@@ -33,6 +35,29 @@ def _point(value, label):
     if not (0 <= x <= 256 and 0 <= y <= 192):
         raise ValueError(label + " outside DS bottom screen")
     return (float(x), float(y))
+
+
+def verify_capture_file(capture_path, expected_hash):
+    """Bind the private metadata hash to actual normalized PNG bytes.
+
+    Inspect only the PNG signature and CRC-checked IHDR; no original pixels,
+    paths, or screenshot bytes are printed or included in outputs. This does
+    not prove a file came from an original Nintendo 3DS runtime.
+    """
+    data = capture_path.read_bytes()
+    if not 33 <= len(data) <= 30_000_000:
+        raise ValueError("private capture PNG size outside supported range")
+    if data[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or data[12:16] != b"IHDR" or data[8:12] != b"\\x00\\x00\\x00\\x0d":
+        raise ValueError("private capture is not a supported PNG")
+    if zlib.crc32(data[12:29]) & 0xffffffff != struct.unpack(">I", data[29:33])[0]:
+        raise ValueError("private capture PNG header CRC mismatch")
+    width, height = struct.unpack(">II", data[16:24])
+    if (width, height) != (256, 192):
+        raise ValueError("private capture PNG dimensions mismatch")
+    actual = hashlib.sha256(data).hexdigest()
+    if actual != _hash(expected_hash, "capture SHA256"):
+        raise ValueError("private capture SHA256 does not match evidence")
+    return actual
 
 
 def validate(layout, evidence, tolerance=2.0):
@@ -134,6 +159,8 @@ def main():
     p.add_argument("source_layout", type=Path)
     p.add_argument("private_evidence", type=Path)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--capture", type=Path, required=True,
+                   help="private normalized 256x192 PNG, required to verify evidence SHA256")
     p.add_argument("--max-error", type=float, default=2.0)
     args = p.parse_args()
     result = validate(json.loads(args.source_layout.read_text()),
