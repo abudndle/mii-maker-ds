@@ -154,20 +154,33 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   # screenshot/window refresh. Retry ONLY if the modal has not visibly
   # changed and the cartridge is still byte-identical to the pre-copy save.
   # Never mask a real second failure or replay an already accepted choice.
-  if ! timeout 15s python3 tools/check_melonds_modal_dismissal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1; then
-    echo "Received acceptance: No touch not observed; retrying once with refreshed window"
+  # melonDS/Qt occasionally consumes the first stylus release while the
+  # modal takes focus. Permit at most two *additional* No touches, and only
+  # after proving the EEPROM is unchanged and the SAME source modal remains
+  # visibly open. A changed/dismissed modal or unexpected save is fatal.
+  for no_retry in 1 2; do
+    if timeout 15s python3 tools/check_melonds_modal_dismissal.py \
+        "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL" >/dev/null 2>&1; then
+      break
+    fi
     cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
       echo "FAIL: received No retry blocked by unexpected EEPROM mutation"
       exit 1
     }
-    kill -0 "$emu_pid"
+    timeout 15s python3 tools/check_melonds_modal_still_open.py \
+      "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
+    kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before No retry"; exit 1; }
+    echo "Received acceptance: No not observed; guarded retry $no_retry/2"
     candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
     test -n "$candidate" || { echo "FAIL: no live received window for No retry"; exit 1; }
     win="$candidate"
+    # Move off the choice pane before re-entering it; do not click elsewhere.
+    timeout 5s xdotool mousemove --window "$win" 128 60
+    sleep 0.2
     tap 128 "$((touch_origin+127))"
     sleep 5
     capture_received "$MELONDS_RECEIVED_CANCEL"
-  fi
+  done
   timeout 15s python3 tools/check_melonds_modal_dismissal.py "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
   timeout 15s python3 tools/melonds_gallery_probe.py "$MELONDS_RECEIVED_HOME" "$MELONDS_RECEIVED_CANCEL"
   cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" || {
