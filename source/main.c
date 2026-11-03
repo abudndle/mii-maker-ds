@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "camera_ds.h"
 #include "camera_action.h"
+#include "gender_input.h"
 #include "photo_candidates.h"
 #include "photo_candidate_input.h"
 #include "photo_suggest.h"
@@ -659,21 +660,33 @@ int main(void)
                 drawn_screen=-1;
             }
         }else if(screen==MDS_SCREEN_GENDER){
-            if(k&KEY_LEFT){mds_profile_choice_step(&profile,-1);drawn_screen=-1;}
-            if(k&KEY_RIGHT){mds_profile_choice_step(&profile,1);drawn_screen=-1;}
-            int chosen=-1;
-            if(down&KEY_A)chosen=profile.choice;
-            if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
-            if(chosen>=0){
+            int touched_gender=-1;
+            if(down&KEY_TOUCH){
+                const char *hit=mds_profile_hit(2,input.touch.px,input.touch.py);
+                if(!strcmp(hit,"B_Male"))touched_gender=0;
+                else if(!strcmp(hit,"B_Female"))touched_gender=1;
+            }
+            /* Exactly one input action per VBlank. Cancel takes priority
+             * over touch and A, so simultaneous buttons cannot commit
+             * an appearance before returning to the previous screen. */
+            MdsGenderAction action=mds_gender_input(
+                (down&KEY_B)!=0,(down&KEY_A)!=0,
+                (k&KEY_LEFT)!=0,(k&KEY_RIGHT)!=0,
+                touched_gender,profile.choice);
+            if(action==MDS_GENDER_PREV||action==MDS_GENDER_NEXT){
+                mds_profile_choice_step(&profile,
+                    action==MDS_GENDER_PREV?-1:1);
+                drawn_screen=-1;
+            }else if(action==MDS_GENDER_MALE||action==MDS_GENDER_FEMALE){
+                int chosen=action==MDS_GENDER_FEMALE?1:0;
                 profile.choice=chosen;
-                /* The stock Mii Maker starts new male and female Miis from
-                 * distinct default appearances, not only a gender toggle. */
+                /* Use the selected scratch starter only on confirmation. */
                 mds_creation_default(&editor.draft,(unsigned)chosen);
                 mds_profile_done(&profile,&editor.draft);
                 editor_return_screen=gender_return_screen;
                 screen=MDS_SCREEN_EDITOR;
-            }
-            if(down&KEY_B){
+                drawn_screen=-1;
+            }else if(action==MDS_GENDER_CANCEL){
                 if(save_ready&&mds_gallery_empty(&gallery)){
                     /* First-boot Personal Mii setup is mandatory, but a
                      * missing or unreadable save never traps the player. */

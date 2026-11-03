@@ -21,8 +21,8 @@ class GenderStarterPreviewTests(unittest.TestCase):
             "}else if(screen==MDS_SCREEN_PROFILE){",1)[0]
         self.assertIn("mds_creation_default(&editor.draft,(unsigned)chosen)",gender)
         self.assertIn("mds_profile_done(&profile,&editor.draft)",gender)
-        self.assertIn("if(k&KEY_LEFT){mds_profile_choice_step(&profile,-1);drawn_screen=-1;}",gender)
-        self.assertIn("if(k&KEY_RIGHT){mds_profile_choice_step(&profile,1);drawn_screen=-1;}",gender)
+        self.assertIn("action==MDS_GENDER_PREV?-1:1",gender)
+        self.assertIn("mds_gender_input(",gender)
         self.assertIn("mds_creation_preview(&editor.draft,(unsigned)profile.choice,",main)
         self.assertIn("mds_ui_info(shown,editor.slot,45,",main)
         self.assertIn("const MdsAvatar *shown=&editor.draft;",main)

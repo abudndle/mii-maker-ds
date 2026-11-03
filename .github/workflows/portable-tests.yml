@@ -153,6 +153,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_gender_starter_preview.py
+      - name: Validate atomic first-boot gender choice and cancellation priority
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_gender_input.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
