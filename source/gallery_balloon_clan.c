@@ -72,7 +72,7 @@ void mds_gallery_balloon_clan_favorite_committed(MdsGalleryBalloonClan *state,ui
 }
 int mds_gallery_balloon_clan_tick(MdsGalleryBalloonClan *state,uint32_t now)
 {
-    if(!state||(uint32_t)(now-state->started)<SHORT_TICKS)return 0;
+    if(!state||!state->active||(uint32_t)(now-state->started)<SHORT_TICKS)return 0;
     /* Preserve elapsed time if a frame was skipped; VBlank wrap is safe. */
     uint32_t started=state->started+SHORT_TICKS;
     if(state->pending_select&&state->clip==MDS_BALLOON_UNSELECT){
