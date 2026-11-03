@@ -303,5 +303,34 @@ int main(void){
     e.draft.value[46]=0;
     assert(mds_editor_save(&e,saved,NULL));
     assert(!g.miis[1].value[46]&&g.miis[0].value[46]);
-    puts("PASS: dirty navigation, failed-save/delete/move/import rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, Favorite transactions, wrap");
+    /* Stale or malformed modal responses cannot consume a pending
+     * confirmation, mutate the gallery, or dereference invalid state. */
+    assert(!mds_editor_confirm(NULL,1,saved,NULL));
+    assert(!mds_editor_confirm(&e,1,saved,NULL)); /* no pending action */
+    MdsAvatar confirm_draft=e.draft;
+    MdsAvatar confirm_saved=g.miis[1];
+    e.pending=MDS_EDIT_DELETE;
+    MdsGallery *confirm_gallery=e.gallery;
+    e.gallery=NULL;
+    assert(!mds_editor_confirm(&e,1,saved,NULL));
+    assert(e.pending==MDS_EDIT_DELETE);
+    e.gallery=confirm_gallery;
+    e.slot=MDS_SLOTS;
+    assert(!mds_editor_confirm(&e,1,saved,NULL));
+    assert(e.pending==MDS_EDIT_DELETE);
+    e.slot=1;
+    e.pending=(MdsEditAction)255;
+    assert(!mds_editor_confirm(&e,1,saved,NULL));
+    assert(e.pending==(MdsEditAction)255);
+    e.pending=MDS_EDIT_DELETE;
+    assert(g.used[1]&&!memcmp(&g.miis[1],&confirm_saved,sizeof confirm_saved));
+    assert(!memcmp(&e.draft,&confirm_draft,sizeof confirm_draft));
+    assert(!mds_editor_confirm(&e,0,saved,NULL));
+    assert(e.pending==MDS_EDIT_NONE&&g.used[1]);
+    assert(!mds_editor_confirm(&e,1,saved,NULL)); /* stale accept */
+    assert(g.used[1]&&g.used[0]&&g.generation==0&&g.active_bank==-1);
+    assert(mds_editor_request(&e,MDS_EDIT_DELETE));
+    assert(mds_editor_confirm(&e,1,saved,NULL));
+    assert(!g.used[1]&&g.used[0]&&g.miis[0].value[51]);
+    puts("PASS: dirty navigation, failed-save/delete/move/import rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, Favorite transactions, safe modal confirmation, wrap");
 }

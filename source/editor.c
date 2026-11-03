@@ -80,6 +80,13 @@ int mds_editor_request(MdsEditor *e,MdsEditAction action)
 }
 int mds_editor_confirm(MdsEditor *e,int accept,MdsPersist persist,void *ctx)
 {
+    /* A stray/stale dialog response must not dereference a missing
+     * gallery, use an invalid slot or consume an unrelated action.
+     * Keep the pending action intact on invalid input so a valid
+     * confirmation or cancellation can still resolve it. */
+    if(!e||!e->gallery||e->slot>=MDS_SLOTS||
+       e->pending==MDS_EDIT_NONE||
+       (unsigned)e->pending>(unsigned)MDS_EDIT_COPY_RECEIVED)return 0;
     MdsEditAction action=e->pending;e->pending=MDS_EDIT_NONE;
     if(!accept){e->status="Cancelled. Draft retained";return 0;}
     if(action==MDS_EDIT_COPY_RECEIVED)
