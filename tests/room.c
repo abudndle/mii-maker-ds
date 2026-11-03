@@ -201,6 +201,10 @@ int main(void)
  for(unsigned slot=0;slot<MDS_ROOM_SLOTS;slot++)
   mds_room_animation_start(&animation[slot],slot%2,100u+slot*3u);
  int animation_ended=0;
+ /* A newly started actor must not jump to a late/ended frame when the
+  * VBlank sample precedes its start (including a reset-like sample). */
+ assert(mds_room_animation_frame(&animation[0],99,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&!animation_ended);
+ assert(mds_room_animation_frame(&animation[1],0,clip_counts,clip_fps,clip_loops,2,&animation_ended)==0&&!animation_ended);
  assert(mds_room_animation_frame(&animation[0],102,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
  assert(mds_room_animation_frame(&animation[1],104,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
  assert(mds_room_animation_frame(&animation[2],108,clip_counts,clip_fps,clip_loops,2,&animation_ended)==1&&!animation_ended);
@@ -249,6 +253,11 @@ int main(void)
  mds_room_animation_start(&animation[0],0,UINT32_MAX-2u);
  assert(mds_room_animation_motion_frame(&animation[0],1u,&original,
                                          &animation_ended)==2&&!animation_ended);
+ assert(mds_room_animation_motion_frame(&animation[0],UINT32_MAX-3u,&original,
+                                         &animation_ended)==0&&!animation_ended);
+ mds_room_animation_start(&animation[0],1,5000u);
+ assert(mds_room_animation_motion_frame(&animation[0],0u,&original,
+                                         &animation_ended)==0&&!animation_ended);
  assert(mds_room_animation_motion_frame(NULL,1u,&original,
                                          &animation_ended)==0&&animation_ended);
  assert(mds_room_animation_motion_frame(&animation[0],1u,NULL,
