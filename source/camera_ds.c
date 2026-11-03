@@ -80,8 +80,13 @@ void mds_camera_freeze(void)
         frozen=1;
         status="Photo ready. X suggest / A retake";
     }else{
+        /* Retake is a privacy boundary: invalidate and wipe the last
+         * accepted portrait before starting another transfer. No NDMA
+         * transfer is in flight while a frozen snapshot is shown. */
         frozen=0;
-        have_frame=0; /* Do not show the old snapshot after retake. */
+        have_frame=0;
+        memset(display,0,sizeof display);
+        memset(frame,0,sizeof frame);
         status="A capture / B back";
     }
 }
