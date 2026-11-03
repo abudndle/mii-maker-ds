@@ -112,6 +112,14 @@ int main(void)
  mds_camera_close();closed_and_scrubbed(photo);
  low_exposure=0;
 
+ /* Reopening a camera never resurrects raw pixels from a previous
+  * photo/QR session. Repeated close is idempotent after the initial wipe. */
+ int previous_stops=stops;
+ mds_camera_close();assert(stops==previous_stops);
+ assert(mds_camera_open_for(MDS_CAMERA_QR_SCAN));
+ assert(mds_camera_frame()==0&&!mds_camera_has_frame());
+ mds_camera_close();closed_and_scrubbed(photo);
+
  /* A failed transfer must close and scrub the last completed snapshot. */
  assert(mds_camera_open());assert(mds_camera_update());
  assert(mds_camera_update());photo=mds_camera_frame();
