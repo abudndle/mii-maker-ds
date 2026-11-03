@@ -39,8 +39,9 @@ class CreateMethodTests(unittest.TestCase):
     def test_main_wiring_and_first_boot(self):
         main=(ROOT/"source/main.c").read_text()
         self.assertIn("screen=MDS_SCREEN_CREATE_METHOD;",main)
-        self.assertIn("mds_create_method_select",main)
-        self.assertIn("mds_create_method_touch",main)
+        self.assertIn("mds_create_method_input(create_input)",main)
+        self.assertIn("create_result.selection",main)
+        self.assertIn("create_result.choice",main)
         self.assertIn("mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW)",main)
         self.assertIn("if(save_ready&&mds_gallery_empty(&gallery)&&",main)
         self.assertIn("screen=MDS_SCREEN_GENDER;",main)
