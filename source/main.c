@@ -205,14 +205,22 @@ int main(void)
                 drawn_screen=-1; /* repaint the real post-dialog UI */
             }
         }else if(screen==MDS_SCREEN_HOME){
+            /* Confirm the already-highlighted option, never one selected
+             * by a simultaneous direction key. B wins over touch and A. */
+            MdsHomeInput home_input={
+                .cancel=(down&KEY_B)!=0,
+                .confirm=(down&KEY_A)!=0,
+                .touch=(down&KEY_TOUCH)!=0,
+                .up=(k&KEY_UP)!=0,.down=(k&KEY_DOWN)!=0,
+                .x=input.touch.px,.y=input.touch.py,.focus=focus
+            };
+            MdsHomeResult home_result=mds_home_input(home_input);
             int previous_focus=focus;
-            if(k&KEY_UP)focus=mds_home_focus_step(focus,-1);
-            if(k&KEY_DOWN)focus=mds_home_focus_step(focus,1);
+            focus=home_result.focus;
             if(focus!=previous_focus)mds_ui_home_focus_start(animation_vblanks);
-            int action=down&KEY_A?focus+1:0;
+            int action=home_result.action;
             if(input.up&(KEY_TOUCH|KEY_LEFT|KEY_RIGHT|KEY_A))
                 mds_ui_editor_adjust_release(animation_vblanks,input.up);
-            if(down&KEY_TOUCH){touchPosition t;t=input.touch;action=mds_home_touch(t.px,t.py);}
             if(action==MDS_HOME_VIEW){screen=MDS_SCREEN_GALLERY;page=editor.slot/10;notice="";}
             else if(action==MDS_HOME_CREATE){
                 unsigned free_slot=0;while(free_slot<100&&gallery.used[free_slot])free_slot++;
@@ -231,7 +239,7 @@ int main(void)
             }
             else if(action==MDS_HOME_QR){qr_return_screen=MDS_SCREEN_HOME;screen=MDS_SCREEN_QR;qr_select_image=0;mds_ui_qr_reset();notice="L/R: choose a saved Mii";if(!gallery.used[editor.slot]){int saved=mds_gallery_next_saved(gallery.used,editor.slot,1);if(saved>=0)editor.slot=(unsigned)saved;}}
             else if(action==MDS_HOME_HELP)notice="Choose View or Create. B returns here.";
-            if(down&KEY_B)notice="";
+            if(home_result.cancel)notice="";
         }else if(screen==MDS_SCREEN_SAVED){
             /* Choose existing Miis in the cartridge's own gallery. */
             if(down&KEY_B)screen=MDS_SCREEN_HOME;
