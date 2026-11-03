@@ -82,6 +82,7 @@ int main(void)
     int create_method_selection=0;
     int photo_return_screen=MDS_SCREEN_EDITOR;
     static MdsPhotoCandidates photo_candidates;
+    MdsPhotoTouch photo_touch;mds_photo_touch_reset(&photo_touch);
     static MdsAvatar photo_generated[3];
     /* On a writable blank cartridge, first launch must create the
      * console's Personal Mii before ordinary home/gallery navigation. */
@@ -130,6 +131,7 @@ int main(void)
                            mds_photo_candidates_begin(&photo_candidates,&editor,
                                                       photo_generated)){
                             editor.status="Photo suggestions are experimental";
+                            mds_photo_touch_reset(&photo_touch);
                             mds_camera_close();camera_open=0;
                             mds_ui_restore_top();drawn_screen=-1;
                             screen=MDS_SCREEN_PHOTO_CANDIDATES;
@@ -592,12 +594,22 @@ int main(void)
             if(down&KEY_B)action=MDS_PHOTO_INPUT_CANCEL;
             else if(down&KEY_Y)action=MDS_PHOTO_INPUT_RETRY;
             else if(down&KEY_A)action=MDS_PHOTO_INPUT_USE;
-            else if(down&KEY_TOUCH)
-                action=mds_photo_candidate_touch(input.touch.px,input.touch.py);
             else if((k&(KEY_LEFT|KEY_RIGHT))==KEY_LEFT)
                 action=MDS_PHOTO_INPUT_PREV;
             else if((k&(KEY_LEFT|KEY_RIGHT))==KEY_RIGHT)
                 action=MDS_PHOTO_INPUT_NEXT;
+            /* A physical command disarms any pending touch action before
+             * the same frame's release could issue another command. */
+            if(action!=MDS_PHOTO_INPUT_NONE||
+               (down&~KEY_TOUCH)||(input.up&~KEY_TOUCH))
+                mds_photo_touch_reset(&photo_touch);
+            else if(down&KEY_TOUCH)
+                mds_photo_touch_begin(&photo_touch,input.touch.px,input.touch.py);
+            else if(input.up&KEY_TOUCH)
+                action=mds_photo_touch_release(&photo_touch,
+                                                input.touch.px,input.touch.py);
+            else if(input.held&KEY_TOUCH)
+                mds_photo_touch_hold(&photo_touch,input.touch.px,input.touch.py);
             if(action==MDS_PHOTO_INPUT_CANCEL){
                 mds_photo_candidates_cancel(&photo_candidates);
                 screen=photo_return_screen;
@@ -620,7 +632,10 @@ int main(void)
                 mds_photo_candidates_step(&photo_candidates,
                     action==MDS_PHOTO_INPUT_NEXT?1:-1);
             }
-            if(action!=MDS_PHOTO_INPUT_NONE)drawn_screen=-1;
+            if(action!=MDS_PHOTO_INPUT_NONE){
+                mds_photo_touch_reset(&photo_touch);
+                drawn_screen=-1;
+            }
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
             if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
