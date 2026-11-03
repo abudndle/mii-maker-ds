@@ -167,8 +167,21 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
       echo "FAIL: received No retry blocked by unexpected EEPROM mutation"
       exit 1
     }
-    timeout 15s python3 tools/check_melonds_modal_still_open.py \
-      "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"
+    if ! timeout 15s python3 tools/check_melonds_modal_still_open.py \
+        "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"; then
+      # The first No touch may have dismissed the dialog but the sampled
+      # frame can land during its exit animation. Never click again in that
+      # ambiguous state: wait for a settled frame and test dismissal first.
+      sleep 3
+      capture_received "$MELONDS_RECEIVED_CANCEL"
+      if timeout 15s python3 tools/check_melonds_modal_dismissal.py \
+          "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_CANCEL"; then
+        echo "Received acceptance: No dismissal confirmed after transition settled"
+        break
+      fi
+      echo "FAIL: No touch changed the choice panes but did not prove dismissal; refusing another touch"
+      exit 1
+    fi
     kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before No retry"; exit 1; }
     echo "Received acceptance: No not observed; guarded retry $no_retry/2"
     candidate="$(timeout 5s xdotool search --onlyvisible --name "melonDS" 2>/dev/null | tail -n 1 || true)"
