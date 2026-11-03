@@ -65,3 +65,12 @@ Documentation:
 - https://blocksds.skylyrac.net/docs/libs/additional_libs/
 - https://github.com/AntonioND/nitro-engine
 - https://github.com/AntonioND/dsma-library
+
+## Additional DSi references and how to reuse them
+
+- libnds API reference (https://libnds.devkitpro.org/): keys, touch, VRAM, NDMA, IRQ and camera APIs already used in this port; cross-check BlocksDS installed libnds version before relying on devkitPro-specific declarations.
+- Epicpkmn11/dsi-camera (https://github.com/Epicpkmn11/dsi-camera): standalone devkitPro DSi inner/outer camera preview and SD PNG photo-save example, not a drop-in BlocksDS library. Useful for comparing sensor-routing behavior.
+- addisonking/dsi-camera (https://github.com/addisonking/dsi-camera): forked standalone app with sensor exposure, gain, white balance, capture and album features. Any adaptation needs license/API review, NDMA ownership checks, privacy-scrub preservation and physical DSi testing.
+- Epicpkmn11/dsidl (https://github.com/Epicpkmn11/dsidl): standalone QR-to-URL downloader; reference for DSi networking and file-browser behavior, not a Mii wireless protocol library. Its documented router compatibility limitations must be considered.
+
+The existing source/camera_ds.c already selects the DSi inner camera for photo creation and outer camera for QR, guards DMA timeouts and securely scrubs prior frames. Preserve these safety properties; do not replace the camera with demo code without parity tests. Other supporting libraries remain candidates, not automatic dependencies.
