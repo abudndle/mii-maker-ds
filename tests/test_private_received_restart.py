@@ -133,8 +133,10 @@ class ReceivedRunnerTests(unittest.TestCase):
         w = WORKFLOW.read_text()
         self.assertIn('bash tools/run_melonds_received_restart.sh', w)
         self.assertIn('steps.melon_received.outcome', w)
-        for name in ("modal", "cancel", "editor", "return"):
+        for name in ("modal", "cancel", "cancel-t1", "cancel-t3", "cancel-t6", "editor", "return"):
             self.assertIn('melonds-received-' + name + '.png.gpg', w)
+            self.assertIn('"$RUNNER_TEMP/melonds-received-' + name + '.png"', w)
+        self.assertIn("for frame in modal cancel cancel-t1 cancel-t3 cancel-t6 editor return; do", w)
         self.assertNotIn('            mii-ds.sav\n', w)
 
 
