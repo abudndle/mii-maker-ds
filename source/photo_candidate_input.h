@@ -21,4 +21,9 @@ void mds_photo_touch_reset(MdsPhotoTouch *gesture);
 void mds_photo_touch_begin(MdsPhotoTouch *gesture,int x,int y);
 void mds_photo_touch_hold(MdsPhotoTouch *gesture,int x,int y);
 MdsPhotoInput mds_photo_touch_release(MdsPhotoTouch *gesture,int x,int y);
+/* Called once each VBlank, including frames without queued button edges.
+ * Returns true only on a release that remained in the original action region
+ * throughout every sampled stylus position. No actions are executed here. */
+int mds_photo_touch_sample(MdsPhotoTouch *gesture,int down,int held,int up,
+                           int x,int y);
 #endif
