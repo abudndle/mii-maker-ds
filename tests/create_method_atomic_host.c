@@ -14,6 +14,9 @@ int main(void)
  assert(r.choice==MDS_CREATE_SCRATCH&&r.selection==0);
  i.confirm=0;r=evaluate(i);
  assert(r.choice==MDS_CREATE_NONE&&r.selection==1);
+ /* As in the main loop, the caller applies the navigation result before
+  * the next frame; the input helper does not mutate its input argument. */
+ i.selection=r.selection;
  /* DSi and ordinary DS have the same navigation, different feature gate. */
  i.confirm=1;i.right=0;i.dsi_enabled=0;
  r=evaluate(i);assert(r.choice==MDS_CREATE_NONE&&r.selection==1);
