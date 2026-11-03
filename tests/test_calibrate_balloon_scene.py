@@ -28,6 +28,7 @@ result = calibrate(layout, measurements)
 assert result["runtime_anchor_verified"] is False
 assert result["pane_count"] == 5
 assert result["maximum_residual_px"] == 0
+assert result["holdout_max_residual_px"] == 0
 assert all(abs(a - b) < 1e-6 for a, b in zip(result["scene_affine_ds"], expected))
 
 
@@ -39,6 +40,20 @@ def rejects(changed_layout, changed_measurements, fragment):
     else:
         raise AssertionError("accepted " + fragment)
 
+
+# Four independent panes still produce a candidate, but the output must
+# explicitly report that there were too few observations for holdout checks.
+four = copy.deepcopy(measurements)
+four["points"] = four["points"][:4]
+assert calibrate(layout, four)["holdout_max_residual_px"] is None
+
+# A distant pane has high leverage: a five-pixel mismeasurement can bend
+# the affine while keeping *every* training residual under the two-pixel
+# limit. The held-out prediction catches it rather than accepting a false
+# runtime scene placement.
+high_leverage = copy.deepcopy(measurements)
+high_leverage["points"][4]["ds_center"][0] += 5
+rejects(layout, high_leverage, "leave-one-out consistency")
 
 # Unmeasured duplicate CLYT names are harmless, but a measured duplicate
 # must not silently select one of two source panes.
