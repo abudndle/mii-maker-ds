@@ -50,6 +50,14 @@ int mds_creation_default(MdsAvatar *avatar,unsigned gender)
     }
     return 1;
 }
+int mds_creation_preview(const MdsAvatar *draft,unsigned gender,MdsAvatar *out)
+{
+    if(!draft||!out||gender>1u||!mds_valid(draft))return 0;
+    MdsAvatar staged=*draft;
+    if(!mds_creation_default(&staged,gender))return 0;
+    *out=staged;
+    return 1;
+}
 int mds_valid(const MdsAvatar *a){if(!a)return 0;if(!memchr(a->name,0,MDS_NAME)||!memchr(a->creator,0,MDS_NAME))return 0;for(unsigned i=0;i<MDS_FIELDS;i++)if(a->value[i]>mds_fields[i].maximum)return 0;return 1;}
 void mds_adjust(MdsAvatar *a,unsigned f,int d){if(!a||f>=MDS_FIELDS)return;int n=mds_fields[f].maximum+1;int64_t v=((int64_t)a->value[f]+d)%n;a->value[f]=(uint8_t)(v<0?v+n:v);if(f>=52&&f<61){char *s=f<57?a->name:a->creator;unsigned start=f<57?52:57,limit=f<57?5:4;for(unsigned j=0;j<limit;j++)s[j]=(char)(a->value[start+j]+32);s[limit]=0;}}
 static uint32_t crc32(const uint8_t *p,size_t n){uint32_t c=~0u;for(size_t i=0;i<n;i++){c^=p[i];for(int k=0;k<8;k++)c=(c>>1)^(0xedb88320u&-(c&1));}return ~c;}
