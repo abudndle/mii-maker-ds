@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/public-synthetic-screenshots.yml'
       - 'tools/capture_public_synthetic_screenshots.sh'
+      - 'public-demo/**'
 permissions:
   contents: read
 jobs:
@@ -14,7 +15,7 @@ jobs:
     timeout-minutes: 30
     env:
       CI: "true"
-      MDS_SYNTHETIC_COMPILE_ONLY: "yes"
+      MDS_PUBLIC_DEMO_ONLY: "yes"
     steps:
       - uses: actions/checkout@v4
       - name: Install screenshot tools
