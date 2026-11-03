@@ -65,6 +65,7 @@ def generate_plan(root: Path, focus: str, model: str, endpoint: str) -> dict:
     task = TASKS[focus]
     source, test = task["source"], task["test"]
     prompt = (
+        "Prioritize verified original-game feature compatibility and meaningful regressions. "
         "Act as a cautious Nintendo DS C developer. Find ONE real correctness "
         "defect and fix it, adding a regression assert. If there is no genuine "
         "defect, return empty changes. Reply with ONE JSON object, no markdown. "
