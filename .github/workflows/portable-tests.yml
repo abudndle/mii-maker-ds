@@ -113,6 +113,10 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_photo_candidates_host.py
       - name: Verify DSi-only create method selection and first-boot gating
         run: python3 -m unittest discover -s tests -p test_create_method.py
+      - name: Verify experimental DSi eye-pair framing cue with synthetic RGB555 frames
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_face_hint.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
