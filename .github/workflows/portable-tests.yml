@@ -157,6 +157,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_gender_input.py
+      - name: Verify Create Mii method input is atomic under simultaneous keys
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_create_method_atomic.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
