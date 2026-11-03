@@ -41,5 +41,7 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_private_received_restart.py
       - name: Verify original CLAN numeric build-parity gate
         run: python3 -m unittest discover -s tests -p test_verify_private_clan.py
+      - name: Test RGB555 photo exposure gate without private assets
+        run: python3 -m unittest discover -s tests -p test_photo_quality_host.py
       - name: Run asset-free sanitizer tests
         run: python3 tests/test_private_rom_release.py && python3 tools/test_host.py
