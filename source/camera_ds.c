@@ -2,6 +2,7 @@
 #include "camera_ds.h"
 #include "photo_quality.h"
 #include "face_hint.h"
+#include "photo_suggest.h"
 #include <string.h>
 #define CHANNEL 0
 static uint16_t frame[256*192] __attribute__((aligned(32)));
@@ -72,11 +73,27 @@ void mds_camera_freeze(void)
          * so a later update cannot overwrite the captured snapshot. */
         if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
         frozen=1;
-        status="Photo captured. X framing / A retake";
+        status="Photo ready. X suggest / A retake";
     }else{
         frozen=0;
         have_frame=0; /* Do not show the old snapshot after retake. */
         status="A capture / B back";
+    }
+}
+void mds_camera_photo_suggestion_notice(MdsPhotoSuggestResult reason)
+{
+    if(!mds_camera_photo_frozen())return;
+    switch(reason){
+      case MDS_PHOTO_SUGGEST_BAD_QUALITY:
+        status="Photo quality failed. A retake";break;
+      case MDS_PHOTO_SUGGEST_NO_PAIR:
+        status="No framing cue. A retake";break;
+      case MDS_PHOTO_SUGGEST_BAD_DRAFT:
+        status="Mii draft invalid. B back";break;
+      case MDS_PHOTO_SUGGEST_INVALID:
+        status="Photo data unavailable. A retake";break;
+      case MDS_PHOTO_SUGGEST_READY:
+        status="Suggestion stage unavailable. B back";break;
     }
 }
 int mds_camera_check_face_hint(void)

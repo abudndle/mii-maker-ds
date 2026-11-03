@@ -25,7 +25,7 @@ class PhotoSuggestTests(unittest.TestCase):
         main=(ROOT/"source/main.c").read_text()
         menu=(ROOT/"source/menu.h").read_text()
         self.assertIn("MDS_SCREEN_PHOTO_CANDIDATES",menu)
-        self.assertIn("mds_photo_suggest(",main)
+        self.assertIn("mds_photo_suggest_diagnose(",main)
         self.assertIn("mds_photo_candidates_begin(",main)
         self.assertIn("mds_photo_candidates_step(",main)
         self.assertIn("mds_photo_candidates_cancel(",main)
