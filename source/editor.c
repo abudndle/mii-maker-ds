@@ -30,6 +30,14 @@ int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
     static const unsigned days[]={0,31,29,31,30,31,30,31,31,30,31,30,31};
     unsigned month=e->draft.value[49],day=e->draft.value[50];
     if((month||day)&&(!month||month>12||!day||day>days[month])){e->status="Choose a valid birthday.";return 0;}
+    /* A Personal Mii is permanently a Favorite. Profile and gallery
+     * toggles already protect it, but generic field edits can reach
+     * Favorite directly. Reject such drafts before writing cartridge
+     * data; never silently alter the user's unsaved appearance edits. */
+    if(e->draft.value[51]&&!e->draft.value[46]){
+        e->status="Your Personal Mii must remain a Favorite.";
+        return 0;
+    }
     MdsAvatar prior=g->miis[e->slot];
     uint8_t used=g->used[e->slot];
     uint32_t generation=g->generation;
