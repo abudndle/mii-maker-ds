@@ -13,7 +13,7 @@ gallery=main.split("}else if(screen==MDS_SCREEN_GALLERY){",1)[1].split(
 move=editor[editor.index("int mds_editor_move("):editor.index("int mds_editor_copy(",editor.index("int mds_editor_move("))]
 
 checks={
-    "release event field": "int down,repeat,held,up;touchPosition touch;" in main,
+    "release event field": "int down,repeat,held,up,touch_stayed;touchPosition touch;" in main,
     "VBlank records key-up and stylus release": ".up=keysUp()" in irq,
     "track last held touch position": "if(live_held&KEY_TOUCH){live_touch_x=current.px;live_touch_y=current.py;}" in irq,
     "release position preserved": "event.touch.px=live_touch_x;event.touch.py=live_touch_y;" in irq,
