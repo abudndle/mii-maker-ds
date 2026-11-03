@@ -31,10 +31,18 @@ class ModalStillOpenTests(unittest.TestCase):
         img.save(self.after)
         self.assertTrue(verify(self.modal, self.after)["modal_still_open"])
 
+    def test_full_selection_highlight_in_one_pane_allows_retry(self):
+        img = Image.open(self.modal).convert("RGB")
+        # Simulate a substantial highlight repaint in the first pane while
+        # the second original choice pane remains visibly present.
+        img.paste("gray", (28, 192 + 71, 228, 192 + 103))
+        img.save(self.after)
+        self.assertTrue(verify(self.modal, self.after)["modal_still_open"])
+
     def test_dismissed_modal_blocks_retry(self):
         Image.new("RGB", (256, 384), "black").save(self.after)
         with self.assertRaisesRegex(ValueError,
-                                    r"choice=0, changed=6400, area=6400"):
+                                    r"changed=12800, area=12800"):
             verify(self.modal, self.after)
 
     def test_one_replaced_choice_pane_blocks_retry(self):
