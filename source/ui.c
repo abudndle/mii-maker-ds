@@ -1421,15 +1421,22 @@ void mds_ui_create_method(int selected,int dsi_enabled)
 void mds_ui_photo_suggestion_controls(unsigned selected)
 {
     if(!ok)return;
-    /* Temporary accessible instructions, not authentic 3DS photo art. */
-    for(unsigned y=163u;y<192u;y++)
+    /* Provisional touch strip; not original 3DS photo artwork. The five
+     * regions exactly match source/photo_candidate_input.c. */
+    for(unsigned y=164u;y<192u;y++)
         for(unsigned x=0;x<256u;x++)
             bottom[y*256u+x]=RGB15(27,29,28)|BIT(15);
-    char label_text[40];
-    snprintf(label_text,sizeof label_text,"Experimental option %u/3",
-             (selected%3u)+1u);
-    center_bottom(128,167,label_text);
-    center_bottom(128,182,"L/R Change  A Use  B Cancel");
+    for(unsigned x=48u;x<256u;x+=48u)
+        if(x<240u)for(unsigned y=164u;y<192u;y++)
+            bottom[y*256u+x]=RGB15(12,17,14)|BIT(15);
+    label(2,173,"Prev");
+    label(51,173,"Next");
+    label(100,173,"Use");
+    label(146,173,"Retry");
+    label(195,173,"Back");
+    char line[34];
+    snprintf(line,sizeof line,"Experimental Mii choice %u/3",selected%3u+1u);
+    center_bottom(128,154,line);
 }
 void mds_ui_gender(int create,int choice)
 {

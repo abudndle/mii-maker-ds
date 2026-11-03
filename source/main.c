@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "camera_ds.h"
 #include "photo_candidates.h"
+#include "photo_candidate_input.h"
 #include "photo_suggest.h"
 #include "create_method.h"
 #include "menu.h"
@@ -586,19 +587,40 @@ int main(void)
             }
             if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_PHOTO_CANDIDATES){
-            if(down&KEY_B){
+            MdsPhotoInput action=MDS_PHOTO_INPUT_NONE;
+            /* Physical cancel/retry/choose takes priority over touch. */
+            if(down&KEY_B)action=MDS_PHOTO_INPUT_CANCEL;
+            else if(down&KEY_Y)action=MDS_PHOTO_INPUT_RETRY;
+            else if(down&KEY_A)action=MDS_PHOTO_INPUT_USE;
+            else if(down&KEY_TOUCH)
+                action=mds_photo_candidate_touch(input.touch.px,input.touch.py);
+            else if((k&(KEY_LEFT|KEY_RIGHT))==KEY_LEFT)
+                action=MDS_PHOTO_INPUT_PREV;
+            else if((k&(KEY_LEFT|KEY_RIGHT))==KEY_RIGHT)
+                action=MDS_PHOTO_INPUT_NEXT;
+            if(action==MDS_PHOTO_INPUT_CANCEL){
                 mds_photo_candidates_cancel(&photo_candidates);
                 screen=photo_return_screen;
-            }else if(down&KEY_A){
+            }else if(action==MDS_PHOTO_INPUT_RETRY){
+                /* Retake must restore the exact pre-preview draft. Never
+                 * carry an unaccepted candidate into a new camera session.
+                 * Set return screen before opening so B/camera error cannot
+                 * land in an inactive candidates screen. */
+                mds_photo_candidates_cancel(&photo_candidates);
+                screen=photo_return_screen;
+                camera_qr=0;
+                camera_open=mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW);
+                editor.status=camera_open?
+                    "A capture / X suggest / B back":mds_camera_status();
+            }else if(action==MDS_PHOTO_INPUT_USE){
                 if(mds_photo_candidates_accept(&photo_candidates))
                     screen=MDS_SCREEN_EDITOR;
-            }else if(k&(KEY_LEFT|KEY_RIGHT)){
-                /* Same-frame opposite arrows do not arbitrarily choose. */
-                if((k&(KEY_LEFT|KEY_RIGHT))!=(KEY_LEFT|KEY_RIGHT))
-                    mds_photo_candidates_step(&photo_candidates,
-                        (k&KEY_RIGHT)?1:-1);
+            }else if(action==MDS_PHOTO_INPUT_PREV||
+                     action==MDS_PHOTO_INPUT_NEXT){
+                mds_photo_candidates_step(&photo_candidates,
+                    action==MDS_PHOTO_INPUT_NEXT?1:-1);
             }
-            if(down||k&(KEY_LEFT|KEY_RIGHT))drawn_screen=-1;
+            if(action!=MDS_PHOTO_INPUT_NONE)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
             if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
