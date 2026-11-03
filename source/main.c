@@ -19,10 +19,12 @@ static MdsImport importer;
 static int qr_select_image;
 static int screen=MDS_SCREEN_HOME;
 static volatile uint32_t animation_vblanks;
-typedef struct {int down,repeat,held,up;touchPosition touch;} MdsInput;
+typedef struct {int down,repeat,held,up,touch_stayed;touchPosition touch;} MdsInput;
 static volatile MdsInput input_queue[32];
 static volatile unsigned input_read,input_write;
 static volatile int live_held,live_touch_x,live_touch_y;
+/* ISR-only touch path state: capture disarming crossings every VBlank. */
+static MdsPhotoTouch vblank_photo_touch;
 static void animation_vblank(void)
 {
  animation_vblanks++;scanKeys();
@@ -31,9 +33,13 @@ static void animation_vblank(void)
  if(live_held&KEY_TOUCH){live_touch_x=current.px;live_touch_y=current.py;}
  MdsInput event={.down=keysDown(),.repeat=keysDownRepeat(),.held=live_held,
                  .up=keysUp()};
- if(!(event.down||event.repeat||event.up))return;
  event.touch=current;
  if(event.up&KEY_TOUCH){event.touch.px=live_touch_x;event.touch.py=live_touch_y;}
+ event.touch_stayed=mds_photo_touch_sample(&vblank_photo_touch,
+     (event.down&KEY_TOUCH)!=0,(event.held&KEY_TOUCH)!=0,
+     (event.up&KEY_TOUCH)!=0,event.touch.px,event.touch.py);
+ /* Sample before the no-event return, so drag paths cannot be lost. */
+ if(!(event.down||event.repeat||event.up))return;
  /* Reserve eight of the 31 usable slots for fresh presses. Holding a
   * direction during expensive software rendering must not fill the FIFO
   * with repeat events and force genuine input out of the queue. */
@@ -605,9 +611,13 @@ int main(void)
                 mds_photo_touch_reset(&photo_touch);
             else if(down&KEY_TOUCH)
                 mds_photo_touch_begin(&photo_touch,input.touch.px,input.touch.py);
-            else if(input.up&KEY_TOUCH)
+            else if(input.up&KEY_TOUCH){
+                /* Intermediate VBlank movements are checked even when
+                 * they never generated a queued key-repeat/edge event. */
+                if(!input.touch_stayed)mds_photo_touch_reset(&photo_touch);
                 action=mds_photo_touch_release(&photo_touch,
                                                 input.touch.px,input.touch.py);
+            }
             else if(input.held&KEY_TOUCH)
                 mds_photo_touch_hold(&photo_touch,input.touch.px,input.touch.py);
             if(action==MDS_PHOTO_INPUT_CANCEL){
