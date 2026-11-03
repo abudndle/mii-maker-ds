@@ -111,7 +111,7 @@ int main(void)
                         }else editor.status="No valid Mii QR found. Try again.";
                     }else mds_camera_freeze();
                 }
-                if(down&KEY_X)mds_camera_switch();
+                if(!camera_qr&&(down&KEY_X))mds_camera_switch();
                 if(camera_open){camera_open=mds_camera_update();mds_ui_camera(mds_camera_frame());if(!camera_qr)editor.status=mds_camera_status();mds_ui_camera_notice(editor.status);mds_ui_present_top();}
             }
         }else if(editor.pending){
@@ -230,7 +230,7 @@ int main(void)
             if(down&KEY_TOUCH){int x=input.touch.px,y=input.touch.py;action=mds_ui_qr_touch(x,y,qr_select_image,isDSiMode());if(y>=168){if(qr_select_image)qr_select_image=0;else screen=qr_return_screen;drawn_screen=-1;}}
             if(action==2&&!qr_select_image){qr_select_image=1;action=0;drawn_screen=-1;}
 
-            if(action==4){camera_qr=1;camera_open=mds_camera_open();editor.status=camera_open?"A: Scan Mii QR / X: Camera / B: Back":mds_camera_status();notice=editor.status;}
+            if(action==4){camera_qr=1;camera_open=mds_camera_open_for(MDS_CAMERA_QR_SCAN);editor.status=camera_open?"A: Scan Mii QR / B: Back":mds_camera_status();notice=editor.status;}
             else if(action){notice=mds_ui_qr_export(gallery.used[editor.slot]?&gallery.miis[editor.slot]:NULL,editor.slot,action);drawn_screen=-1;}
         }else if(screen==MDS_SCREEN_IMPORT){
             int action=0;
@@ -599,7 +599,7 @@ int main(void)
             if(down&KEY_START){mds_ui_info(&editor.draft,editor.slot,editor.field,"Saving...",mds_editor_dirty(&editor));mds_editor_save(&editor,persist,NULL);}
             if(down&KEY_SELECT){mds_profile_begin(&profile);screen=MDS_SCREEN_PROFILE;}
             if((input.held&KEY_B)&&(down&KEY_Y))mds_editor_request(&editor,MDS_EDIT_DELETE);
-            else if(down&KEY_Y){camera_qr=0;camera_open=mds_camera_open();editor.status=mds_camera_status();}
+            else if(down&KEY_Y){camera_qr=0;camera_open=mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW);editor.status=mds_camera_status();}
             if((down&KEY_B)&&!(input.held&KEY_Y)){
                 if(save_ready&&mds_gallery_empty(&gallery)){
                     /* First Mii is assigned the gold crown on save.
