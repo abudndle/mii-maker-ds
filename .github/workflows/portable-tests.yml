@@ -117,6 +117,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_face_hint.py
+      - name: Test experimental photo-derived candidate generation and UI wiring
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_photo_suggest.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}

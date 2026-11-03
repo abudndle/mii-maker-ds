@@ -10,6 +10,7 @@ void mds_camera_close(void);
 int mds_camera_update(void);
 int mds_camera_switch(void); /* Legacy API: sensor switching disabled. */
 int mds_camera_has_frame(void); /* True only when completed frame exists. */
+int mds_camera_photo_frozen(void); /* Frozen inward photo, never QR or live DMA. */
 void mds_camera_freeze(void);
 /* Experimental framing cue, not recognition; frozen inward photo only. */
 int mds_camera_check_face_hint(void);

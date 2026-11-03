@@ -35,7 +35,7 @@ int mds_photo_candidates_begin(MdsPhotoCandidates *s,MdsEditor *e,
     s->selected=0;
     s->active=1;
     preview(s);
-    e->status="Photo candidate 1/3. A choose / B cancel";
+    e->status="Experimental suggestion 1/3";
     return 1;
 }
 int mds_photo_candidates_step(MdsPhotoCandidates *s,int direction)
@@ -44,8 +44,8 @@ int mds_photo_candidates_step(MdsPhotoCandidates *s,int direction)
     unsigned next=(s->selected+(direction>0?1u:2u))%MDS_PHOTO_CANDIDATE_COUNT;
     s->selected=next;
     preview(s);
-    s->editor->status=next==0?"Photo candidate 1/3":
-                      next==1?"Photo candidate 2/3":"Photo candidate 3/3";
+    s->editor->status=next==0?"Experimental suggestion 1/3":
+                      next==1?"Experimental suggestion 2/3":"Experimental suggestion 3/3";
     return 1;
 }
 int mds_photo_candidates_cancel(MdsPhotoCandidates *s)

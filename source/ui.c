@@ -1418,6 +1418,19 @@ void mds_ui_create_method(int selected,int dsi_enabled)
     center_bottom(128,151,dsi_enabled?"Preview only - no recognition":"Unavailable on DS");
     center_bottom(128,178,"A Choose    B Back");
 }
+void mds_ui_photo_suggestion_controls(unsigned selected)
+{
+    if(!ok)return;
+    /* Temporary accessible instructions, not authentic 3DS photo art. */
+    for(unsigned y=163u;y<192u;y++)
+        for(unsigned x=0;x<256u;x++)
+            bottom[y*256u+x]=RGB15(27,29,28)|BIT(15);
+    char label_text[40];
+    snprintf(label_text,sizeof label_text,"Experimental option %u/3",
+             (selected%3u)+1u);
+    center_bottom(128,167,label_text);
+    center_bottom(128,182,"L/R Change  A Use  B Cancel");
+}
 void mds_ui_gender(int create,int choice)
 {
  show_profile_hint=0;bitmap(create?"nitro:/ui/create-gender.rgb555":"nitro:/ui/gender.rgb555",bottom);
