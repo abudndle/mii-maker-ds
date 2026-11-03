@@ -4,6 +4,7 @@
 #include "save_nds.h"
 #include "ui.h"
 #include "camera_ds.h"
+#include "create_method.h"
 #include "menu.h"
 #include "saved_select.h"
 #include "qr_scan.h"
@@ -75,6 +76,7 @@ int main(void)
     int ui_ready=mds_ui_init();mds_ui_set_render_abort(input_waiting);mds_ui_set_render_clock(render_time);mds_gallery_new(&gallery);save_ready=mds_cart_open(&gallery);mds_editor_begin(&editor,&gallery);mds_profile_begin(&profile);
     int camera_open=0,camera_qr=0,focus=0,drawn_focus=-1,drawn_screen=-1;
     int gender_return_screen=MDS_SCREEN_HOME;
+    int create_method_selection=0;
     /* On a writable blank cartridge, first launch must create the
      * console's Personal Mii before ordinary home/gallery navigation. */
     if(save_ready&&mds_gallery_empty(&gallery)&&
@@ -174,8 +176,8 @@ int main(void)
                 if(free_slot==100)notice="All 100 Mii slots are occupied";
                 else if(mds_editor_create(&editor,free_slot)){
                     gender_return_screen=MDS_SCREEN_HOME;
-                    mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
-                    screen=MDS_SCREEN_GENDER;notice="";
+                    create_method_selection=0;
+                    screen=MDS_SCREEN_CREATE_METHOD;notice="";
                 }else notice=editor.status;
             }else if(action==MDS_HOME_TRANSFER){
                 /* The source list is the 100-slot cartridge save, not an SD
@@ -486,8 +488,8 @@ int main(void)
                 if(!gallery.used[editor.slot]){
                     if(mds_editor_create(&editor,editor.slot)){
                         gender_return_screen=MDS_SCREEN_GALLERY;
-                        mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
-                        screen=MDS_SCREEN_GENDER;
+                        create_method_selection=0;
+                        screen=MDS_SCREEN_CREATE_METHOD;
                     }
                 }else if(gallery.miis[editor.slot].value[61]&1){
                     /* Nintendo 3DS behavior: permitted received Miis must be
@@ -531,6 +533,35 @@ int main(void)
             }
             if(gallery_action&MDS_GALLERY_CONTROL_EXPORT)editor.status=gallery.used[editor.slot]?mds_ui_export_image(&gallery.miis[editor.slot],editor.slot):"Choose a saved Mii first.";
             } /* Only non-B gallery input may reach mutations above. */
+        }else if(screen==MDS_SCREEN_CREATE_METHOD){
+            /* Optional creation only. First-boot Personal Mii still enters
+             * the mandatory gender setup directly. */
+            if(down&(KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)){
+                create_method_selection^=1;
+                drawn_screen=-1;
+            }
+            MdsCreateChoice method=MDS_CREATE_NONE;
+            if(down&KEY_A)
+                method=mds_create_method_select(create_method_selection,isDSiMode());
+            if(down&KEY_TOUCH)
+                method=mds_create_method_touch(input.touch.px,input.touch.py,isDSiMode());
+            if(down&KEY_B)method=MDS_CREATE_BACK;
+            if(method==MDS_CREATE_SCRATCH){
+                mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
+                screen=MDS_SCREEN_GENDER;
+            }else if(method==MDS_CREATE_PHOTO_PREVIEW){
+                camera_qr=0;
+                camera_open=mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW);
+                editor.status=camera_open?
+                    "Photo preview only. Face recognition unavailable.":
+                    mds_camera_status();
+            }else if(method==MDS_CREATE_BACK){
+                editor.draft=editor.baseline;
+                editor.pending=MDS_EDIT_NONE;
+                editor.status="Creation cancelled";
+                screen=gender_return_screen;
+            }
+            if(down)drawn_screen=-1;
         }else if(screen==MDS_SCREEN_GENDER){
             if(k&KEY_LEFT)mds_profile_choice_step(&profile,-1);
             if(k&KEY_RIGHT)mds_profile_choice_step(&profile,1);
@@ -692,6 +723,7 @@ int main(void)
                     shown->status[0]?shown->status:editor.status,
                     mds_editor_dirty(&editor));
             }
+            else if(screen==MDS_SCREEN_CREATE_METHOD){mds_ui_create_method(create_method_selection,isDSiMode());}
             else if(screen==MDS_SCREEN_GENDER){mds_ui_gender(1,profile.choice);mds_ui_info(&editor.draft,editor.slot,45,"Select a gender.",mds_editor_dirty(&editor));}
             else if(screen==MDS_SCREEN_ACCESSORIES){mds_ui_accessories();mds_ui_info(&editor.draft,editor.slot,editor.field,"Choose a feature.",mds_editor_dirty(&editor));}
             else{if(ui_ready)mds_ui_draw(&editor.draft,editor.field);if(!defer_preview)mds_ui_info(&editor.draft,editor.slot,editor.field,editor.status,mds_editor_dirty(&editor));}

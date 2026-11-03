@@ -52,6 +52,7 @@ void mds_ui_gallery_invalid(int direction);
 void mds_ui_gallery_top(const MdsGallery *,unsigned,unsigned,const char *);
 void mds_ui_profile(const MdsProfile *,const MdsAvatar *);
 void mds_ui_gender(int,int);
+void mds_ui_create_method(int selected,int dsi_enabled);
 void mds_ui_accessories(void);
 void mds_ui_confirm(const char *);
 /* 3DS DialogBase02 original 21-frame W_Dialog entrance; input remains
