@@ -29,7 +29,12 @@ void mds_camera_close(void)
 {
     if(!active)return;
     cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;cameraDeinit();
-    active=0;inflight=0;have_frame=0;frozen=0;status="Camera closed";
+    /* Never leave a captured portrait or scanned QR frame resident after
+     * the sensor is closed. Stop NDMA first; wipe both the DMA destination
+     * and the complete display snapshot, including on capture failure. */
+    memset(frame,0,sizeof frame);
+    memset(display,0,sizeof display);
+    active=0;inflight=0;frames=0;have_frame=0;frozen=0;status="Camera closed";
 }
 int mds_camera_update(void)
 {
