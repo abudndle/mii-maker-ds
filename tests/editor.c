@@ -34,7 +34,7 @@ int main(void){
     assert(mds_editor_request(&e,MDS_EDIT_DELETE));assert(!mds_editor_confirm(&e,0,saved,NULL));assert(g.used[0]);
     assert(mds_editor_request(&e,MDS_EDIT_DELETE));assert(!mds_editor_confirm(&e,1,failed,NULL));assert(g.used[0]&&g.miis[0].value[5]==25&&g.generation==0&&g.active_bank==-1);
     assert(mds_editor_request(&e,MDS_EDIT_DELETE));assert(mds_editor_confirm(&e,1,saved,NULL));assert(!g.used[0]);
-    e.draft.value[51]=1;assert(mds_editor_save(&e,saved,NULL));assert(!mds_editor_request(&e,MDS_EDIT_DELETE));assert(g.used[0]);
+    e.draft.value[51]=1;e.draft.value[46]=1;assert(mds_editor_save(&e,saved,NULL));assert(!mds_editor_request(&e,MDS_EDIT_DELETE));assert(g.used[0]);
     assert(mds_editor_request(&e,MDS_EDIT_PREV));assert(e.slot==99);assert(mds_editor_request(&e,MDS_EDIT_NEXT));assert(e.slot==0);
     mds_gallery_new(&g);mds_editor_begin(&e,&g);
     e.draft.value[49]=2;e.draft.value[50]=30;assert(!mds_editor_save(&e,saved,NULL)&&!g.used[0]);
@@ -274,5 +274,34 @@ int main(void){
     assert(mds_editor_import(&e,&incoming,saved,NULL));
     assert(g.used[0]&&e.slot==0&&!mds_editor_dirty(&e));
     assert(!strcmp(g.miis[0].name,"Incoming")&&mds_editor_locked(&g.miis[0]));
+    /* Generic Favorite field adjustment must not strip the Personal
+     * Mii's permanent Favorite status when START saves the draft. */
+    mds_gallery_new(&g);mds_editor_begin(&e,&g);
+    MdsAvatar primary;mds_new(&primary);
+    strcpy(primary.name,"Primary");
+    primary.value[51]=1;primary.value[46]=1;
+    assert(mds_gallery_store(&g,0,&primary));
+    assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    e.draft.value[5]=25;
+    e.draft.value[46]=0;
+    MdsAvatar forbidden_draft=e.draft, stored_primary=g.miis[0];
+    assert(!mds_editor_save(&e,saved,NULL));
+    assert(!mds_editor_save(&e,failed,NULL));
+    assert(!memcmp(&e.draft,&forbidden_draft,sizeof forbidden_draft));
+    assert(!memcmp(&g.miis[0],&stored_primary,sizeof stored_primary));
+    assert(g.used[0]&&g.generation==0&&g.active_bank==-1);
+    assert(e.draft.value[51]&&!e.draft.value[46]);
+    e.draft.value[46]=1;
+    assert(mds_editor_save(&e,saved,NULL));
+    assert(g.miis[0].value[51]&&g.miis[0].value[46]);
+    assert(g.miis[0].value[5]==25&&!mds_editor_dirty(&e));
+    /* Other Miis retain the ability to toggle Favorite off. */
+    MdsAvatar standard;mds_new(&standard);
+    standard.value[46]=1;
+    assert(mds_gallery_store(&g,1,&standard));
+    e.slot=1;assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    e.draft.value[46]=0;
+    assert(mds_editor_save(&e,saved,NULL));
+    assert(!g.miis[1].value[46]&&g.miis[0].value[46]);
     puts("PASS: dirty navigation, failed-save/delete/move/import rollback, Personal Mii protection, direct creation, gallery sort, received copy-before-edit, Favorite transactions, wrap");
 }
