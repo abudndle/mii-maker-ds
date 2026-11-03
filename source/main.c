@@ -579,16 +579,25 @@ int main(void)
         }else if(screen==MDS_SCREEN_CREATE_METHOD){
             /* Optional creation only. First-boot Personal Mii still enters
              * the mandatory gender setup directly. */
-            if(down&(KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)){
-                create_method_selection^=1;
+            /* Resolve exactly one command per frame. Previously direction
+             * keys could flip the selected method before a simultaneous A
+             * confirmation, unexpectedly entering the DSi camera. */
+            MdsCreateInput create_input={
+                .cancel=(down&KEY_B)!=0,
+                .confirm=(down&KEY_A)!=0,
+                .touch=(down&KEY_TOUCH)!=0,
+                .up=(down&KEY_UP)!=0,.down=(down&KEY_DOWN)!=0,
+                .left=(down&KEY_LEFT)!=0,.right=(down&KEY_RIGHT)!=0,
+                .x=input.touch.px,.y=input.touch.py,
+                .selection=create_method_selection,
+                .dsi_enabled=isDSiMode()
+            };
+            MdsCreateOutcome create_result=mds_create_method_input(create_input);
+            MdsCreateChoice method=create_result.choice;
+            if(create_method_selection!=create_result.selection){
+                create_method_selection=create_result.selection;
                 drawn_screen=-1;
             }
-            MdsCreateChoice method=MDS_CREATE_NONE;
-            if(down&KEY_A)
-                method=mds_create_method_select(create_method_selection,isDSiMode());
-            if(down&KEY_TOUCH)
-                method=mds_create_method_touch(input.touch.px,input.touch.py,isDSiMode());
-            if(down&KEY_B)method=MDS_CREATE_BACK;
             if(method==MDS_CREATE_SCRATCH){
                 mds_profile_open(&profile,&editor.draft,MDS_PROFILE_GENDER);
                 screen=MDS_SCREEN_GENDER;
