@@ -18,6 +18,38 @@ const MdsField mds_fields[MDS_FIELDS]={
 };
 /* Last ten fields offer a basic console input UI. Full UTF-8 names live separately. */
 void mds_new(MdsAvatar *a){if(!a)return;memset(a,0,sizeof *a);strcpy(a->name,"Mii");for(unsigned i=0;i<MDS_FIELDS;i++)a->value[i]=mds_fields[i].initial;}
+/* Creation-only provisional starting presets. These are not extracted
+ * Nintendo 3DS parameter bytes; a private source-asset comparison is still
+ * needed. The female start has a visibly different hairstyle, eyes and
+ * shape, rather than just changing the gender bit of the male draft. */
+int mds_creation_default(MdsAvatar *avatar,unsigned gender)
+{
+    if(!avatar||gender>1u)return 0;
+    MdsAvatar initial;
+    mds_new(&initial);
+    /* Only a fresh creation draft should use these appearance defaults.
+     * Preserve name, birthday, Personal crown, Favorite, permissions,
+     * import state, height and build from the existing draft. */
+    for(unsigned i=1u;i<=42u;i++)
+        avatar->value[i]=initial.value[i];
+    avatar->value[0]=(uint8_t)gender;
+    if(gender){
+        avatar->value[2]=1; /* rounded face */
+        avatar->value[5]=36;/* medium-length female starting hair */
+        avatar->value[6]=1;
+        avatar->value[8]=4; /* female starting eye shape */
+        avatar->value[15]=2;
+        avatar->value[25]=3;
+    }else{
+        avatar->value[2]=0;
+        avatar->value[5]=0; /* short male starting hair */
+        avatar->value[6]=1;
+        avatar->value[8]=0;
+        avatar->value[15]=0;
+        avatar->value[25]=0;
+    }
+    return 1;
+}
 int mds_valid(const MdsAvatar *a){if(!a)return 0;if(!memchr(a->name,0,MDS_NAME)||!memchr(a->creator,0,MDS_NAME))return 0;for(unsigned i=0;i<MDS_FIELDS;i++)if(a->value[i]>mds_fields[i].maximum)return 0;return 1;}
 void mds_adjust(MdsAvatar *a,unsigned f,int d){if(!a||f>=MDS_FIELDS)return;int n=mds_fields[f].maximum+1;int64_t v=((int64_t)a->value[f]+d)%n;a->value[f]=(uint8_t)(v<0?v+n:v);if(f>=52&&f<61){char *s=f<57?a->name:a->creator;unsigned start=f<57?52:57,limit=f<57?5:4;for(unsigned j=0;j<limit;j++)s[j]=(char)(a->value[start+j]+32);s[limit]=0;}}
 static uint32_t crc32(const uint8_t *p,size_t n){uint32_t c=~0u;for(size_t i=0;i<n;i++){c^=p[i];for(int k=0;k<8;k++)c=(c>>1)^(0xedb88320u&-(c&1));}return ~c;}
