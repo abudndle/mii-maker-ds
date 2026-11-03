@@ -26,6 +26,13 @@ class PhotoTouchVBlankTests(unittest.TestCase):
         candidate=main.split("}else if(screen==MDS_SCREEN_PHOTO_CANDIDATES){",1)[1].split(
             "}else if(screen==MDS_SCREEN_GENDER){",1)[0]
         self.assertIn("input.touch_stayed",candidate)
+        # A queued DOWN+UP must be armed and released by independent
+        # checks; mutually exclusive branches silently drop the tap.
+        self.assertIn("if(down&KEY_TOUCH)",candidate)
+        self.assertIn("if(input.up&KEY_TOUCH)",candidate)
+        self.assertNotIn("else if(input.up&KEY_TOUCH)",candidate)
+        self.assertLess(candidate.index("if(down&KEY_TOUCH)"),
+                        candidate.index("if(input.up&KEY_TOUCH)"))
         self.assertIn("mds_photo_touch_reset(&photo_touch)",candidate)
 if __name__=="__main__":
     unittest.main()

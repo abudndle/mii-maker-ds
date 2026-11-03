@@ -622,17 +622,24 @@ int main(void)
             if(action!=MDS_PHOTO_INPUT_NONE||
                (down&~KEY_TOUCH)||(input.up&~KEY_TOUCH))
                 mds_photo_touch_reset(&photo_touch);
-            else if(down&KEY_TOUCH)
-                mds_photo_touch_begin(&photo_touch,input.touch.px,input.touch.py);
-            else if(input.up&KEY_TOUCH){
-                /* Intermediate VBlank movements are checked even when
-                 * they never generated a queued key-repeat/edge event. */
-                if(!input.touch_stayed)mds_photo_touch_reset(&photo_touch);
-                action=mds_photo_touch_release(&photo_touch,
-                                                input.touch.px,input.touch.py);
+            else{
+                /* A short stylus tap may carry DOWN and UP in the same
+                 * queued input event. Arm then release once, rather than
+                 * losing the UP behind an else-if on the DOWN branch. */
+                if(down&KEY_TOUCH)
+                    mds_photo_touch_begin(&photo_touch,
+                                          input.touch.px,input.touch.py);
+                if(input.up&KEY_TOUCH){
+                    /* Intermediate VBlank movements are checked even
+                     * when no corresponding edge entered the FIFO. */
+                    if(!input.touch_stayed)
+                        mds_photo_touch_reset(&photo_touch);
+                    action=mds_photo_touch_release(&photo_touch,
+                                                   input.touch.px,input.touch.py);
+                }else if((input.held&KEY_TOUCH)&&!(down&KEY_TOUCH))
+                    mds_photo_touch_hold(&photo_touch,
+                                         input.touch.px,input.touch.py);
             }
-            else if(input.held&KEY_TOUCH)
-                mds_photo_touch_hold(&photo_touch,input.touch.px,input.touch.py);
             if(action==MDS_PHOTO_INPUT_CANCEL){
                 mds_photo_candidates_cancel(&photo_candidates);
                 screen=photo_return_screen;
