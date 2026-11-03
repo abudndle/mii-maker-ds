@@ -4,6 +4,7 @@
 #include "save_nds.h"
 #include "ui.h"
 #include "camera_ds.h"
+#include "camera_action.h"
 #include "photo_candidates.h"
 #include "photo_candidate_input.h"
 #include "photo_suggest.h"
@@ -116,9 +117,15 @@ int main(void)
     for(;;){
         MdsInput input=next_input();int k=input.repeat,down=input.down;
         if(camera_open){
-            if(down&KEY_B){mds_camera_close();camera_open=0;mds_ui_restore_top();drawn_screen=-1;}
-            else{
-                if(down&KEY_A){
+            /* One camera command per VBlank: B > A > X. In particular,
+             * simultaneous A/X cannot freeze and suggest in one frame. */
+            MdsCameraAction camera_action=
+                mds_camera_action((unsigned)down,camera_qr);
+            if(camera_action==MDS_CAMERA_ACTION_CLOSE){
+                mds_camera_close();camera_open=0;
+                mds_ui_restore_top();drawn_screen=-1;
+            }else{
+                if(camera_action==MDS_CAMERA_ACTION_CAPTURE){
                     if(camera_qr){
                         MdsMiiRecord received;
                         if(!mds_camera_has_frame())editor.status="Camera warming up. Try again.";
@@ -127,7 +134,7 @@ int main(void)
                         }else editor.status="No valid Mii QR found. Try again.";
                     }else mds_camera_freeze();
                 }
-                if(!camera_qr&&(down&KEY_X)){
+                if(camera_action==MDS_CAMERA_ACTION_SUGGEST){
                     /* Suggestions are explicitly experimental, not face recognition.
                      * Only the frozen inward camera buffer may seed draft choices. */
                     if(mds_camera_photo_frozen()){
@@ -657,7 +664,11 @@ int main(void)
             if(down&KEY_A)chosen=profile.choice;
             if(down&KEY_TOUCH){touchPosition t;t=input.touch;const char*h=mds_profile_hit(2,t.px,t.py);if(!strcmp(h,"B_Male"))chosen=0;else if(!strcmp(h,"B_Female"))chosen=1;}
             if(chosen>=0){
-                profile.choice=chosen;mds_profile_done(&profile,&editor.draft);
+                profile.choice=chosen;
+                /* The stock Mii Maker starts new male and female Miis from
+                 * distinct default appearances, not only a gender toggle. */
+                mds_creation_default(&editor.draft,(unsigned)chosen);
+                mds_profile_done(&profile,&editor.draft);
                 editor_return_screen=gender_return_screen;
                 screen=MDS_SCREEN_EDITOR;
             }
