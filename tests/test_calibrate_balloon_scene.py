@@ -41,11 +41,11 @@ def rejects(changed_layout, changed_measurements, fragment):
         raise AssertionError("accepted " + fragment)
 
 
-# Four independent panes still produce a candidate, but the output must
-# explicitly report that there were too few observations for holdout checks.
+# Four points are insufficient: every emitted candidate must carry a
+# real leave-one-out residual rather than a null holdout field.
 four = copy.deepcopy(measurements)
 four["points"] = four["points"][:4]
-assert calibrate(layout, four)["holdout_max_residual_px"] is None
+rejects(layout, four, "five to 64 independent pane measurements")
 
 # A distant pane has high leverage: a five-pixel mismeasurement can bend
 # the affine while keeping *every* training residual under the two-pixel
