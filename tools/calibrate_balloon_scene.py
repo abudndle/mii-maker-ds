@@ -157,18 +157,18 @@ def calibrate(layout, measurements, max_error=2.0):
     # includes an actual leave-one-out check; never emit a four-point fit
     # with a null holdout metric.
     holdout_errors = []
-        for omitted in range(len(source)):
-            training_source = source[:omitted] + source[omitted + 1:]
-            training_target = target[:omitted] + target[omitted + 1:]
-            if (_weak_axis_variance(training_source) < 16.0 or
-                    _weak_axis_variance(training_target) < 16.0):
-                raise ValueError("leave-one-out panes lack two-dimensional spread")
-            ha, hb, htx = _solve3(training_source, [p[0] for p in training_target])
-            hc, hd, hty = _solve3(training_source, [p[1] for p in training_target])
-            x, y = source[omitted]
-            u, v = target[omitted]
-            holdout_errors.append(math.hypot(ha * x + hb * y + htx - u,
-                                             hc * x + hd * y + hty - v))
+    for omitted in range(len(source)):
+        training_source = source[:omitted] + source[omitted + 1:]
+        training_target = target[:omitted] + target[omitted + 1:]
+        if (_weak_axis_variance(training_source) < 16.0 or
+                _weak_axis_variance(training_target) < 16.0):
+            raise ValueError("leave-one-out panes lack two-dimensional spread")
+        ha, hb, htx = _solve3(training_source, [p[0] for p in training_target])
+        hc, hd, hty = _solve3(training_source, [p[1] for p in training_target])
+        x, y = source[omitted]
+        u, v = target[omitted]
+        holdout_errors.append(math.hypot(ha * x + hb * y + htx - u,
+                                         hc * x + hd * y + hty - v))
     holdout_max = max(holdout_errors)
     if not math.isfinite(holdout_max) or holdout_max > max_error:
         raise ValueError("runtime measurements fail leave-one-out consistency")
