@@ -37,6 +37,16 @@ dsma-private-model:
 	python3 tools/export_bod2_md5.py --input "$(BOD2_INPUT)" --output "$(DSMA_STAGE)" --name "$(DSMA_NAME)"
 	python3 "$(NITRO_ENGINE_MD5_TOOL)" --model "$(DSMA_STAGE)/$(DSMA_NAME).md5mesh" --name "$(DSMA_NAME)" --output "$(DSMA_STAGE)" --texture 8 8 --export-base-pose --bin
 
+# Stage locally converted, privately owned DSMA files for the separate GPU ROM.
+# These NitroFS files are gitignored and never included in public CI artifacts.
+DSMA_MODEL ?=
+DSMA_ANIMATION ?=
+.PHONY: stage-dsma-private
+stage-dsma-private:
+	@test -n "$(DSMA_MODEL)" || (echo "Set DSMA_MODEL=/private/path/MiiBody_dsm.bin" && exit 2)
+	@test -n "$(DSMA_ANIMATION)" || (echo "Set DSMA_ANIMATION=/private/path/MiiBody_dsa.bin" && exit 2)
+	python3 tools/stage_private_dsma.py --model "$(DSMA_MODEL)" --animation "$(DSMA_ANIMATION)"
+
 # Separate GPU test ROM: never links Nitro Engine into the existing 2D game
 # until the original source UVs, bind hierarchy and screen compositor work.
 .PHONY: nitro-3d-preview

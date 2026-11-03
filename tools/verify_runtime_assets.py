@@ -21,7 +21,7 @@ CATEGORIES = re.compile(r'^\{"([A-Za-z0-9_]+)",(NULL|"[A-Za-z0-9_]+"),(\d+),(\d+
 FIELDS = re.compile(r'\{"[^"\n]+",(\d+),(\d+)\}')
 SOURCE_F = re.compile(r'const MdsField mds_fields\[MDS_FIELDS\]\s*=\s*\{(.*?)\};', re.S)
 DYNAMIC = {"art/%s%0*d.bin", "ui/%s.rgb555"}
-OPTIONAL = {"test-import"}
+OPTIONAL = {"test-import", "soundbank.bin"}
 
 
 def source_paths(root):
