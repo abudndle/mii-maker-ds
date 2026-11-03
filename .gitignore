@@ -34,3 +34,8 @@ __pycache__/
 *.dsm
 *.dsa
 /m86-private/
+
+# Source-derived private Nitro Engine / DSMA preview assets and ROM.
+/hardware3d/nitrofiles/
+/hardware3d/*.nds
+/hardware3d/build/
