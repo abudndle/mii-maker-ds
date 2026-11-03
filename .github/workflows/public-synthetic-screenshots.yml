@@ -27,7 +27,19 @@ jobs:
             -v "$PWD:/work" -w /work/public-demo --entrypoint make \
             skylyrac/blocksds:slim-latest -j2 public-demo.nds
           test -s public-demo/public-demo.nds
-          python3 tests/rom_arm_sections.py public-demo/public-demo.nds
+          python3 - <<'PY'
+          from pathlib import Path
+          rom = Path("public-demo/public-demo.nds").read_bytes()
+          assert len(rom) >= 0x200, "ROM header missing"
+          arm9_offset = int.from_bytes(rom[0x20:0x24], "little")
+          arm9_size = int.from_bytes(rom[0x2c:0x30], "little")
+          arm7_offset = int.from_bytes(rom[0x30:0x34], "little")
+          arm7_size = int.from_bytes(rom[0x3c:0x40], "little")
+          assert arm9_size > 0 and arm7_size > 0, "ARM payload missing"
+          assert arm9_offset + arm9_size <= len(rom), "ARM9 payload out of bounds"
+          assert arm7_offset + arm7_size <= len(rom), "ARM7 payload out of bounds"
+          print("PASS: independent homebrew ROM ARM9/ARM7 sections in bounds")
+          PY
       - name: Capture synthetic melonDS screen and verify PNG
         if: success()
         run: bash tools/capture_public_synthetic_screenshots.sh
