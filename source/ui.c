@@ -1394,6 +1394,30 @@ void mds_ui_profile(const MdsProfile *p,const MdsAvatar *a)
       RGB15(26,29,27)|BIT(15));
  }
 }
+/* Accessible interim method picker; does not replace authentic 3DS art.
+ * No photo-to-Mii claim: DSi preview is explicitly labelled incomplete. */
+void mds_ui_create_method(int selected,int dsi_enabled)
+{
+    show_profile_hint=0;
+    mds_ui_home(0,"");
+    for(unsigned i=0;i<256u*192u;i++)bottom[i]=RGB15(27,29,28)|BIT(15);
+    center_bottom(128,20,"Create a Mii");
+    for(int choice=0;choice<2;choice++){
+        int top_y=choice?110:48;
+        int enabled=choice==0||dsi_enabled;
+        unsigned short border=enabled?RGB15(4,16,11)|BIT(15):
+                                       RGB15(17,17,17)|BIT(15);
+        for(int y=top_y;y<top_y+52;y++)for(int x=20;x<236;x++){
+            if(x==20||x==235||y==top_y||y==top_y+51||
+               (selected==choice&&(x==21||x==234||y==top_y+1||y==top_y+50)))
+                bottom[y*256+x]=border;
+        }
+    }
+    center_bottom(128,69,"Start from scratch");
+    center_bottom(128,130,dsi_enabled?"Create from photo":"Photo: DSi only");
+    center_bottom(128,151,dsi_enabled?"Preview only - no recognition":"Unavailable on DS");
+    center_bottom(128,178,"A Choose    B Back");
+}
 void mds_ui_gender(int create,int choice)
 {
  show_profile_hint=0;bitmap(create?"nitro:/ui/create-gender.rgb555":"nitro:/ui/gender.rgb555",bottom);
