@@ -1,0 +1,43 @@
+name: Public-safe synthetic melonDS PNG screenshots
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/public-synthetic-screenshots.yml'
+      - 'tools/capture_public_synthetic_screenshots.sh'
+permissions:
+  contents: read
+jobs:
+  synthetic-screenshots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      MDS_SYNTHETIC_COMPILE_ONLY: "yes"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install screenshot tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick unzip python3-pil
+      - name: Generate public-safe compiler placeholders
+        run: python3 tools/generate_ci_compile_assets.py
+      - name: Compile synthetic ROM in BlocksDS
+        run: |
+          docker run --rm --network none --cap-drop ALL \
+            --user "$(id -u):$(id -g)" --security-opt no-new-privileges \
+            -v "$PWD:/work" -w /work --entrypoint make \
+            skylyrac/blocksds:slim-latest SDK_STAGE=1 -j2 mii-ds.nds
+          python3 tools/fix_nds_regions.py mii-ds.nds
+          python3 tests/rom_arm_sections.py mii-ds.nds
+      - name: Capture synthetic melonDS screen and verify PNG
+        run: bash tools/capture_public_synthetic_screenshots.sh
+      - name: Upload PNG only (never ROM or private source assets)
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-safe-synthetic-melonds-png
+          path: public-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove synthetic ROM and images from runner
+        if: always()
+        run: rm -f mii-ds.nds
