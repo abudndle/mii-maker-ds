@@ -29,7 +29,12 @@ jobs:
             skylyrac/blocksds:slim-latest SDK_STAGE=1 -j2 mii-ds.nds
           python3 tools/fix_nds_regions.py mii-ds.nds
           python3 tests/rom_arm_sections.py mii-ds.nds
+      - name: Refuse non-playable synthetic compiler fixtures
+        run: |
+          echo "::error title=No bootable public-safe ROM::generate_ci_compile_assets.py produces compiler-only placeholders (NOT playable). A real independently bootable, redistributable test fixture is required before capturing a genuine melonDS screenshot."
+          exit 1
       - name: Capture synthetic melonDS screen and verify PNG
+        if: success()
         run: bash tools/capture_public_synthetic_screenshots.sh
       - name: Upload PNG only (never ROM or private source assets)
         uses: actions/upload-artifact@v4
