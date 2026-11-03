@@ -8,6 +8,9 @@ GAME_ICON := assets/ui/original-icon.gif
 GAME_AUTHOR := Independent demake
 SOURCEDIRS := source
 NITROFSDIR := nitrofiles
+# Keep the shipping software renderer until the source skeleton/UVs and
+# 3D framebuffer ownership are validated. Nitro Engine links in the
+# separately opt-in hardware backend build, not the current ROM.
 LIBS := -lnds9 -lm
 CFLAGS := -Wextra -Werror $(EXTRA_CFLAGS)
 ifeq ($(SDK_STAGE),1)
@@ -18,6 +21,20 @@ NDSTOOL_ARGS += -g MDSD
 $(ROM): Makefile $(GAME_ICON) $(shell find nitrofiles -type f)
 
 else
+# Local source-derived 3D geometry staging (never part of public ROM/CI).
+# Requires a private BOD2 extracted from the user's source assets.
+# Nitro Engine includes DSMA and its md5_to_dsma conversion tool.
+BOD2_INPUT ?=
+DSMA_STAGE ?= /tmp/mii-maker-dsma-private
+DSMA_NAME ?= MiiBody
+NITRO_ENGINE_MD5_TOOL ?=
+.PHONY: dsma-private-model
+dsma-private-model:
+	@test -n "$(BOD2_INPUT)" || (echo "Set BOD2_INPUT=/path/to/private/BOD2" && exit 2)
+	@test -n "$(NITRO_ENGINE_MD5_TOOL)" || (echo "Set NITRO_ENGINE_MD5_TOOL=/path/to/md5_to_dsma.py" && exit 2)
+	python3 tools/export_bod2_md5.py --input "$(BOD2_INPUT)" --output "$(DSMA_STAGE)" --name "$(DSMA_NAME)"
+	python3 "$(NITRO_ENGINE_MD5_TOOL)" --model "$(DSMA_STAGE)/$(DSMA_NAME).md5mesh" --name "$(DSMA_NAME)" --output "$(DSMA_STAGE)" --texture 8 8 --export-base-pose --bin
+
 .DEFAULT_GOAL := all
 .PHONY: all $(NAME).nds clean dump
 all: $(NAME).nds
