@@ -13,7 +13,7 @@ class Hardware3DPreview(unittest.TestCase):
               "NE_ProcessArg","NE_WaitForVBL"):
    self.assertIn(api,source)
   self.assertIn('nitro:/models/MiiBody_dsm.bin',source)
-  self.assertIn('nitro:/models/MiiBody_base_pose_dsa.bin',source)
+  self.assertIn('nitro:/models/MiiBody_dsa.bin',source)
   self.assertIn("consoleDemoInit()",source)
   self.assertNotIn("glBegin",source)
   self.assertNotIn("createCube",source)
