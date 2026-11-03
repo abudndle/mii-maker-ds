@@ -145,6 +145,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_camera_ds_lifetime.py
+      - name: Verify male/female scratch Mii presets and camera key priority
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_camera_creation_defaults.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
