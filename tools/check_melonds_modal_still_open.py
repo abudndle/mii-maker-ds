@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify a received-Mii Yes touch was missed before a single guarded retry.
+"""Verify the received-Mii choice modal remains open before a guarded retry.
 
 This check only compares original confirmation choice-pane regions. It never
 prints private screenshots or saved Mii data.
@@ -39,8 +39,8 @@ def main():
     try:
         verify(args.modal, args.after)
     except (OSError, ValueError) as exc:
-        p.exit(1, "FAIL: received Yes retry guard: %s\n" % exc)
-    print("PASS: received modal still visibly open; one Yes retry permitted")
+        p.exit(1, "FAIL: received choice retry guard: %s\n" % exc)
+    print("PASS: received modal still visibly open; guarded choice retry permitted")
 
 
 if __name__ == "__main__":
