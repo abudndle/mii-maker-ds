@@ -21,17 +21,17 @@ mkdir -p "$HOME"
 export QT_QPA_PLATFORM=xcb SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   set -euo pipefail
-  setsid -w "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$RUNNER_TEMP/public-melonds.log" 2>&1 &
+  setsid "$MELONDS_APP" --appimage-extract-and-run "$MELONDS_ROM" >"$RUNNER_TEMP/public-melonds.log" 2>&1 &
   pid=$!
   trap '\''kill -- "-$pid" 2>/dev/null || true; kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true'\'' EXIT
   win=""
   for attempt in $(seq 1 25); do
-    kill -0 "$pid" 2>/dev/null || { echo "FAIL: emulator exited"; exit 1; }
+    kill -0 "$pid" 2>/dev/null || { echo "FAIL: emulator exited"; cat "$RUNNER_TEMP/public-melonds.log"; exit 1; }
     win="$(xdotool search --onlyvisible --name melonDS 2>/dev/null | tail -n 1 || true)"
     test -z "$win" || break
     sleep 1
   done
-  test -n "$win"
+  test -n "$win" || { echo "FAIL: no melonDS window"; cat "$RUNNER_TEMP/public-melonds.log"; exit 1; }
   sleep 12
   kill -0 "$pid"
   import -window "$win" -depth 8 "$MELONDS_IMAGE"
