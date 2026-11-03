@@ -35,7 +35,7 @@ class PhotoCandidateInputTests(unittest.TestCase):
     def test_retry_restores_draft_before_open(self):
         main=(ROOT/"source/main.c").read_text()
         part=main.split("}else if(screen==MDS_SCREEN_PHOTO_CANDIDATES){",1)[1].split("}else if(screen==MDS_SCREEN_GENDER){",1)[0]
-        self.assertIn("mds_photo_candidate_touch(",part)
+        self.assertIn("mds_photo_touch_release(",part)
         self.assertIn("if(down&KEY_Y)",part)
         self.assertIn("mds_photo_candidates_cancel(&photo_candidates);",part)
         self.assertIn("screen=photo_return_screen;",part)
