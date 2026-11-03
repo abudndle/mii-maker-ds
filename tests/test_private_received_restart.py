@@ -68,8 +68,8 @@ class ReceivedRunnerTests(unittest.TestCase):
         self.assertIn('xdotool mousemove --window "$win" 128 60', retry)
         self.assertIn('tap 128 "$((touch_origin+127))"', retry)
         self.assertIn('capture_received "$MELONDS_RECEIVED_CANCEL"', retry)
-        self.assertIn('  done\\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
-        self.assertNotIn('|| true\\n  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertIn('  done' + chr(10) + '  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
+        self.assertNotIn('|| true' + chr(10) + '  timeout 15s python3 tools/check_melonds_modal_dismissal.py', retry)
 
     def test_second_received_modal_reselects_source_and_matches_first(self):
         s = SCRIPT.read_text()
