@@ -4,7 +4,7 @@
 #define CHANNEL 0
 static uint16_t frame[256*192] __attribute__((aligned(32)));
 static uint16_t display[256*192];
-static int active,inflight,frames,have_frame,frozen,switch_requested;
+static int active,inflight,frames,have_frame,frozen;
 static CameraDevice selected;
 static MdsCameraPurpose camera_purpose;
 static const char *status="Camera closed";
@@ -17,8 +17,8 @@ int mds_camera_open_for(MdsCameraPurpose purpose)
     camera_purpose=purpose;
     selected=purpose==MDS_CAMERA_QR_SCAN?CAMERA_OUTER:CAMERA_INNER;
     if(!cameraSelect(selected)){cameraDeinit();status="Camera unavailable";return 0;}
-    active=1;inflight=0;frames=0;have_frame=0;frozen=0;switch_requested=0;
-    status=purpose==MDS_CAMERA_QR_SCAN?"A scan Mii QR / B back":"A freeze / B back";
+    active=1;inflight=0;frames=0;have_frame=0;frozen=0;
+    status=purpose==MDS_CAMERA_QR_SCAN?"A scan Mii QR / B back":"A capture / B back";
     return 1;
 }
 int mds_camera_open(void){return mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW);}
@@ -26,7 +26,7 @@ void mds_camera_close(void)
 {
     if(!active)return;
     cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;cameraDeinit();
-    active=0;inflight=0;have_frame=0;status="Camera closed";
+    active=0;inflight=0;have_frame=0;frozen=0;status="Camera closed";
 }
 int mds_camera_update(void)
 {
@@ -40,11 +40,6 @@ int mds_camera_update(void)
         memcpy(display,frame,sizeof display);
         inflight=0;have_frame=1;
     }
-    if(switch_requested && camera_purpose==MDS_CAMERA_PHOTO_PREVIEW){
-        CameraDevice next=selected==CAMERA_INNER?CAMERA_OUTER:CAMERA_INNER;
-        if(!cameraSelect(next)){status="Camera switch failed";return 1;}
-        selected=next;frozen=0;have_frame=0;switch_requested=0;
-    }
     if(!frozen){
         DC_InvalidateRange(frame,sizeof frame);
         if(!cameraStartTransfer(frame,MCUREG_APT_SEQ_CMD_PREVIEW,CHANNEL)){
@@ -54,12 +49,24 @@ int mds_camera_update(void)
     }
     return 1;
 }
-int mds_camera_switch(void)
+/* The photo camera stays inward-facing; QR scanning stays outward-facing. */
+int mds_camera_switch(void){return 0;}
+int mds_camera_has_frame(void){return active&&have_frame;}
+void mds_camera_freeze(void)
 {
-    if(!active || camera_purpose==MDS_CAMERA_QR_SCAN)return 0;
-    switch_requested=1;
-    return 1;
+    if(!active || camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW)return;
+    if(!frozen){
+        if(!have_frame){status="Camera warming up. Try again.";return;}
+        /* display holds the last complete frame; stop the in-flight DMA
+         * so a later update cannot overwrite the captured snapshot. */
+        if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
+        frozen=1;
+        status="Photo captured. A retake / B back";
+    }else{
+        frozen=0;
+        have_frame=0; /* Do not show the old snapshot after retake. */
+        status="A capture / B back";
+    }
 }
-void mds_camera_freeze(void){if(active){frozen=!frozen;status=frozen?"Preview frozen. A resume":"A freeze / B back";}}
 const uint16_t *mds_camera_frame(void){return active&&have_frame?display:NULL;}
 const char *mds_camera_status(void){return status;}

@@ -24,8 +24,17 @@ class CameraRoutingTests(unittest.TestCase):
         self.assertIn("camera_open=mds_camera_open_for(MDS_CAMERA_PHOTO_PREVIEW)", MAIN)
 
     def test_qr_mode_cannot_switch_sensor(self):
-        self.assertIn("if(!camera_qr&&(down&KEY_X))mds_camera_switch();", MAIN)
-        self.assertRegex(CAMERA, r"if\s*\(!active\s*\|\|\s*camera_purpose\s*==\s*MDS_CAMERA_QR_SCAN\)\s*return 0")
+        self.assertNotIn("mds_camera_switch();", MAIN)
+        self.assertIn("int mds_camera_switch(void){return 0;}", CAMERA)
+
+    def test_camera_capture_waits_for_valid_frame(self):
+        self.assertIn("if(!have_frame)", CAMERA)
+        self.assertIn("if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}", CAMERA)
+        self.assertIn("if(!mds_camera_has_frame())", MAIN)
+        self.assertIn("have_frame=0; /* Do not show the old snapshot after retake. */", CAMERA)
+
+    def test_capture_failure_restores_ui(self):
+        self.assertIn("mds_ui_restore_top();drawn_screen=-1;", MAIN)
 
     def test_dsi_gate_is_preserved(self):
         self.assertIn("if(!isDSiMode())", CAMERA)
