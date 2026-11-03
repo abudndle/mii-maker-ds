@@ -68,7 +68,7 @@ class PhotoQualityTests(unittest.TestCase):
 
     def test_rejects_sparse_noise_even_with_large_range(self):
         def image(x, y):
-            return pixel(0 if (x + y) % 128 == 0 else 16)
+            return pixel(0 if (x, y) in {(0, 0), (8, 0), (16, 0), (24, 0)} else 16)
         self.assertEqual(self.check_frame(image), FLAT)
 
     def test_accepts_well_exposed_contrast(self):
