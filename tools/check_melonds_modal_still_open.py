@@ -18,7 +18,7 @@ def verify(modal_path, after_path, threshold=28):
         a = modal.convert("RGB").crop((0, origin, 256, origin + 192))
         b = after.convert("RGB").crop((0, origin, 256, origin + 192))
     ma, ab = a.load(), b.load()
-    for x0, y0, x1, y1 in CHOICE_PANES:
+    for choice, (x0, y0, x1, y1) in enumerate(CHOICE_PANES):
         changed = sum(
             max(abs(ma[x, y][channel] - ab[x, y][channel])
                 for channel in range(3)) >= threshold
@@ -27,7 +27,10 @@ def verify(modal_path, after_path, threshold=28):
         area = (x1 - x0) * (y1 - y0)
         # A highlighted button can animate; a replaced dialog cannot.
         if changed * 100 >= area * 35:
-            raise ValueError("received confirmation no longer looks open")
+            # Only numeric pane-change evidence leaves the trusted runner.
+            raise ValueError(
+                "received confirmation no longer looks open "
+                f"(choice={choice}, changed={changed}, area={area})")
     return {"verified": True, "modal_still_open": True}
 
 

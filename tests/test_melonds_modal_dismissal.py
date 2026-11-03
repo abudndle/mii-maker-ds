@@ -34,6 +34,12 @@ class ModalDismissalTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "remains visible"):
             verify(self.gallery, self.modal, self.after)
 
+    def test_failure_reports_aggregate_counts_not_pixels(self):
+        self.after.write_bytes(self.modal.read_bytes())
+        with self.assertRaisesRegex(ValueError,
+                                    r"choice=0, appeared=6400, changed=0, residual=6400"):
+            verify(self.gallery, self.modal, self.after)
+
     def test_button_press_highlight_is_not_a_dismissal(self):
         img = Image.open(self.modal).convert("RGB")
         img.paste("gray", (28, 192 + 71, 228, 192 + 77))

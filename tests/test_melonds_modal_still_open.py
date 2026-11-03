@@ -33,7 +33,8 @@ class ModalStillOpenTests(unittest.TestCase):
 
     def test_dismissed_modal_blocks_retry(self):
         Image.new("RGB", (256, 384), "black").save(self.after)
-        with self.assertRaisesRegex(ValueError, "no longer looks open"):
+        with self.assertRaisesRegex(ValueError,
+                                    r"choice=0, changed=6400, area=6400"):
             verify(self.modal, self.after)
 
     def test_one_replaced_choice_pane_blocks_retry(self):
