@@ -129,6 +129,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_eye_pair.py
+      - name: Require photo candidate gestures to activate on stylus release
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_photo_touch_release.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
