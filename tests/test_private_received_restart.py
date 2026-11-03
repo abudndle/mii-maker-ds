@@ -97,9 +97,11 @@ class ReceivedRunnerTests(unittest.TestCase):
         end = s.index('Received acceptance: confirmed copy opened editor', begin)
         yes = s[begin:end]
         self.assertIn('if cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"; then', yes)
-        self.assertIn('tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_EDITOR"', yes)
+        self.assertIn('tools/check_melonds_modal_sequence.py', yes)
+        self.assertIn('"$MELONDS_RECEIVED_YES_T1" "$MELONDS_RECEIVED_YES_T3" --expect open', yes)
+        self.assertIn('cp "$MELONDS_RECEIVED_YES_T3" "$MELONDS_RECEIVED_EDITOR"', yes)
+        self.assertIn('Received acceptance: retrying verified unobserved Yes touch once', yes)
         self.assertIn('kill -0 "$emu_pid"', yes)
-        self.assertIn('Received acceptance: retrying unobserved Yes touch once', yes)
         self.assertEqual(yes.count('tap 128 "$((touch_origin+87))"'), 2)
         self.assertIn('tools/check_gallery_received_copy_save.py "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav" --mode copy', yes)
         self.assertLess(yes.index('--mode copy'),
@@ -133,10 +135,10 @@ class ReceivedRunnerTests(unittest.TestCase):
         w = WORKFLOW.read_text()
         self.assertIn('bash tools/run_melonds_received_restart.sh', w)
         self.assertIn('steps.melon_received.outcome', w)
-        for name in ("modal", "cancel", "cancel-t1", "cancel-t3", "cancel-t6", "editor", "return"):
+        for name in ("modal", "cancel", "cancel-t1", "cancel-t3", "cancel-t6", "yes-t1", "yes-t3", "editor", "return"):
             self.assertIn('melonds-received-' + name + '.png.gpg', w)
             self.assertIn('"$RUNNER_TEMP/melonds-received-' + name + '.png"', w)
-        self.assertIn("for frame in modal cancel cancel-t1 cancel-t3 cancel-t6 editor return; do", w)
+        self.assertIn("for frame in modal cancel cancel-t1 cancel-t3 cancel-t6 yes-t1 yes-t3 editor return; do", w)
         self.assertNotIn('            mii-ds.sav\n', w)
 
 

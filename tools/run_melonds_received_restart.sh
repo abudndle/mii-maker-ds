@@ -43,6 +43,8 @@ export MELONDS_RECEIVED_CANCEL_T1="$RUNNER_TEMP/melonds-received-cancel-t1.png"
 export MELONDS_RECEIVED_CANCEL_T3="$RUNNER_TEMP/melonds-received-cancel-t3.png"
 export MELONDS_RECEIVED_CANCEL_T6="$RUNNER_TEMP/melonds-received-cancel-t6.png"
 export MELONDS_RECEIVED_EDITOR="$RUNNER_TEMP/melonds-received-editor.png"
+export MELONDS_RECEIVED_YES_T1="$RUNNER_TEMP/melonds-received-yes-t1.png"
+export MELONDS_RECEIVED_YES_T3="$RUNNER_TEMP/melonds-received-yes-t3.png"
 export MELONDS_RECEIVED_RETURN="$RUNNER_TEMP/melonds-received-return.png"
 export MELONDS_RECEIVED_POSTCOPY="$RUNNER_TEMP/melonds-received-postcopy.sav"
 export HOME="$RUNNER_TEMP/melonds-home-received"
@@ -260,15 +262,30 @@ timeout 170s xvfb-run -a -s '-screen 0 1280x960x24' bash -c '
   kill -0 "$emu_pid"
   capture_received "$MELONDS_RECEIVED_EDITOR"
   if cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"; then
-    # A dropped Qt Yes touch leaves the original modal visible and the
-    # synthetic EEPROM unchanged. Retry only that exact state, once.
-    timeout 15s python3 tools/check_melonds_modal_still_open.py "$MELONDS_RECEIVED_MODAL" "$MELONDS_RECEIVED_EDITOR"
-    kill -0 "$emu_pid" || { echo "FAIL: received emulator exited before Yes retry"; exit 1; }
-    echo "Received acceptance: retrying unobserved Yes touch once"
-    tap 128 "$((touch_origin+87))"
-    sleep 7
-    kill -0 "$emu_pid"
-    capture_received "$MELONDS_RECEIVED_EDITOR"
+    # The initial Yes frame may contain a selection highlight or an exit
+    # animation. Never retry on that single frame. First passively wait for
+    # two settled captures and re-check the actual cartridge transaction.
+    sleep 2
+    capture_received "$MELONDS_RECEIVED_YES_T1"
+    sleep 3
+    capture_received "$MELONDS_RECEIVED_YES_T3"
+    kill -0 "$emu_pid" || { echo "FAIL: received emulator exited while Yes settled"; exit 1; }
+    cp "$MELONDS_RECEIVED_YES_T3" "$MELONDS_RECEIVED_EDITOR"
+    if cmp -s "$RUNNER_TEMP/melonds-received-before.sav" "$PWD/mii-ds.sav"; then
+      # A retry is permitted only when BOTH observations prove the same
+      # original open dialog and EEPROM remains byte-identical.
+      timeout 15s python3 tools/check_melonds_modal_sequence.py \
+          "$MELONDS_RECEIVED_GALLERY" "$MELONDS_RECEIVED_MODAL" \
+          "$MELONDS_RECEIVED_YES_T1" "$MELONDS_RECEIVED_YES_T3" --expect open || {
+        echo "FAIL: Yes touch state ambiguous; refusing another touch"
+        exit 1
+      }
+      echo "Received acceptance: retrying verified unobserved Yes touch once"
+      tap 128 "$((touch_origin+87))"
+      sleep 7
+      kill -0 "$emu_pid"
+      capture_received "$MELONDS_RECEIVED_EDITOR"
+    fi
   fi
   # Verify the *actual cartridge transaction* before accepting a visual
   # editor transition or sending B. A modal animation is not an editable copy.
