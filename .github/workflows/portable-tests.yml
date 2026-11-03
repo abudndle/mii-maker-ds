@@ -141,6 +141,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: python3 -m unittest discover -s tests -p test_photo_suggest_diagnostics.py
+      - name: Verify DSi camera capture, retake, error cleanup and private RAM scrub
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_camera_ds_lifetime.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
