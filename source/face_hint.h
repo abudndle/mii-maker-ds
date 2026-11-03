@@ -3,7 +3,7 @@
 #include <stdint.h>
 /* Experimental eye-pair contrast cue, NOT face detection or recognition.
  * Two appropriately spaced dark patches can be scenery or other objects:
- * both false positives and negatives are expected on real photos. */
+ * False positives and negatives are expected on real photos. */
 typedef enum {
  MDS_FACE_HINT_INVALID=0,
  MDS_FACE_HINT_NO_PAIR=1,
