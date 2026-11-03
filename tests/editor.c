@@ -207,6 +207,44 @@ int main(void){
     e.slot=10;assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
     assert(mds_editor_toggle_favorite(&e,saved,NULL));
     assert(g.miis[10].value[46]&&!mds_editor_dirty(&e));
+    /* Save and Create must not bypass the existing delete/copy/discard
+     * confirmation. The modal action and all gallery state stay intact. */
+    mds_gallery_new(&g);mds_editor_begin(&e,&g);
+    assert(!mds_editor_save(NULL,saved,NULL));
+    assert(!mds_editor_create(NULL,1));
+    assert(!mds_editor_save(&e,failed,NULL));
+    MdsAvatar modal_saved;mds_new(&modal_saved);
+    strcpy(modal_saved.name,"Modal");
+    assert(mds_gallery_store(&g,0,&modal_saved));
+    e.slot=0;assert(mds_editor_request(&e,MDS_EDIT_RELOAD));
+    e.pending=MDS_EDIT_DELETE;
+    MdsAvatar preserved_draft=e.draft, preserved_record=g.miis[0];
+    assert(!mds_editor_save(&e,saved,NULL));
+    assert(!mds_editor_create(&e,1));
+    assert(e.pending==MDS_EDIT_DELETE&&e.slot==0);
+    assert(!memcmp(&e.draft,&preserved_draft,sizeof preserved_draft));
+    assert(!memcmp(&g.miis[0],&preserved_record,sizeof preserved_record));
+    assert(g.used[0]&&!g.used[1]&&g.generation==0&&g.active_bank==-1);
+    assert(!mds_editor_confirm(&e,0,saved,NULL));
+    assert(e.pending==MDS_EDIT_NONE&&g.used[0]&&!g.used[1]);
+    assert(mds_editor_create(&e,1));
+    assert(e.slot==1&&!g.used[1]&&!mds_editor_dirty(&e));
+    e.pending=MDS_EDIT_NEXT;
+    assert(!mds_editor_save(&e,saved,NULL));
+    assert(!mds_editor_create(&e,2));
+    assert(e.pending==MDS_EDIT_NEXT&&e.slot==1);
+    assert(!mds_editor_confirm(&e,0,saved,NULL));
+    assert(e.pending==MDS_EDIT_NONE);
+    assert(mds_editor_save(&e,saved,NULL));
+    assert(g.used[1]&&!mds_editor_dirty(&e));
+    e.slot=MDS_SLOTS;
+    assert(!mds_editor_save(&e,saved,NULL));
+    assert(!mds_editor_create(&e,2));
+    e.slot=1;
+    MdsGallery *modal_gallery=e.gallery;e.gallery=NULL;
+    assert(!mds_editor_save(&e,saved,NULL));
+    assert(!mds_editor_create(&e,2));
+    e.gallery=modal_gallery;
     /* Import must never overwrite a dirty draft or an active confirmation.
      * This also protects the caller from invalid/null editor state. */
     mds_gallery_new(&g);mds_editor_begin(&e,&g);

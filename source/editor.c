@@ -17,6 +17,14 @@ int mds_editor_locked(const MdsAvatar*a){return a&&(a->value[61]&3)!=0;}
 int mds_editor_dirty(const MdsEditor *e){return memcmp(&e->draft,&e->baseline,sizeof e->draft)!=0;}
 int mds_editor_save(MdsEditor *e,MdsPersist persist,void *ctx)
 {
+    if(!e||!e->gallery||e->slot>=MDS_SLOTS)return 0;
+    /* A pending delete, copy or discard confirmation must be resolved
+     * before Save changes the gallery. Preserve the pending action and
+     * draft so B can still cancel the original dialog safely. */
+    if(e->pending){
+        e->status="Finish the confirmation before saving.";
+        return 0;
+    }
     MdsGallery *g=e->gallery;
     if(g->used[e->slot]&&mds_editor_locked(&g->miis[e->slot])){e->status="This received Mii cannot be edited.";return 0;}
     static const unsigned days[]={0,31,29,31,30,31,30,31,31,30,31,30,31};
@@ -87,7 +95,12 @@ int mds_editor_confirm(MdsEditor *e,int accept,MdsPersist persist,void *ctx)
 
 int mds_editor_create(MdsEditor *e,unsigned slot)
 {
- if(!e||!e->gallery||slot>=MDS_SLOTS||e->gallery->used[slot])return 0;
+ if(!e||!e->gallery||e->slot>=MDS_SLOTS||
+    slot>=MDS_SLOTS||e->gallery->used[slot])return 0;
+ if(e->pending){
+  e->status="Finish the confirmation before creating a Mii.";
+  return 0;
+ }
  /* Never overwrite an unfinished edit when selecting a new gallery slot. */
  if(mds_editor_dirty(e)){
   e->status="Discard unsaved edits before creating a Mii.";
