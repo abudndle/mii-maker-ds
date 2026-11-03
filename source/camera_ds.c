@@ -1,5 +1,6 @@
 #include <nds.h>
 #include "camera_ds.h"
+#include "photo_quality.h"
 #include <string.h>
 #define CHANNEL 0
 static uint16_t frame[256*192] __attribute__((aligned(32)));
@@ -61,12 +62,25 @@ void mds_camera_freeze(void)
          * so a later update cannot overwrite the captured snapshot. */
         if(inflight){cameraStopTransfer();REG_NDMA_CR(CHANNEL)=0;inflight=0;}
         frozen=1;
-        status="Photo captured. A retake / B back";
+        status="Photo captured. X check / A retake";
     }else{
         frozen=0;
         have_frame=0; /* Do not show the old snapshot after retake. */
         status="A capture / B back";
     }
+}
+int mds_camera_check_photo(void)
+{
+    if(!active || camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW || !frozen || !have_frame)
+        return 0;
+    MdsPhotoQuality quality=mds_photo_quality_rgb555(display,256,192);
+    if(quality==MDS_PHOTO_TOO_DARK)status="Too dark. A retake";
+    else if(quality==MDS_PHOTO_TOO_BRIGHT)status="Too bright. A retake";
+    else if(quality==MDS_PHOTO_TOO_FLAT)status="Low detail. A retake";
+    else if(quality==MDS_PHOTO_EXPOSURE_OK)
+        status="Lighting OK. Face recognition unavailable";
+    else status="Invalid photo frame";
+    return quality==MDS_PHOTO_EXPOSURE_OK;
 }
 const uint16_t *mds_camera_frame(void){return active&&have_frame?display:NULL;}
 const char *mds_camera_status(void){return status;}
