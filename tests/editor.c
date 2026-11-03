@@ -13,9 +13,10 @@ int main(void){
     assert(mds_editor_create(&e,23));
     assert(e.slot==23&&e.field==2&&!e.pending);
     assert(!g.used[23]&&e.draft.value[51]&&e.draft.value[46]);
-    assert(mds_editor_dirty(&e));
+    assert(e.baseline.value[51]&&e.baseline.value[46]);
+    assert(!mds_editor_dirty(&e));
     /* A second creation cannot silently erase an unfinished draft. */
-    e.draft.value[5]=9;
+    e.draft.value[5]=9;assert(mds_editor_dirty(&e));
     assert(!mds_editor_create(&e,24)&&e.slot==23&&e.draft.value[5]==9);
     assert(mds_editor_save(&e,saved,NULL)&&g.used[23]&&g.miis[23].value[51]);
     assert(!mds_editor_create(&e,23)); /* occupied slot */
