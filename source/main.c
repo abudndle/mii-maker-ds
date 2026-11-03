@@ -112,6 +112,7 @@ int main(void)
                         }else editor.status="No valid Mii QR found. Try again.";
                     }else mds_camera_freeze();
                 }
+                if(!camera_qr&&(down&KEY_X))mds_camera_check_photo();
                 if(camera_open){
                     camera_open=mds_camera_update();
                     if(camera_open){
