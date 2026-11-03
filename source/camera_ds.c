@@ -54,6 +54,7 @@ int mds_camera_update(void)
 /* The photo camera stays inward-facing; QR scanning stays outward-facing. */
 int mds_camera_switch(void){return 0;}
 int mds_camera_has_frame(void){return active&&have_frame;}
+int mds_camera_photo_frozen(void){return active&&camera_purpose==MDS_CAMERA_PHOTO_PREVIEW&&frozen&&have_frame;}
 void mds_camera_freeze(void)
 {
     if(!active || camera_purpose!=MDS_CAMERA_PHOTO_PREVIEW)return;
