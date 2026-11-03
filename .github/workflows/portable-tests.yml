@@ -103,6 +103,10 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_original_motion_render_runner.py
       - name: Link original Mii software renderer without private assets
         run: python3 tools/test_original_render.py --compile-only --cc ${{ matrix.compiler }}
+      - name: Verify DSi RGB555 photo quality and capture gating
+        env:
+          CC: ${{ matrix.compiler }}
+        run: python3 -m unittest discover -s tests -p test_photo_quality.py
       - name: Run asset-free source tests
         env:
           CC: ${{ matrix.compiler }}
