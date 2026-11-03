@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Public screenshots are allowed ONLY from the synthetic compiler-placeholder ROM.
+# Public screenshots are allowed ONLY from the independent, asset-free homebrew ROM.
 set -euo pipefail
-test "${MDS_SYNTHETIC_COMPILE_ONLY:-}" = yes
+test "${MDS_PUBLIC_DEMO_ONLY:-}" = yes
 test -s public-demo/public-demo.nds
 mkdir -p public-screenshots
 bin_dir="$RUNNER_TEMP/public-melonds"

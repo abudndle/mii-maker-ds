@@ -6,12 +6,12 @@
 
 int main(void) {
     consoleDemoInit();
-    iprintf("PUBLIC DS TEST ROM\n");
-    iprintf("==================\n\n");
-    iprintf("Synthetic homebrew only\n");
-    iprintf("No original game assets\n\n");
-    iprintf("A: increment counter\n");
-    iprintf("START: reset counter\n\n");
+    printf("PUBLIC DS TEST ROM\n");
+    printf("==================\n\n");
+    printf("Synthetic homebrew only\n");
+    printf("No original game assets\n\n");
+    printf("A: increment counter\n");
+    printf("START: reset counter\n\n");
     int counter = 0;
     while (1) {
         swiWaitForVBlank();
@@ -19,6 +19,6 @@ int main(void) {
         unsigned int down = keysDown();
         if (down & KEY_A) ++counter;
         if (down & KEY_START) counter = 0;
-        iprintf("\x1b[10;0HCounter: %d      ", counter);
+        printf("\x1b[10;0HCounter: %d      ", counter);
     }
 }
