@@ -116,8 +116,10 @@ unsigned mds_room_animation_frame(const MdsRoomAnimation *state,unsigned ticks,
  }
  MdsMotionClip clip={0};
  clip.count=counts[state->clip];clip.fps=fps[state->clip];clip.loop=loops[state->clip];
- /* Unsigned subtraction intentionally handles the DS VBlank counter wrap. */
- return mds_motion_frame(&clip,(uint32_t)(ticks-state->start_tick),ended);
+ /* A sample before the scheduled start must display frame zero rather than
+  * underflow into a late frame. Signed modular delta still handles wrap. */
+ int32_t elapsed=(int32_t)((uint32_t)ticks-state->start_tick);
+ return mds_motion_frame(&clip,elapsed<0?0u:(uint32_t)elapsed,ended);
 }
 
 unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *state,uint32_t ticks,
@@ -129,10 +131,11 @@ unsigned mds_room_animation_motion_frame(const MdsRoomAnimation *state,uint32_t 
   if(ended)*ended=1;
   return 0;
  }
- /* Keep each actor's start tick independent. uint32_t subtraction also
-  * makes a running VBlank clock wrap without losing animation continuity. */
+ /* Keep each actor's start tick independent. A pre-start sample stays at
+  * frame zero, while a short animation crossing UINT32_MAX still advances. */
+ int32_t elapsed=(int32_t)(ticks-state->start_tick);
  return mds_motion_frame(&motion->clips[state->clip],
-                         (uint32_t)(ticks-state->start_tick),ended);
+                         elapsed<0?0u:(uint32_t)elapsed,ended);
 }
 
 unsigned mds_room_animation_gallery_frame(const MdsRoomAnimation *state,uint32_t ticks,
