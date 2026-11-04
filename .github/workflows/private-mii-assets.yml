@@ -1,0 +1,49 @@
+
+name: Verify Private Mii Assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout DS port
+        uses: actions/checkout@v4
+
+      - name: Download private assets
+        env:
+          MII_ASSETS_URL: ${{ secrets.MII_ASSETS_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$MII_ASSETS_URL" || {
+            echo "MII_ASSETS_URL is missing"
+            exit 1
+          }
+
+          mkdir -p private-assets
+          curl --fail --location --silent \
+            --show-error --retry 3 \
+            --output private-assets/mii.zip \
+            "$MII_ASSETS_URL"
+
+      - name: Verify archive
+        run: |
+          unzip -tq private-assets/mii.zip
+
+      - name: Extract original resources
+        run: |
+          mkdir -p private-assets/extracted
+          unzip -q private-assets/mii.zip \
+            -d private-assets/extracted
+
+      - name: Report verification
+        run: |
+          echo "Private Mii assets verified."
+          echo "Archive contents remain private."
