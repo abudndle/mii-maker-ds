@@ -31,6 +31,23 @@ int main(void)
  assert(!mds_creation_default(&invalid,2));
  assert(!memcmp(&invalid,&original,sizeof original));
  assert(!mds_creation_default(0,0));
+ /* Corrupt imported drafts must fail atomically, including identity and
+  * sharing fields that a starter reset intentionally preserves. */
+ invalid=original;
+ invalid.value[48]=255;
+ MdsAvatar corrupt=invalid;
+ assert(!mds_creation_default(&invalid,1));
+ assert(!memcmp(&invalid,&corrupt,sizeof invalid));
+ invalid=original;
+ invalid.value[5]=255;
+ corrupt=invalid;
+ assert(!mds_creation_default(&invalid,0));
+ assert(!memcmp(&invalid,&corrupt,sizeof invalid));
+ invalid=original;
+ memset(invalid.name,'X',sizeof invalid.name);
+ corrupt=invalid;
+ assert(!mds_creation_default(&invalid,1));
+ assert(!memcmp(&invalid,&corrupt,sizeof invalid));
  /* Calling with the same gender reinitializes appearance consistently. */
  male.value[5]=100;
  assert(mds_creation_default(&male,0)&&male.value[5]==0);
