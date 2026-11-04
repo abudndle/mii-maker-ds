@@ -33,7 +33,7 @@ int main(void)
     consoleDemoInit();
 
     if(!nitroFSInit(NULL)){
-        iprintf("Missing private NitroFS\nmodel assets.\n");
+        printf("Missing private NitroFS\nmodel assets.\n");
         for(;;)swiWaitForVBlank();
     }
     Mds3DScene scene={0};
@@ -41,14 +41,14 @@ int main(void)
     scene.camera=NE_CameraCreate();
     NE_Animation *clip=NE_AnimationCreate();
     if(!scene.model||!scene.camera||!clip){
-        iprintf("3D allocation failed\n");
+        printf("3D allocation failed\n");
         for(;;)swiWaitForVBlank();
     }
     /* Source-derived, privately staged: not included in public builds. */
     if(!NE_ModelLoadDSMFAT(scene.model,"nitro:/models/MiiBody_dsm.bin")||
        !NE_AnimationLoadFAT(clip,"nitro:/models/MiiBody_dsa.bin")){
-        iprintf("Private DSM / DSA absent\n");
-        iprintf("Run dsma-private-model\n");
+        printf("Private DSM / DSA absent\n");
+        printf("Run dsma-private-model\n");
         for(;;)swiWaitForVBlank();
     }
     NE_ModelSetAnimation(scene.model,clip);
@@ -56,7 +56,7 @@ int main(void)
     NE_CameraSet(scene.camera,6,3,-4,0,3,0,0,1,0);
     NE_ClearColorSet(NE_Black,31,63);
     NE_LightSet(0,NE_White,0,-1,-1);
-    iprintf("Original Mii body\nNitro Engine / DSMA\nD-pad: rotate\nSTART: exit\n");
+    printf("Original Mii body\nNitro Engine / DSMA\nD-pad: rotate\nSTART: exit\n");
     while(1){
         NE_WaitForVBL(NE_UPDATE_ANIMATIONS);
         scanKeys();
