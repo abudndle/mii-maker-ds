@@ -15,6 +15,8 @@ class Hardware3DPreview(unittest.TestCase):
   self.assertIn('nitro:/models/MiiBody_dsm.bin',source)
   self.assertIn('nitro:/models/MiiBody_dsa.bin',source)
   self.assertIn("consoleDemoInit()",source)
+  self.assertIn("printf(",source)
+  self.assertNotIn("iprintf(",source)
   self.assertNotIn("glBegin",source)
   self.assertNotIn("createCube",source)
  def test_separate_opt_in_build_does_not_break_main_renderer(self):
