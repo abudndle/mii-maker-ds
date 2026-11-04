@@ -43,6 +43,8 @@ jobs:
           done
       - name: Test private DSMA staging with synthetic files only
         run: python3 -m unittest discover -s tests -p test_stage_private_dsma.py
+      - name: Test trusted private repository ROM build wiring (asset-free)
+        run: python3 -m unittest discover -s tests -p test_private_repo_checkout_workflow.py -v
       - name: Portable C gallery input regressions
         shell: bash
         run: |
