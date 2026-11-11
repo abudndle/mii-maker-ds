@@ -24,7 +24,10 @@ void mds_new(MdsAvatar *a){if(!a)return;memset(a,0,sizeof *a);strcpy(a->name,"Mi
  * shape, rather than just changing the gender bit of the male draft. */
 int mds_creation_default(MdsAvatar *avatar,unsigned gender)
 {
-    if(!avatar||gender>1u)return 0;
+    /* Reject corrupt drafts before changing any fields. A fresh starter must
+     * never launder invalid saved identity/permission bytes into an apparently
+     * valid avatar, nor partially rewrite the caller on failure. */
+    if(!avatar||gender>1u||!mds_valid(avatar))return 0;
     MdsAvatar initial;
     mds_new(&initial);
     /* Only a fresh creation draft should use these appearance defaults.
