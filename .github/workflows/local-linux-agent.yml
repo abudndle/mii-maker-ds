@@ -33,6 +33,9 @@ jobs:
       focus: ${{ steps.queue.outputs.focus }}
       issue: ${{ steps.queue.outputs.issue }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - id: queue
         env:
           GH_TOKEN: ${{ github.token }}
