@@ -22,7 +22,12 @@ jobs:
       pull-requests: read
     outputs:
       proceed: ${{ steps.queue.outputs.proceed }}
+      focus: ${{ steps.queue.outputs.focus }}
+      issue: ${{ steps.queue.outputs.issue }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - id: queue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,6 +39,14 @@ jobs:
             --jq '[.[] | select(.headRefName | startswith("agent/"))] | length')"
           if [[ "$pending" == 0 ]]; then
             echo 'proceed=true' >> "$GITHUB_OUTPUT"
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+              --limit 100 --json number,title > "$RUNNER_TEMP/bot-issues.json"
+            python3 tests/test_select_bot_milestone.py
+            python3 scripts/select_bot_milestone.py --slot "$GITHUB_RUN_NUMBER" \
+              < "$RUNNER_TEMP/bot-issues.json" > "$RUNNER_TEMP/bot-selected.json"
+            echo "focus=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["focus"])' "$RUNNER_TEMP/bot-selected.json")" >> "$GITHUB_OUTPUT"
+            echo "issue=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["issue"])' "$RUNNER_TEMP/bot-selected.json")" >> "$GITHUB_OUTPUT"
+            cat "$RUNNER_TEMP/bot-selected.json"
           else
             echo 'proceed=false' >> "$GITHUB_OUTPUT"
             echo "Existing agent PR blocks duplicate model generation."
@@ -56,6 +69,7 @@ jobs:
         run: |
           python3 -m py_compile scripts/local_agent_propose.py
           python3 tests/test_local_agent_propose.py
+          python3 tests/test_select_bot_milestone.py
       - name: Start stronger local open-source coding model
         shell: bash
         run: |
@@ -77,8 +91,8 @@ jobs:
         run: |
           set -euo pipefail
           echo 'ready=false' >> "$GITHUB_OUTPUT"
-          FOCI=("tween" "face")
-          focus="${FOCI[$(( GITHUB_RUN_NUMBER % ${#FOCI[@]} ))]}"
+          focus="${{ needs.check-queue.outputs.focus }}"
+          case "$focus" in tween|face) ;; *) echo "Unapproved bot task focus"; exit 2 ;; esac
           if python3 scripts/local_agent_propose.py --focus "$focus" --output-dir agent-output; then
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
@@ -95,7 +109,7 @@ jobs:
           retention-days: 7
 
   publish-draft:
-    needs: propose
+    needs: [check-queue, propose]
     if: needs.propose.outputs.ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -176,6 +190,10 @@ jobs:
           git commit -m 'agent: bounded free local-model DS code and regression proposal'
           git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
             push "https://github.com/${{ github.repository }}.git" "HEAD:refs/heads/$branch"
+          milestone_issue="${{ needs.check-queue.outputs.issue }}"
+          if [[ "$milestone_issue" =~ ^[1-9][0-9]*$ ]]; then
+            printf '\nCloses #%s\n' "$milestone_issue" >> agent-output/pr-body.md
+          fi
           if ! gh pr create --repo "$GITHUB_REPOSITORY" --draft --base main --head "$branch" \
             --title "Free local coding agent: bounded DS source and test fix" \
             --body-file agent-output/pr-body.md; then
