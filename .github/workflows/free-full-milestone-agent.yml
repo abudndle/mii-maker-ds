@@ -211,6 +211,15 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/test_first_boot_flow.py && python3 tests/test_gallery_drag.py
+          # Compile and execute the selected room/exchange C regressions (plus
+          # other asset-free source suites) before proposing any PR.
+          python3 tools/test_host.py
+          # The gallery-balloon suite is not in tools/test_host.py; validate it
+          # explicitly so every agent-selectable source/test pair is executed.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isource \
+            tests/gallery_balloon_clan.c source/gallery_balloon_clan.c \
+            source/clan_curve.c -o "$RUNNER_TEMP/agent-gallery-balloon"
+          "$RUNNER_TEMP/agent-gallery-balloon"
 
       - name: Publish gated draft PR for independent CI (never auto-merge)
         if: steps.changes.outputs.has_changes == 'true'
